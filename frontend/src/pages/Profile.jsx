@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { ChevronDown, ChevronUp, User, Mail, Lock, ShieldAlert, ShieldCheck, Clock, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, User, Mail, Lock, ShieldAlert, ShieldCheck, Clock, Loader2, Edit2, Check, X } from 'lucide-react';
 
 const Profile = () => {
-  const [openSection, setOpenSection] = useState('basic'); // 'basic' or 'verification'
+  const [openSection, setOpenSection] = useState('basic'); 
   
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Name Edit States 🔥
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [updateLoading, setUpdateLoading] = useState(false);
   
   // Password Reset States
   const [resetLoading, setResetLoading] = useState(false);
@@ -20,10 +25,9 @@ const Profile = () => {
   const fetchProfileData = async () => {
     try {
       const token = localStorage.getItem('token');
-      // Fetch Profile securely using HttpOnly Cookies
       const profileRes = await fetch('http://localhost:5000/api/users/profile', {
         headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include' // 🔥 Secure session validation
+        credentials: 'include' 
       });
       
       if (profileRes.status === 429) {
@@ -45,7 +49,38 @@ const Profile = () => {
     fetchProfileData();
   }, []);
 
-  // 🔥 Password Reset Logic with Rate Limit Handling
+  // 🔥 Update Name Logic
+  const handleNameUpdate = async () => {
+    if (!newName.trim()) return alert("Name cannot be empty");
+    
+    setUpdateLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/users/profile/name', {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ name: newName })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setUserProfile((prev) => ({ ...prev, name: data.user.name }));
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setIsEditingName(false);
+      } else {
+        alert(data.message || "Failed to update name");
+      }
+    } catch (error) {
+      alert("Server error");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
   const handlePasswordResetRequest = async () => {
     setResetLoading(true);
     setResetMessage({ type: '', text: '' });
@@ -56,7 +91,6 @@ const Profile = () => {
         body: JSON.stringify({ email: userProfile?.email })
       });
 
-      // 🔥 Rate Limiter Check (15 min limit handling)
       if (res.status === 429) {
         setResetMessage({ type: 'error', text: 'Too many requests. Please wait 15 minutes.' });
         return;
@@ -84,7 +118,6 @@ const Profile = () => {
     <div className="min-h-screen bg-gray-50 font-sans pb-10 flex flex-col">
       <Navbar />
 
-      {/* 🟢 Header */}
       <div className="bg-[#0066ff] px-4 py-6 shadow-md relative overflow-hidden text-white mt-14 sm:mt-0">
         <div className="max-w-2xl mx-auto relative z-10 text-center">
           <h1 className="text-2xl font-black">My Account</h1>
@@ -105,11 +138,42 @@ const Profile = () => {
           
           {openSection === 'basic' && (
             <div className="p-5 border-t border-gray-100 space-y-4 bg-gray-50/50">
+              
+              {/* 🔥 EDITABLE NAME SECTION */}
               <div className="flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                 <div className="bg-blue-50 p-2 rounded-lg"><User size={18} className="text-[#0066ff]" /></div>
-                <div>
+                <div className="flex-1">
                   <p className="text-xs text-gray-400 font-bold uppercase mb-0.5">Full Name</p>
-                  <p className="text-gray-800 font-bold">{userProfile?.name}</p>
+                  {isEditingName ? (
+                    <input 
+                      type="text" 
+                      value={newName} 
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="w-full bg-blue-50/50 border-b-2 border-[#0066ff] focus:outline-none text-gray-800 font-bold px-1 py-0.5"
+                      autoFocus
+                    />
+                  ) : (
+                    <p className="text-gray-800 font-bold">{userProfile?.name}</p>
+                  )}
+                </div>
+                <div>
+                  {isEditingName ? (
+                    <div className="flex gap-2">
+                      <button onClick={() => setIsEditingName(false)} disabled={updateLoading} className="p-1.5 bg-gray-100 text-gray-500 rounded hover:bg-gray-200 transition">
+                        <X size={16} />
+                      </button>
+                      <button onClick={handleNameUpdate} disabled={updateLoading} className="p-1.5 bg-green-100 text-green-600 rounded hover:bg-green-200 transition">
+                        {updateLoading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => { setIsEditingName(true); setNewName(userProfile?.name || ''); }} 
+                      className="flex items-center gap-1 text-xs font-bold text-[#0066ff] bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition"
+                    >
+                      <Edit2 size={14} /> Edit
+                    </button>
+                  )}
                 </div>
               </div>
               
@@ -166,7 +230,6 @@ const Profile = () => {
                   <h3 className="text-2xl font-black text-gray-800">Verified Account</h3>
                   <p className="text-sm text-gray-500 mt-2 max-w-sm">Your Amazon and payment accounts are securely linked to our system.</p>
                   
-                  {/* 🔥 Role-based dynamic text */}
                   <div className="mt-6 inline-flex bg-white text-green-700 px-6 py-2.5 rounded-full text-sm font-bold border-2 border-green-400 shadow-sm">
                     {userProfile?.role === 'seller' ? '🎉 You are now ready to list products!' : '🎉 You are now ready to apply for tasks!'}
                   </div>

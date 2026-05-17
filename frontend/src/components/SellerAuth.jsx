@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ShoppingBag, FileText, X, RefreshCcw } from 'lucide-react'; 
 
+// 🔥 Firebase Imports (আপনার firebase.js ফাইলের লোকেশন অনুযায়ী পাথ ঠিক করে নিবেন, যদি একই ফোল্ডারে না থাকে)
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider, yahooProvider } from '../firebase'; 
+
 export default function SellerAuth({ onAuthSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,6 +14,7 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [isLogin, setIsLogin] = useState(true); 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
 
   const [whatsapp, setWhatsapp] = useState('');
   const [country, setCountry] = useState('');
@@ -17,7 +22,7 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  // 🔥 NEW STATES FOR CAPTCHA AND OTP
+  // STATES FOR CAPTCHA AND OTP
   const [captchaData, setCaptchaData] = useState(null);
   const [captchaInput, setCaptchaInput] = useState('');
   
@@ -28,7 +33,7 @@ export default function SellerAuth({ onAuthSuccess }) {
 
   const navigate = useNavigate();
 
-  // 🔥 FETCH CAPTCHA ON LOAD & WHEN SWITCHING TO LOGIN
+  // FETCH CAPTCHA
   const fetchCaptcha = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/users/captcha');
@@ -42,12 +47,10 @@ export default function SellerAuth({ onAuthSuccess }) {
   };
 
   useEffect(() => {
-    if (isLogin) {
-      fetchCaptcha();
-    }
+    if (isLogin) fetchCaptcha();
   }, [isLogin]);
 
-  // 🔥 OTP COUNTDOWN TIMER
+  // OTP COUNTDOWN TIMER
   useEffect(() => {
     let timer;
     if (otpCountdown > 0) {
@@ -58,10 +61,13 @@ export default function SellerAuth({ onAuthSuccess }) {
     return () => clearInterval(timer);
   }, [otpCountdown]);
 
-  // 🔥 SEND OTP FUNCTION
+  // BASIC EMAIL VALIDATION HELPER
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  // SEND OTP
   const handleSendOtp = async () => {
-    if (!email) {
-      setError("Please enter your email first.");
+    if (!email || !isValidEmail(email)) {
+      setError("Please enter a valid email first.");
       return;
     }
     setError('');
@@ -76,7 +82,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       
       if (res.ok) {
         setOtpSent(true);
-        setOtpCountdown(60); // 60 seconds cooldown before resend
+        setOtpCountdown(60); 
         alert(data.message || "OTP sent to your email!");
       } else {
         setError(data.message || "Failed to send OTP.");
@@ -88,33 +94,78 @@ export default function SellerAuth({ onAuthSuccess }) {
     }
   };
 
+  // 🔥 ASOL SOCIAL LOGIN HANDLER (Firebase Integrated)
+  const handleSocialLogin = async (providerName) => {
+    setSocialLoading(true);
+    setError('');
+    try {
+      // 1. সিলেক্ট করুন কোন প্রোভাইডার দিয়ে লগিন হবে
+      const provider = providerName === 'google' ? googleProvider : yahooProvider;
+      
+      // 2. ফায়ারবেস পপআপ ওপেন করা
+      const result = await signInWithPopup(auth, provider);
+      
+      // 3. ফায়ারবেস থেকে ইউজারের তথ্য নেওয়া
+      const userEmail = result.user.email;
+      const userName = result.user.displayName || `${providerName} User`;
+
+      if (!userEmail) {
+        throw new Error("Email not found from social account.");
+      }
+
+      // 4. ব্যাকএন্ডে API কল করে ইউজারকে সিস্টেমে লগিন/রেজিস্টার করানো
+      const res = await fetch('http://localhost:5000/api/users/social-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, name: userName, auth_provider: providerName })
+      });
+      
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        onAuthSuccess(data.user);
+        navigate('/dashboard'); 
+      } else {
+        setError(data.message || `${providerName} login failed`);
+      }
+    } catch (err) {
+      console.error("Firebase Auth Error:", err);
+      // ইউজার যদি নিজেই পপআপ কেটে দেয়, তাহলে এরর দেখানোর দরকার নেই
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError("Social login connection error. Please try again.");
+      }
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  // STANDARD EMAIL SUBMIT
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     if (!isLogin && role === 'buyer' && !termsAccepted) {
-      setError('You must accept the Terms and Conditions to register.');
-      return;
+      return setError('You must accept the Terms and Conditions to register.');
     }
 
     if (!isLogin && !otpCode) {
-      setError('Please enter the verification code sent to your email.');
-      return;
+      return setError('Please enter the verification code sent to your email.');
     }
 
     if (isLogin && !captchaInput) {
-      setError('Please enter the captcha code.');
-      return;
+      return setError('Please enter the captcha code.');
     }
 
     setLoading(true);
 
     const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
     
-    // Include captcha for login, and OTP for register
     const payload = isLogin 
       ? { email, password, captchaId: captchaData?.captchaId, captchaInput } 
-      : { fullName, name: fullName, email, password, role, whatsapp, country, profileLink, otp: otpCode };
+      : { fullName, email, password, role, whatsapp, country, profileLink, otp: otpCode };
 
     try {
       const res = await fetch(`http://localhost:5000${endpoint}`, {
@@ -130,14 +181,9 @@ export default function SellerAuth({ onAuthSuccess }) {
         localStorage.setItem('user', JSON.stringify(data.user));
         
         onAuthSuccess(data.user);
-        
-        if (data.user.role === 'admin') navigate('/dashboard');
-        else if (data.user.role === 'seller') navigate('/dashboard');
-        else navigate('/dashboard');
-
+        navigate('/dashboard'); 
       } else {
         setError(data.message || 'Authentication failed');
-        // Refresh captcha on login failure
         if (isLogin) fetchCaptcha();
       }
     } catch (err) {
@@ -149,7 +195,7 @@ export default function SellerAuth({ onAuthSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 font-sans animate-fade-in">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 font-sans animate-fade-in py-10">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
         
         {/* HEADER */}
@@ -180,9 +226,41 @@ export default function SellerAuth({ onAuthSuccess }) {
           </div>
         )}
 
+        {/* SOCIAL LOGIN BUTTONS */}
+        <div className="px-6 mb-5 space-y-3">
+          <div className="flex gap-3">
+            <button 
+              type="button" 
+              onClick={() => handleSocialLogin('google')}
+              disabled={socialLoading}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+              <span className="text-sm font-bold text-gray-700">{socialLoading ? 'Wait...' : 'Google'}</span>
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={() => handleSocialLogin('yahoo')}
+              disabled={socialLoading}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-[#720e9e] bg-[#720e9e] hover:bg-[#5a0b7c] transition-colors text-white rounded-xl disabled:opacity-50"
+            >
+              <svg width="20" height="20" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M410.3 35.8L270.6 244.6V476h-59.5V244.6L71.4 35.8h72.2l87.5 142.2 87-142.2h92.2z"/>
+              </svg>
+              <span className="text-sm font-bold">{socialLoading ? 'Wait...' : 'Yahoo'}</span>
+            </button>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="h-px bg-gray-200 flex-1"></div>
+            <span className="text-[10px] font-bold text-gray-400 tracking-wider">OR CONTINUE WITH EMAIL</span>
+            <div className="h-px bg-gray-200 flex-1"></div>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="px-6 pb-8 space-y-4">
           
-          {/* REGISTRATION ONLY FIELDS */}
           {!isLogin && (
             <>
               <div className="flex gap-4 mb-2">
@@ -203,13 +281,11 @@ export default function SellerAuth({ onAuthSuccess }) {
             </>
           )}
 
-          {/* COMMON EMAIL & PASSWORD */}
           <div>
             <label className="block text-xs font-bold text-gray-600 mb-1">Email Address</label>
             <input required type="email" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
           </div>
 
-          {/* 🔥 REGISTRATION ONLY: EMAIL OTP VERIFICATION */}
           {!isLogin && (
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1">Verification Code</label>
@@ -241,7 +317,6 @@ export default function SellerAuth({ onAuthSuccess }) {
             <input required type="password" minLength="8" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
 
-          {/* 🔥 LOGIN ONLY: CAPTCHA */}
           {isLogin && (
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1">Security Code</label>
@@ -257,7 +332,11 @@ export default function SellerAuth({ onAuthSuccess }) {
                 />
                 <div className="w-1/2 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center bg-[#f4f7f6] relative group">
                   {captchaData ? (
-                    <div dangerouslySetInnerHTML={{ __html: captchaData.image }} className="scale-110" />
+                    <img 
+                      src={`data:image/svg+xml;base64,${btoa(captchaData.image)}`} 
+                      alt="Captcha" 
+                      className="scale-110"
+                    />
                   ) : (
                     <span className="text-xs text-gray-400">Loading...</span>
                   )}
@@ -274,7 +353,6 @@ export default function SellerAuth({ onAuthSuccess }) {
             </div>
           )}
 
-          {/* EXTRA REGISTRATION FIELDS (Seller) */}
           {!isLogin && role === 'seller' && (
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -288,7 +366,6 @@ export default function SellerAuth({ onAuthSuccess }) {
             </div>
           )}
 
-          {/* TERMS AND CONDITIONS (Buyer) */}
           {!isLogin && role === 'buyer' && (
             <div className="flex items-center gap-2 mt-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
               <input 
@@ -304,7 +381,6 @@ export default function SellerAuth({ onAuthSuccess }) {
             </div>
           )}
 
-          {/* SUBMIT BUTTON */}
           <button type="submit" disabled={loading} className="w-full py-3.5 mt-6 bg-[#0066ff] text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-colors disabled:opacity-50">
             {loading ? 'Processing...' : (isLogin ? 'Secure Login' : 'Create Account')}
           </button>
@@ -339,15 +415,6 @@ export default function SellerAuth({ onAuthSuccess }) {
           </div>
         </div>
       )}
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-      `}} />
     </div>
   );
 }

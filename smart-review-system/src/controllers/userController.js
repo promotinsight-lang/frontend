@@ -3,17 +3,15 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const svgCaptcha = require("svg-captcha"); // 🔥 NEW: For generating Captcha images
+const svgCaptcha = require("svg-captcha"); 
 
 // ==========================================
 // 🛡️ Security Helpers & In-Memory Cache
 // ==========================================
 
-// Simple In-Memory Caches for OTP and CAPTCHA
-const captchaCache = new Map(); // Stores: { captchaId: { text, expires } }
-const otpCache = new Map();     // Stores: { email: { code, expires } }
+const captchaCache = new Map(); 
+const otpCache = new Map();     
 
-// Auto-cleanup stale cache every 30 minutes to prevent memory leaks
 setInterval(() => {
   const now = Date.now();
   for (const [key, value] of captchaCache.entries()) {
@@ -24,7 +22,6 @@ setInterval(() => {
   }
 }, 30 * 60 * 1000);
 
-// Strict URL Validator
 const isValidURL = (string) => {
   try {
     new URL(string);
@@ -34,13 +31,11 @@ const isValidURL = (string) => {
   }
 };
 
-// Strict Email format validator
 const isValidEmail = (email) => {
   const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
   return emailRegex.test(email);
 };
 
-// Secure Cookie Options for JWT
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production', 
@@ -48,7 +43,6 @@ const getCookieOptions = () => ({
   maxAge: 7 * 24 * 60 * 60 * 1000 
 });
 
-// 🔥 NEW: Helper to Mask Email (e.g., john.doe@gmail.com -> jo***e@gmail.com)
 const maskEmail = (email) => {
   if (!email) return "Unknown";
   const [name, domain] = email.split('@');
@@ -57,11 +51,10 @@ const maskEmail = (email) => {
 };
 
 // ==========================================
-// 📈 GET PUBLIC LIVE FEED (For Home Page)
+// 📈 GET PUBLIC LIVE FEED 
 // ==========================================
 const getPublicLiveFeed = async (req, res) => {
   try {
-    // 1. Get last 5 completed earnings
     const earningsRes = await pool.query(`
       SELECT u.email, (p.price + p.reward) as amount, a.updated_at as date, 'earning' as type
       FROM applications a
@@ -71,7 +64,6 @@ const getPublicLiveFeed = async (req, res) => {
       ORDER BY a.updated_at DESC LIMIT 5
     `);
 
-    // 2. Get last 5 approved withdrawals
     const withdrawalsRes = await pool.query(`
       SELECT u.email, w.amount, w.created_at as date, 'withdrawal' as type
       FROM withdrawals w
@@ -80,12 +72,10 @@ const getPublicLiveFeed = async (req, res) => {
       ORDER BY w.created_at DESC LIMIT 5
     `);
 
-    // Merge and sort by date
     const combined = [...earningsRes.rows, ...withdrawalsRes.rows]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5); // Show top 5 latest overall
+      .slice(0, 5); 
 
-    // Mask emails before sending
     const maskedData = combined.map(item => ({
       ...item,
       email: maskEmail(item.email)
@@ -99,22 +89,21 @@ const getPublicLiveFeed = async (req, res) => {
 };
 
 // ==========================================
-// 🖼️ Generate CAPTCHA (For Login)
+// 🖼️ Generate CAPTCHA 
 // ==========================================
 const generateCaptcha = (req, res) => {
   try {
     const captcha = svgCaptcha.create({
-      size: 4,           // 4 characters long
-      noise: 2,          // number of noise lines
-      color: true,       // colored characters
-      background: '#f4f7f6', // background color
+      size: 4,           
+      noise: 2,          
+      color: true,       
+      background: '#f4f7f6', 
       width: 120,
       height: 40
     });
 
     const captchaId = crypto.randomBytes(16).toString('hex');
     
-    // Store in cache for 5 minutes
     captchaCache.set(captchaId, {
       text: captcha.text.toLowerCase(),
       expires: Date.now() + 5 * 60000 
@@ -123,7 +112,7 @@ const generateCaptcha = (req, res) => {
     res.status(200).json({ 
       success: true, 
       captchaId, 
-      image: captcha.data // SVG string to render directly in img src or div
+      image: captcha.data 
     });
   } catch (error) {
     console.error("CAPTCHA ERROR:", error);
@@ -144,22 +133,18 @@ const sendRegistrationOtp = async (req, res) => {
 
     const emailTrimmed = email.trim().toLowerCase();
 
-    // Check if email already exists
     const existingUser = await pool.query("SELECT id FROM users WHERE email = $1", [emailTrimmed]);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ success: false, message: "Email is already registered" });
     }
 
-    // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store in cache for 10 minutes
     otpCache.set(emailTrimmed, {
       code: otpCode,
       expires: Date.now() + 10 * 60000
     });
 
-    // Send Email
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -197,7 +182,7 @@ const sendRegistrationOtp = async (req, res) => {
 
 
 // =======================
-// ✅ Register User (With OTP Validation)
+// ✅ Register User
 // =======================
 const registerUser = async (req, res) => {
   try {
@@ -213,7 +198,6 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid email format" });
     }
 
-    // 🔥 VERIFY OTP
     const cachedOtp = otpCache.get(emailTrimmed);
     if (!cachedOtp) {
       return res.status(400).json({ success: false, message: "Verification code expired or not requested. Please click 'Send' again." });
@@ -237,7 +221,6 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    // Enterprise-grade hashing with 12 salt rounds
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const result = await pool.query(
@@ -248,8 +231,6 @@ const registerUser = async (req, res) => {
     );
 
     const user = result.rows[0];
-
-    // OTP Successfully used, remove from cache
     otpCache.delete(emailTrimmed);
 
     const token = jwt.sign(
@@ -258,7 +239,6 @@ const registerUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Set HttpOnly Cookie
     res.cookie('token', token, getCookieOptions());
 
     res.status(201).json({ 
@@ -275,7 +255,7 @@ const registerUser = async (req, res) => {
 };
 
 // =======================
-// ✅ Login User (With CAPTCHA Validation)
+// ✅ Login User 
 // =======================
 const loginUser = async (req, res) => {
   try {
@@ -285,7 +265,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email and password required" });
     }
 
-    // 🔥 VERIFY CAPTCHA
     if (!captchaId || !captchaInput) {
       return res.status(400).json({ success: false, message: "Captcha is required" });
     }
@@ -320,7 +299,6 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid credentials" });
     }
 
-    // Captcha successfully used, remove from cache to prevent reuse
     captchaCache.delete(captchaId);
 
     const token = jwt.sign(
@@ -329,7 +307,6 @@ const loginUser = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Set HttpOnly Cookie
     res.cookie('token', token, getCookieOptions());
 
     res.json({
@@ -342,6 +319,64 @@ const loginUser = async (req, res) => {
   } catch (error) {
     console.error("LOGIN ERROR:", error);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// =======================
+// 🌐 Social Login (Google & Yahoo)
+// =======================
+const socialLogin = async (req, res) => {
+  try {
+    const { email, name, auth_provider } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required for social login" });
+    }
+
+    const emailTrimmed = email.trim().toLowerCase();
+    
+    const existingUser = await pool.query(
+      "SELECT id, name, email, password_hash, role, verification_status FROM users WHERE email = $1",
+      [emailTrimmed]
+    );
+
+    let user;
+
+    if (existingUser.rows.length > 0) {
+      user = existingUser.rows[0];
+    } else {
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 12);
+      const finalName = name ? name.trim() : 'User';
+
+      const newUser = await pool.query(
+        `INSERT INTO users (name, email, password_hash, role)
+         VALUES ($1, $2, $3, 'buyer')
+         RETURNING id, name, email, role, verification_status`,
+        [finalName, emailTrimmed, hashedPassword]
+      );
+      
+      user = newUser.rows[0];
+    }
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.cookie('token', token, getCookieOptions());
+
+    res.status(200).json({
+      success: true,
+      message: `${auth_provider ? auth_provider.toUpperCase() : 'Social'} login successful`,
+      token, 
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, verification_status: user.verification_status },
+    });
+
+  } catch (error) {
+    console.error("SOCIAL LOGIN ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error during social login" });
   }
 };
 
@@ -386,6 +421,35 @@ const getUserProfile = async (req, res) => {
 };
 
 // ==========================================
+// ✏️ Update User Name (For Profile)  🔥 NEW
+// ==========================================
+const updateUserName = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name } = req.body;
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ success: false, message: "Name cannot be empty" });
+    }
+
+    const result = await pool.query(
+      "UPDATE users SET name = $1 WHERE id = $2 RETURNING id, name, email, role, verification_status",
+      [name.trim(), userId]
+    );
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Name updated successfully!",
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error("UPDATE NAME ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ==========================================
 // 🛡️ Submit User Verification Info
 // ==========================================
 const submitVerification = async (req, res) => {
@@ -396,11 +460,11 @@ const submitVerification = async (req, res) => {
       paypal_account, facebook_account, whatsapp_account, telegram_account 
     } = req.body;
 
-    if (!amazon_location || !amazon_account || !amazon_profile_url || !paypal_account) {
-      return res.status(400).json({ success: false, message: "Amazon info and PayPal info are required!" });
+    // 🔥 UPDATE: whatsapp_account এখানে যুক্ত করা হয়েছে
+    if (!amazon_location || !amazon_account || !amazon_profile_url || !paypal_account || !whatsapp_account) {
+      return res.status(400).json({ success: false, message: "Amazon info, PayPal info, and WhatsApp number are required!" });
     }
 
-    // 🔥 STRICT VALIDATION: Ensure inputs are Profile Links, NOT screenshots/random strings
     if (!isValidURL(amazon_profile_url)) {
       return res.status(400).json({ success: false, message: "Amazon profile must be a valid URL link. Screenshots are strictly prohibited." });
     }
@@ -625,7 +689,6 @@ const getPendingAppeals = async (req, res) => {
   }
 };
 
-// 🔥 Admin Resolve Appeal - SECURED TRANSACTION
 const resolveAppeal = async (req, res) => {
   const client = await pool.connect();
   try {
@@ -661,9 +724,6 @@ const resolveAppeal = async (req, res) => {
   }
 };
 
-// ==========================================
-// 📧 Password Reset Flow (15-Min Secure Token)
-// ==========================================
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -674,13 +734,11 @@ const forgotPassword = async (req, res) => {
 
     const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email.trim()]);
     if (userResult.rows.length === 0) {
-      // Return a vague message to prevent email enumeration attacks
       return res.status(200).json({ success: true, message: "If your email is registered, a reset link will be sent." });
     }
 
     const user = userResult.rows[0];
 
-    // Strict 15-minute token
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
     const transporter = nodemailer.createTransport({
@@ -733,7 +791,6 @@ const resetPassword = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid or expired token. Please request a new link." });
       }
 
-      // Enterprise-grade hashing
       const salt = await bcrypt.genSalt(12);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
 
@@ -749,13 +806,15 @@ const resetPassword = async (req, res) => {
 };
 
 module.exports = {
-  getPublicLiveFeed,      // 🔥 Export Live Feed
-  generateCaptcha,        // 🔥 Export Captcha Generator
-  sendRegistrationOtp,    // 🔥 Export OTP Sender
+  getPublicLiveFeed,      
+  generateCaptcha,        
+  sendRegistrationOtp,    
   registerUser,
   loginUser,
+  socialLogin,
   logoutUser,
   getUserProfile,
+  updateUserName, // 🔥 Exported Update Name API
   getPaymentSettings,
   depositFunds,
   getMyDeposits,

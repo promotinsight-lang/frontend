@@ -165,7 +165,7 @@ const Verification = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               
-              {/* Mandatory Fields */}
+              {/* 🔥 MANDATORY FIELDS */}
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-[#0066ff] uppercase tracking-wider mb-2 border-b border-blue-100 pb-1">Mandatory Fields</h3>
                 
@@ -188,20 +188,21 @@ const Verification = () => {
                   <DollarSign size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input required name="paypal_account" value={formData.paypal_account} onChange={handleChange} type="email" placeholder="PayPal Email Address" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all" />
                 </div>
+
+                {/* 🔥 WhatsApp Number moved to Mandatory Fields */}
+                <div className="relative">
+                  <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input required name="whatsapp_account" value={formData.whatsapp_account} onChange={handleChange} type="text" placeholder="WhatsApp Number (with country code)" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all" />
+                </div>
               </div>
 
-              {/* Optional Fields */}
+              {/* OPTIONAL FIELDS */}
               <div className="space-y-3 pt-4">
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">Social Accounts (Optional)</h3>
                 
                 <div className="relative">
                   <MessageCircle size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input name="facebook_account" value={formData.facebook_account} onChange={handleChange} type="text" placeholder="Facebook Profile URL" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all" />
-                </div>
-
-                <div className="relative">
-                  <Phone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input name="whatsapp_account" value={formData.whatsapp_account} onChange={handleChange} type="text" placeholder="WhatsApp Number (with country code)" className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all" />
                 </div>
 
                 <div className="relative">
