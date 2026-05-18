@@ -2,6 +2,8 @@ console.log("✅ PRODUCT ROUTES MOUNTED at /api/products");
 console.log("🔥🔥🔥 NEW SECURE SERVER RUNNING 🔥🔥🔥");
 
 const express = require("express");
+const http = require("http"); // 🔥 NEW: http module import kora holo
+const { Server } = require("socket.io"); // 🔥 NEW: socket.io theke Server import kora holo
 const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
@@ -10,6 +12,18 @@ const pool = require("./config/db");
 require("dotenv").config();
 
 const app = express();
+
+// ==========================================
+// 📡 CREATE HTTP SERVER & INIT SOCKET.IO
+// ==========================================
+const server = http.createServer(app); // 🔥 NEW: Express app ke HTTP server er sathe connect kora holo
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:5173", // Only allow your frontend
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true // MUST BE TRUE
+  }
+});
 
 // ==========================================
 // 🛡️ ENTERPRISE-GRADE SECURITY MIDDLEWARES
@@ -21,8 +35,8 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" })); // Allows
 
 // 2. CORS Setup (Strict Origins & Credentials)
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173", // Only allow your frontend
-    credentials: true, // 🔥 MUST BE TRUE for HttpOnly Cookies to work properly
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true, 
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -33,7 +47,6 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // 4. Cookie Parser (🔥 REQUIRED for reading HttpOnly JWT cookies)
 app.use(cookieParser());
-
 
 // 6. Global Rate Limiting (Defense in Depth Fallback)
 const globalLimiter = rateLimit({
@@ -51,6 +64,35 @@ app.use("/api", globalLimiter);
 app.use("/uploads", express.static("uploads"));
 
 // ==========================================
+// 🔴 SOCKET.IO REAL-TIME TRACKING LOGIC
+// ==========================================
+let activeUsers = {};
+
+io.on('connection', (socket) => {
+  console.log('🟢 New user connected via Socket:', socket.id);
+
+  // User jokhon kono page e jabe
+  socket.on('page_change', (data) => {
+    activeUsers[socket.id] = {
+      page: data.page,
+      timestamp: new Date()
+    };
+    
+    // Admin der ke updated count pathano
+    io.emit('active_users_update', Object.keys(activeUsers).length);
+  });
+
+  // User jokhon ber hoye jabe
+  socket.on('disconnect', () => {
+    console.log('🔴 User disconnected:', socket.id);
+    delete activeUsers[socket.id];
+    
+    // Admin der ke updated count pathano
+    io.emit('active_users_update', Object.keys(activeUsers).length);
+  });
+});
+
+// ==========================================
 // 🔗 ROUTES IMPORT & MOUNT
 // ==========================================
 const userRoutes = require("./routes/userRoutes");
@@ -61,7 +103,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const appealRoutes = require("./routes/appealRoutes"); 
 const supportRoutes = require("./routes/supportRoutes"); 
 const announcementRoutes = require("./routes/announcementRoutes"); 
-const blogRoutes = require("./routes/blogRoutes"); // 🔥 NEW: Blog Routes
+const blogRoutes = require("./routes/blogRoutes"); 
 
 app.use("/api/users", userRoutes); 
 app.use("/api/products", productRoutes); 
@@ -71,7 +113,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/appeals", appealRoutes); 
 app.use("/api/support", supportRoutes); 
 app.use("/api/announcements", announcementRoutes); 
-app.use("/api/blogs", blogRoutes); // 🔥 NEW: Blog Route Mount করা হলো
+app.use("/api/blogs", blogRoutes); 
 
 // ==========================================
 // 🌐 HEALTH CHECK & ERROR HANDLING
@@ -111,6 +153,8 @@ startCronJobs();
 // ==========================================
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// 🔥 CHANGED: app.listen er bodole server.listen kora hoyeche
+server.listen(PORT, () => {
   console.log(`🚀 Secure Enterprise Server running on port ${PORT}`);
+  console.log(`📡 Socket.io is ready for real-time tracking!`);
 });
