@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Home, Bell, X, ShoppingBag } from 'lucide-react'; 
+import { Menu, Home, Bell, X, ShoppingBag, FileText } from 'lucide-react'; // 🔥 NEW: FileText icon added for Blog
 import SidebarMenu from './SidebarMenu';
 
 const Navbar = () => {
@@ -35,7 +35,6 @@ const Navbar = () => {
           // 🛡️ ADMIN NOTIFICATIONS
           // ==========================================
           if (user.role === 'admin') {
-              // 🔥 FIX: Added 'api/applications/all' to fetch buyer applications
               const [resAppeals, resVer, resStats, resProd, resApps] = await Promise.all([
                  fetch('http://localhost:5000/api/admin/appeals', { headers, credentials: 'include' }),
                  fetch('http://localhost:5000/api/admin/verifications', { headers, credentials: 'include' }),
@@ -69,7 +68,6 @@ const Navbar = () => {
                  if (c > 0) notifs.push({ id: `admin_prod_${c}`, text: `${c} Products Awaiting Approval`, subtext: "Review seller products", link: '/dashboard?tab=products' });
               }
               
-              // 🔥 NEW: Application Notifications for Admin
               if (dataApps.success) {
                  const newApplies = dataApps.data.filter(a => a.status === 'pending').length;
                  const newOrders = dataApps.data.filter(a => a.status === 'order_submitted').length;
@@ -241,6 +239,15 @@ const Navbar = () => {
                  <Home size={22} />
                </Link>
 
+               {/* 📄 Blog Link (New) */}
+               <Link 
+                 to="/blogs" 
+                 className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" 
+                 title="Blogs"
+               >
+                 <FileText size={22} />
+               </Link>
+
                {/* 🔥 Conditional Rendering: Logged in vs Guest */}
                {user ? (
                  <>
@@ -321,7 +328,7 @@ const Navbar = () => {
                    </div>
                  </>
                ) : (
-                 /* 👤 Guests: Show Login & Register Buttons (FIXED for Mobile) */
+                 /* 👤 Guests: Show Login & Register Buttons */
                  <div className="flex items-center gap-2 sm:gap-3 ml-2">
                    <Link 
                      to="/login" 

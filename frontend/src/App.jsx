@@ -16,6 +16,10 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Support from './pages/Support';
 
+// 🔥 NEW: Blog Pages Import
+import Blogs from './pages/Blogs';
+import BlogDetails from './pages/BlogDetails';
+
 export default function App() {
   
   const [user, setUser] = useState(() => {
@@ -77,6 +81,10 @@ export default function App() {
             path="/marketplace" 
             element={user ? <Marketplace /> : <Navigate to="/login" />} 
           />
+
+          {/* 🔥 NEW: Blog Routes (Public - Anyone can access) */}
+          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blog/:slug" element={<BlogDetails />} />
 
           <Route 
             path="/login" 

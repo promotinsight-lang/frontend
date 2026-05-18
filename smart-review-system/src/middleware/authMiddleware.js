@@ -62,5 +62,14 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+// 🔥 NEW: Admin Check Middleware
+const isAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: "Not authorized as an admin" });
+  }
+};
+
+module.exports = { protect, isAdmin };
 // 🚨 SECURITY NOTE: This middleware is the first line of defense for all protected routes

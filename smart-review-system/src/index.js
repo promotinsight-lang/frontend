@@ -60,8 +60,8 @@ const withdrawalRoutes = require("./routes/withdrawalRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const appealRoutes = require("./routes/appealRoutes"); 
 const supportRoutes = require("./routes/supportRoutes"); 
-// 🔥 Announcement Route Import করা হলো
 const announcementRoutes = require("./routes/announcementRoutes"); 
+const blogRoutes = require("./routes/blogRoutes"); // 🔥 NEW: Blog Routes
 
 app.use("/api/users", userRoutes); 
 app.use("/api/products", productRoutes); 
@@ -70,8 +70,8 @@ app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/appeals", appealRoutes); 
 app.use("/api/support", supportRoutes); 
-// 🔥 Announcement Route Mount করা হলো
 app.use("/api/announcements", announcementRoutes); 
+app.use("/api/blogs", blogRoutes); // 🔥 NEW: Blog Route Mount করা হলো
 
 // ==========================================
 // 🌐 HEALTH CHECK & ERROR HANDLING

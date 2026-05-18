@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const axios = require("axios"); // 🔥 NEW: Axios for Premium IP Location API
 
 // 🛡️ XSS Protection Utility
 const escapeHTML = (str) => {
@@ -6,6 +7,28 @@ const escapeHTML = (str) => {
   return str.replace(/[&<>'"]/g, tag => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[tag] || tag));
+};
+
+// 🔥 NEW: IP Tracking Helper
+const getClientIp = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = forwarded ? forwarded.split(/, /)[0] : req.socket.remoteAddress;
+  return ip || 'Unknown';
+};
+
+// 🔥 PREMIUM: Automated IP to Location Resolver
+const getIpLocation = async (ip) => {
+  if (!ip || ip === 'Unknown' || ip === '::1' || ip === '127.0.0.1') return 'Localhost';
+  try {
+    const response = await axios.get(`http://ip-api.com/json/${ip}`);
+    if (response.data && response.data.status === 'success') {
+      return `${response.data.city}, ${response.data.country}`;
+    }
+    return 'Unknown Location';
+  } catch (error) {
+    console.error("IP Location Fetch Error:", error.message);
+    return 'Location Unavailable';
+  }
 };
 
 // =======================
@@ -18,6 +41,10 @@ const applyToProduct = async (req, res) => {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
     const user_id = req.user.id;
+    
+    // 🔥 Track IP and Location when applying
+    const ipAddress = getClientIp(req); 
+    const ipLocation = await getIpLocation(ipAddress);
 
     await client.query('BEGIN');
 
@@ -55,9 +82,10 @@ const applyToProduct = async (req, res) => {
       return res.status(400).json({ message: "Already applied" });
     }
 
+    // 🔥 Add IP & Location to insertion
     const result = await client.query(
-      `INSERT INTO applications (user_id, product_id, status) VALUES ($1, $2, 'pending') RETURNING *`,
-      [user_id, product_id]
+      `INSERT INTO applications (user_id, product_id, status, ip_address, ip_location) VALUES ($1, $2, 'pending', $3, $4) RETURNING *`,
+      [user_id, product_id, ipAddress, ipLocation]
     );
 
     await client.query('COMMIT');
@@ -136,7 +164,7 @@ const getApplicationsByProduct = async (req, res) => {
     const productId = req.params.id;
     const result = await pool.query(
       `SELECT a.id, a.status, a.order_number, a.screenshot_url, a.order_comment, 
-              a.review_screenshot_url, a.review_link, a.refund_screenshot_url, a.refund_comment, a.created_at, 
+              a.review_screenshot_url, a.review_link, a.refund_screenshot_url, a.refund_comment, a.created_at, a.ip_address, a.ip_location,
               u.name, u.email 
        FROM applications a JOIN users u ON a.user_id = u.id WHERE a.product_id = $1 ORDER BY a.created_at DESC`,
       [productId]
@@ -470,7 +498,7 @@ const getAllApplicationsAdmin = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT a.id, a.user_id, a.status, a.order_number, a.screenshot_url, a.order_comment, 
-             a.review_link, a.review_screenshot_url, a.created_at,
+             a.review_link, a.review_screenshot_url, a.created_at, a.ip_address, a.ip_location,
              p.product_name, p.image_url, p.price, p.reward,
              p.platform, p.country, p.store_name, p.search_keyword, p.instructions, p.product_link, p.seller_id, p.category,
              u.name AS buyer_name, u.email AS buyer_email, u.trust_score,

@@ -4,7 +4,7 @@ import {
   ShoppingBag, User, AlertTriangle, CheckCircle,
   LogOut, ChevronRight, X, Snowflake, ShieldAlert,
   LayoutDashboard, ShoppingCart, Package, Wallet, Landmark, Settings,
-  List, UserCheck, History, PlusCircle, Users, Scale, Headset, Megaphone
+  List, UserCheck, History, PlusCircle, Users, Scale, Headset, Megaphone, FileText // 🔥 NEW: FileText imported for Blogs
 } from 'lucide-react';
 
 const SidebarMenu = ({ isOpen, setIsOpen }) => {
@@ -42,7 +42,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
 
       <div className={`fixed top-0 left-0 h-full w-[85%] max-w-[340px] bg-white z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} overflow-y-auto shadow-2xl`}>
         
-        {/* 検 BLUE PREMIUM HEADER */}
+        {/* 🌟 BLUE PREMIUM HEADER */}
         <div className="bg-[#0066ff] p-6 pt-10 relative border-b border-blue-700/20">
           <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-1 bg-white/10 rounded-full hover:bg-white/20">
             <X size={20} />
@@ -99,7 +99,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
           )}
         </div>
 
-        {/* 検 UNIFIED WALLET SECTION */}
+        {/* 🌟 UNIFIED WALLET SECTION */}
         {user?.role !== 'admin' && user?.role !== 'seller' && (
           <div className="bg-gray-50/80 p-5 flex flex-col items-center justify-center border-b border-gray-100">
             <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
@@ -114,7 +114,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
           </div>
         )}
 
-        {/* 検 CLEAN MENU ITEMS */}
+        {/* 🌟 CLEAN MENU ITEMS */}
         <div className="py-3 px-2">
           
           {user?.role === 'admin' ? (
@@ -223,6 +223,15 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
 
+              {/* 🔥 NEW: MANAGE BLOGS TAB FOR ADMIN */}
+              <Link to="/dashboard?tab=blogs" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
+                <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
+                  <FileText size={20} />
+                  <span className="font-semibold">Manage Blogs</span>
+                </div>
+                <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
+              </Link>
+
               <Link to="/dashboard?tab=settings" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   <Settings size={20} />
@@ -281,7 +290,6 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                   <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
                 </Link>
 
-                {/* 🔥 NEW: ANNOUNCEMENTS TAB FOR SELLER */}
                 <Link to="/dashboard?tab=announcements" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                   <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                     <Megaphone size={20} />
@@ -324,7 +332,6 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
 
-              {/* 🔥 NEW: ANNOUNCEMENTS TAB FOR BUYER */}
               <Link to="/dashboard?tab=announcements" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   <Megaphone size={20} />

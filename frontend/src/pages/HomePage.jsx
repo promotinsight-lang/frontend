@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard,
-  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet
+  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight // 🔥 IMPORTED NEW ICONS
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
@@ -15,9 +15,12 @@ export default function HomePage() {
   const [workTab, setWorkTab] = useState('buyer'); // 'buyer' or 'seller'
   const [openFaq, setOpenFaq] = useState(0);
   
-  // ⚡ NEW: Live Feed States
+  // ⚡ Live Feed States
   const [liveFeed, setLiveFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
+
+  // 📝 Blog States (NEW)
+  const [latestBlogs, setLatestBlogs] = useState([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -59,7 +62,7 @@ export default function HomePage() {
       fetchLiveProfile();
     }
 
-    // ⚡ NEW: Fetch Live Feed Data
+    // ⚡ Fetch Live Feed Data
     const fetchLiveFeed = async () => {
       try {
         const res = await fetch('http://localhost:5000/api/users/live-feed');
@@ -74,7 +77,23 @@ export default function HomePage() {
       }
     };
 
+    // 📝 NEW: Fetch Latest Public Blogs
+    const fetchLatestBlogs = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/blogs/public');
+        const data = await res.json();
+        if (res.ok && data.success) {
+          // Keep only the latest 3 blogs for the homepage
+          setLatestBlogs(data.data.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to fetch blogs", err);
+      }
+    };
+
     fetchLiveFeed();
+    fetchLatestBlogs();
+    
     // Refresh live feed every 30 seconds to keep it dynamic
     const feedInterval = setInterval(fetchLiveFeed, 30000);
     return () => clearInterval(feedInterval);
@@ -165,7 +184,7 @@ export default function HomePage() {
                  </span>
                </div>
 
-               {/* ⚡ UPDATED LIVE FEED SECTION */}
+               {/* ⚡ LIVE FEED SECTION */}
                <div className="space-y-4">
                  {feedLoading ? (
                    // Skeletons while loading
@@ -319,7 +338,59 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. FAQ SECTION */}
+      {/* 🔥 4. LATEST BLOGS SECTION (NEW) */}
+      {latestBlogs.length > 0 && (
+        <section className="py-20 px-4 max-w-7xl mx-auto">
+          <div className="flex justify-between items-end mb-10 border-b pb-4">
+            <div>
+              <h2 className="text-3xl font-black text-gray-800">Latest from our Blog</h2>
+              <p className="text-gray-500 mt-2">Tips, platform updates, and success stories.</p>
+            </div>
+            <Link to="/blogs" className="hidden md:flex items-center gap-1 text-[#0066ff] font-bold hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors">
+              View All Articles <ArrowRight size={16} />
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {latestBlogs.map(blog => (
+              <div key={blog.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col">
+                <div className="h-48 bg-gray-100 overflow-hidden relative">
+                  {blog.image_url ? (
+                    <img src={blog.image_url} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                      <FileText size={48} />
+                    </div>
+                  )}
+                </div>
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex justify-between border-b border-gray-50 pb-2">
+                    <span>{new Date(blog.created_at).toLocaleDateString()}</span>
+                    <span>By {blog.author_name}</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 group-hover:text-[#0066ff] transition-colors leading-snug">
+                    {blog.title}
+                  </h3>
+                  
+                  <div className="mt-auto pt-4">
+                    <Link to={`/blog/${blog.slug}`} className="text-[#0066ff] text-sm font-bold flex items-center gap-1 w-max group-hover:gap-2 transition-all">
+                      Read Article <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-8 text-center md:hidden">
+             <Link to="/blogs" className="inline-flex items-center gap-1 text-[#0066ff] bg-blue-50 px-6 py-3 rounded-full font-bold hover:bg-blue-100">
+               View All Articles <ArrowRight size={16} />
+             </Link>
+          </div>
+        </section>
+      )}
+
+      {/* 5. FAQ SECTION */}
       <section className="py-20 px-4 max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-black text-gray-800">Frequently Asked Questions</h2>
@@ -344,12 +415,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. FOOTER */}
+      {/* 6. FOOTER */}
       <footer className="bg-gray-900 text-gray-400 py-10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-white font-black text-xl tracking-tight">MarketInsight</div>
           <div className="flex gap-6 text-sm font-medium">
-            {/* UPDATED LINKS HERE */}
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Use</Link>
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link to="/support" className="hover:text-white transition-colors">Support</Link>

@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const svgCaptcha = require("svg-captcha"); 
+const axios = require("axios"); // 🔥 NEW: Axios for API calls
 
 // ==========================================
 // 🛡️ Security Helpers & In-Memory Cache
@@ -36,6 +37,40 @@ const isValidEmail = (email) => {
   return emailRegex.test(email);
 };
 
+// 🔥 NEW: Block Disposable/Fake/Temporary Emails
+const isDisposableEmail = (email) => {
+  if (!email) return false;
+  const domain = email.split('@')[1].toLowerCase();
+  const blockedDomains = [
+    'yopmail.com', 'mailinator.com', 'tempmail.com', '10minutemail.com', 
+    'guerrillamail.com', 'dropmail.me', 'fakemail.net', 'temp-mail.org', 
+    'throwawaymail.com', 'dispostable.com', 'maildrop.cc', 'tempmailo.com'
+  ];
+  return blockedDomains.includes(domain);
+};
+
+// 🔥 NEW: IP Tracking Helper
+const getClientIp = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = forwarded ? forwarded.split(/, /)[0] : req.socket.remoteAddress;
+  return ip || 'Unknown';
+};
+
+// 🔥 PREMIUM: Automated IP to Location Resolver
+const getIpLocation = async (ip) => {
+  if (!ip || ip === 'Unknown' || ip === '::1' || ip === '127.0.0.1') return 'Localhost';
+  try {
+    const response = await axios.get(`http://ip-api.com/json/${ip}`);
+    if (response.data && response.data.status === 'success') {
+      return `${response.data.city}, ${response.data.country}`;
+    }
+    return 'Unknown Location';
+  } catch (error) {
+    console.error("IP Location Fetch Error:", error.message);
+    return 'Location Unavailable';
+  }
+};
+
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production', 
@@ -51,7 +86,7 @@ const maskEmail = (email) => {
 };
 
 // ==========================================
-// 📈 GET PUBLIC LIVE FEED 
+// 📈 GET PUBLIC LIVE FEED
 // ==========================================
 const getPublicLiveFeed = async (req, res) => {
   try {
@@ -89,7 +124,7 @@ const getPublicLiveFeed = async (req, res) => {
 };
 
 // ==========================================
-// 🖼️ Generate CAPTCHA 
+// 🖼️ Generate CAPTCHA
 // ==========================================
 const generateCaptcha = (req, res) => {
   try {
@@ -132,6 +167,14 @@ const sendRegistrationOtp = async (req, res) => {
     }
 
     const emailTrimmed = email.trim().toLowerCase();
+
+    // 🔥 FRAUD PREVENTION: Block Temporary/Fake Emails
+    if (isDisposableEmail(emailTrimmed)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Temporary or Fake emails are strictly prohibited on our platform. Please use a valid email address (e.g. Gmail, Yahoo)." 
+      });
+    }
 
     const existingUser = await pool.query("SELECT id FROM users WHERE email = $1", [emailTrimmed]);
     if (existingUser.rows.length > 0) {
@@ -180,7 +223,6 @@ const sendRegistrationOtp = async (req, res) => {
   }
 };
 
-
 // =======================
 // ✅ Register User
 // =======================
@@ -189,6 +231,10 @@ const registerUser = async (req, res) => {
     const { name, fullName, email, password, role, otp } = req.body;
     const finalName = name ? name.trim() : (fullName ? fullName.trim() : '');
     const emailTrimmed = email ? email.trim().toLowerCase() : '';
+    
+    // 🔥 Track IP and Location on Register
+    const ipAddress = getClientIp(req); 
+    const ipLocation = await getIpLocation(ipAddress);
 
     if (!finalName || !emailTrimmed || !password || !otp) {
       return res.status(400).json({ success: false, message: "All fields including verification code are required" });
@@ -198,20 +244,24 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid email format" });
     }
 
+    if (isDisposableEmail(emailTrimmed)) {
+      return res.status(400).json({ success: false, message: "Fake or temporary emails are not allowed." });
+    }
+
     const cachedOtp = otpCache.get(emailTrimmed);
     if (!cachedOtp) {
-      return res.status(400).json({ success: false, message: "Verification code expired or not requested. Please click 'Send' again." });
+      return res.status(400).json({ success: false, message: "Verification code expired or not requested." });
     }
     if (cachedOtp.expires < Date.now()) {
       otpCache.delete(emailTrimmed);
-      return res.status(400).json({ success: false, message: "Verification code expired. Please request a new one." });
+      return res.status(400).json({ success: false, message: "Verification code expired." });
     }
     if (cachedOtp.code !== otp.toString().trim()) {
       return res.status(400).json({ success: false, message: "Invalid verification code" });
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ success: false, message: "Password must be at least 8 characters long for security" });
+      return res.status(400).json({ success: false, message: "Password must be at least 8 characters long." });
     }
 
     const userRole = role ? role.trim().toLowerCase() : "buyer";
@@ -223,11 +273,12 @@ const registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // 🔥 Add IP and Location to insertion
     const result = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO users (name, email, password_hash, role, last_ip, ip_location)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, name, email, role, verification_status`,
-      [finalName, emailTrimmed, hashedPassword, userRole]
+      [finalName, emailTrimmed, hashedPassword, userRole, ipAddress, ipLocation]
     );
 
     const user = result.rows[0];
@@ -255,11 +306,15 @@ const registerUser = async (req, res) => {
 };
 
 // =======================
-// ✅ Login User 
+// ✅ Login User
 // =======================
 const loginUser = async (req, res) => {
   try {
     const { email, password, captchaId, captchaInput } = req.body;
+    
+    // 🔥 Track IP and Location on Login
+    const ipAddress = getClientIp(req); 
+    const ipLocation = await getIpLocation(ipAddress);
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "Email and password required" });
@@ -271,12 +326,12 @@ const loginUser = async (req, res) => {
 
     const cachedCaptcha = captchaCache.get(captchaId);
     if (!cachedCaptcha) {
-      return res.status(400).json({ success: false, message: "Captcha expired. Please refresh the captcha." });
+      return res.status(400).json({ success: false, message: "Captcha expired." });
     }
     
     if (cachedCaptcha.expires < Date.now()) {
       captchaCache.delete(captchaId);
-      return res.status(400).json({ success: false, message: "Captcha expired. Please refresh the captcha." });
+      return res.status(400).json({ success: false, message: "Captcha expired." });
     }
 
     if (cachedCaptcha.text !== captchaInput.toLowerCase().trim()) {
@@ -300,6 +355,9 @@ const loginUser = async (req, res) => {
     }
 
     captchaCache.delete(captchaId);
+    
+    // 🔥 Update last IP and Location on successful login
+    await pool.query("UPDATE users SET last_ip = $1, ip_location = $2 WHERE id = $3", [ipAddress, ipLocation, user.id]);
 
     const token = jwt.sign(
       { id: user.id, role: user.role },
@@ -328,6 +386,10 @@ const loginUser = async (req, res) => {
 const socialLogin = async (req, res) => {
   try {
     const { email, name, auth_provider } = req.body;
+    
+    // 🔥 Track IP and Location on Social Login
+    const ipAddress = getClientIp(req); 
+    const ipLocation = await getIpLocation(ipAddress);
 
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required for social login" });
@@ -344,16 +406,19 @@ const socialLogin = async (req, res) => {
 
     if (existingUser.rows.length > 0) {
       user = existingUser.rows[0];
+      // 🔥 Update IP and Location for returning social login user
+      await pool.query("UPDATE users SET last_ip = $1, ip_location = $2 WHERE id = $3", [ipAddress, ipLocation, user.id]);
     } else {
       const randomPassword = crypto.randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 12);
       const finalName = name ? name.trim() : 'User';
 
+      // 🔥 Insert IP and Location for new social login user
       const newUser = await pool.query(
-        `INSERT INTO users (name, email, password_hash, role)
-         VALUES ($1, $2, $3, 'buyer')
+        `INSERT INTO users (name, email, password_hash, role, last_ip, ip_location)
+         VALUES ($1, $2, $3, 'buyer', $4, $5)
          RETURNING id, name, email, role, verification_status`,
-        [finalName, emailTrimmed, hashedPassword]
+        [finalName, emailTrimmed, hashedPassword, ipAddress, ipLocation]
       );
       
       user = newUser.rows[0];
@@ -421,7 +486,7 @@ const getUserProfile = async (req, res) => {
 };
 
 // ==========================================
-// ✏️ Update User Name (For Profile)  🔥 NEW
+// ✏️ Update User Name (For Profile)
 // ==========================================
 const updateUserName = async (req, res) => {
   try {
@@ -460,17 +525,31 @@ const submitVerification = async (req, res) => {
       paypal_account, facebook_account, whatsapp_account, telegram_account 
     } = req.body;
 
-    // 🔥 UPDATE: whatsapp_account এখানে যুক্ত করা হয়েছে
     if (!amazon_location || !amazon_account || !amazon_profile_url || !paypal_account || !whatsapp_account) {
       return res.status(400).json({ success: false, message: "Amazon info, PayPal info, and WhatsApp number are required!" });
     }
 
     if (!isValidURL(amazon_profile_url)) {
-      return res.status(400).json({ success: false, message: "Amazon profile must be a valid URL link. Screenshots are strictly prohibited." });
+      return res.status(400).json({ success: false, message: "Amazon profile must be a valid URL link." });
     }
 
     if (facebook_account && !isValidURL(facebook_account)) {
       return res.status(400).json({ success: false, message: "Facebook account must be a valid URL link." });
+    }
+
+    // 🔥 FRAUD PREVENTION: Check for Duplicate WhatsApp or Amazon Profile URL
+    const duplicateCheck = await pool.query(
+      `SELECT id FROM users 
+       WHERE (whatsapp_account = $1 OR amazon_profile_url = $2) 
+       AND id != $3`,
+      [whatsapp_account.trim(), amazon_profile_url.trim(), userId]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Fraud Alert: This WhatsApp number or Amazon Profile URL is already linked with another account!" 
+      });
     }
 
     const result = await pool.query(
@@ -493,7 +572,7 @@ const submitVerification = async (req, res) => {
 
     res.status(200).json({ 
       success: true, 
-      message: "Verification submitted successfully! Waiting for admin approval.",
+      message: "Verification submitted successfully!",
       user: result.rows[0]
     });
 
@@ -509,9 +588,10 @@ const submitVerification = async (req, res) => {
 const getAllUsersByRole = async (req, res) => {
   try {
     const { role } = req.params;
+    // 🔥 Added ip_location to selection
     const result = await pool.query(
       `SELECT id, name, email, role, wallet_balance, trust_score, 
-              verification_status, is_active, is_frozen, created_at 
+              verification_status, is_active, is_frozen, created_at, last_ip, ip_location
        FROM users WHERE role = $1 ORDER BY created_at DESC`,
       [role]
     );
@@ -558,11 +638,12 @@ const updateUserStatus = async (req, res) => {
 const getAdminUserDetailsById = async (req, res) => {
   try {
     const userId = req.params.id;
+    // 🔥 Added ip_location to selection
     const result = await pool.query(
       `SELECT id, name, email, role, wallet_balance, created_at, 
               verification_status, amazon_location, amazon_account, 
               amazon_profile_url, paypal_account, facebook_account, 
-              whatsapp_account, telegram_account, trust_score, is_active, is_frozen
+              whatsapp_account, telegram_account, trust_score, is_active, is_frozen, last_ip, ip_location
        FROM users WHERE id = $1`,
       [userId]
     );
@@ -640,7 +721,7 @@ const updateTrustScore = async (req, res) => {
     const scoreValue = parseFloat(trust_score);
 
     if (isNaN(scoreValue) || scoreValue < 0 || scoreValue > 5) {
-      return res.status(400).json({ success: false, message: "Score must be a valid number between 0 and 5" });
+      return res.status(400).json({ success: false, message: "Score must be between 0 and 5" });
     }
 
     const result = await pool.query(
@@ -709,7 +790,7 @@ const resolveAppeal = async (req, res) => {
       await client.query("UPDATE users SET is_active = true WHERE id = $1", [userId]);
       await client.query("UPDATE appeals SET status = 'approved' WHERE id = $1", [id]);
       await client.query('COMMIT');
-      res.status(200).json({ success: true, message: "Appeal approved. Account reactivated." });
+      res.status(200).json({ success: true, message: "Appeal approved." });
     } else {
       await client.query("UPDATE appeals SET status = 'rejected' WHERE id = $1", [id]);
       await client.query('COMMIT');
@@ -738,7 +819,6 @@ const forgotPassword = async (req, res) => {
     }
 
     const user = userResult.rows[0];
-
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
 
     const transporter = nodemailer.createTransport({
@@ -760,16 +840,15 @@ const forgotPassword = async (req, res) => {
           <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; max-width: 500px; margin: auto; border-top: 5px solid #0066ff;">
             <h2 style="color: #333;">Password Reset</h2>
             <p style="color: #555; font-size: 16px;">Hello ${user.name},</p>
-            <p style="color: #555; font-size: 16px;">You requested to reset your password. Click the button below to set a new password. For security reasons, this link will strictly expire in <strong>15 minutes</strong>.</p>
+            <p style="color: #555; font-size: 16px;">You requested to reset your password. This link will expire in 15 minutes.</p>
             <a href="${resetLink}" style="display: inline-block; padding: 12px 25px; background-color: #0066ff; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px;">Reset Password</a>
-            <p style="color: #999; font-size: 12px; margin-top: 30px;">If you didn't request this, you can safely ignore this email.</p>
           </div>
         </div>
       `
     };
 
     await transporter.sendMail(mailOptions);
-    res.status(200).json({ success: true, message: "If your email is registered, a reset link will be sent." });
+    res.status(200).json({ success: true, message: "Reset link sent successfully." });
 
   } catch (error) {
     console.error("FORGOT PASSWORD ERROR:", error);
@@ -783,20 +862,19 @@ const resetPassword = async (req, res) => {
     const { newPassword } = req.body;
 
     if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ success: false, message: "New password must be at least 8 characters long for security." });
+      return res.status(400).json({ success: false, message: "New password must be at least 8 characters long." });
     }
 
     jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
       if (err) {
-        return res.status(400).json({ success: false, message: "Invalid or expired token. Please request a new link." });
+        return res.status(400).json({ success: false, message: "Invalid or expired token." });
       }
 
       const salt = await bcrypt.genSalt(12);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
 
       await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [hashedPassword, id]);
-
-      res.status(200).json({ success: true, message: "Password has been successfully updated!" });
+      res.status(200).json({ success: true, message: "Password updated successfully!" });
     });
 
   } catch (error) {
@@ -811,10 +889,10 @@ module.exports = {
   sendRegistrationOtp,    
   registerUser,
   loginUser,
-  socialLogin,
+  socialLogin, 
   logoutUser,
   getUserProfile,
-  updateUserName, // 🔥 Exported Update Name API
+  updateUserName,
   getPaymentSettings,
   depositFunds,
   getMyDeposits,

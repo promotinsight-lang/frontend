@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   RefreshCcw, CheckCircle, XCircle, Eye, Search, X, 
   ShieldCheck, ShieldAlert, Snowflake, Play, Star, Users, User, Trash2, Scale, Clock, Package, AlertTriangle, Wallet, Image as ImageIcon,
-  BarChart3, Calendar, Headset, MessageCircle, Send, History, Megaphone
+  BarChart3, Calendar, Headset, MessageCircle, Send, History, Megaphone, MapPin, FileText // 🔥 NEW: FileText icon imported
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
@@ -65,7 +65,6 @@ export default function AdminDashboard() {
   const [selectedTrx, setSelectedTrx] = useState(null);
   const [trxType, setTrxType] = useState('');
 
-  // ================= SUPPORT TICKET STATES =================
   const [supportTickets, setSupportTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [ticketReplies, setTicketReplies] = useState([]);
@@ -74,10 +73,15 @@ export default function AdminDashboard() {
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
-  // ================= ANNOUNCEMENT STATES =================
   const [announcements, setAnnouncements] = useState([]);
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '' });
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // ================= BLOG STATES =================
+  const [adminBlogs, setAdminBlogs] = useState([]);
+  const [newBlog, setNewBlog] = useState({ title: '', content: '', is_published: true });
+  const [blogImage, setBlogImage] = useState(null);
+  const [isPublishingBlog, setIsPublishingBlog] = useState(false);
 
   const token = localStorage.getItem('token');
   const getAuthHeaders = () => {
@@ -93,7 +97,6 @@ export default function AdminDashboard() {
     else setActiveTab('overview');
   }, [location.search]);
 
-  // ================= SECURE FETCH FUNCTIONS (HTTPOnly included) =================
   const fetchMonthlyReport = async () => {
     try {
       const res = await fetch(`http://localhost:5000/api/admin/monthly-stats?month=${selectedMonth}`, { headers: getAuthHeaders(), credentials: 'include' });
@@ -213,6 +216,17 @@ export default function AdminDashboard() {
     } catch (err) { console.error(err); }
   };
 
+  const fetchAdminBlogs = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/blogs/admin/all', { 
+        headers: getAuthHeaders(), 
+        credentials: 'include' 
+      });
+      const data = await res.json();
+      if (data.success) setAdminBlogs(data.data);
+    } catch (err) { console.error(err); }
+  };
+
   const fetchAndShowUserProfile = async (userId) => {
     try {
       const res = await fetch(`http://localhost:5000/api/users/admin/user/${userId}`, { headers: getAuthHeaders(), credentials: 'include' });
@@ -271,9 +285,9 @@ export default function AdminDashboard() {
     if (activeTab === 'all-sellers') fetchUsers('seller'); 
     if (activeTab === 'support-tickets') fetchSupportTickets(); 
     if (activeTab === 'announcements') fetchAnnouncements(); 
+    if (activeTab === 'blogs') fetchAdminBlogs(); // 🔥 Fetch blogs if tab is active
   }, [activeTab, selectedMonth]);
 
-  // ================= SECURE ACTION HANDLER =================
   const handleAction = async (url, method = 'PATCH', bodyData = null) => {
     try {
       const options = { 
@@ -308,7 +322,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Admin Mutations
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`http://localhost:5000/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
   const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`http://localhost:5000/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
   
@@ -397,7 +410,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // ================= SUPPORT SYSTEM LOGIC =================
   const openTicketView = async (ticket) => {
     setSelectedTicket(ticket);
     setShowTicketViewModal(true);
@@ -455,7 +467,6 @@ export default function AdminDashboard() {
     } catch(err) { alert("Server error"); }
   };
 
-  // ================= ANNOUNCEMENT LOGIC =================
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault();
     setIsPublishing(true);
@@ -471,6 +482,49 @@ export default function AdminDashboard() {
     if (window.confirm("Delete this announcement?")) {
       const success = await handleAction(`http://localhost:5000/api/announcements/${id}`, 'DELETE');
       if (success) fetchAnnouncements();
+    }
+  };
+
+  // ================= BLOG LOGIC =================
+  const handleCreateBlog = async (e) => {
+    e.preventDefault();
+    if (!newBlog.title || !newBlog.content) return alert("Title and content are required.");
+    setIsPublishingBlog(true);
+    
+    const formData = new FormData();
+    formData.append("title", newBlog.title);
+    formData.append("content", newBlog.content);
+    formData.append("is_published", newBlog.is_published);
+    if (blogImage) formData.append("image", blogImage);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/blogs", {
+        method: "POST",
+        headers: getAuthHeaders(), // fetch will auto-set Content-Type with boundary for FormData
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert("Blog published successfully!");
+        setNewBlog({ title: '', content: '', is_published: true });
+        setBlogImage(null);
+        // Reset file input UI manually if needed, or rely on state
+        const fileInput = document.getElementById('blog-image-upload');
+        if (fileInput) fileInput.value = '';
+        fetchAdminBlogs();
+      } else {
+        alert(data.message || "Failed to publish blog.");
+      }
+    } catch (err) {
+      alert("Server Connection Error.");
+    }
+    setIsPublishingBlog(false);
+  };
+
+  const handleDeleteBlog = async (id) => {
+    if (window.confirm("Are you sure you want to delete this blog post?")) {
+      const success = await handleAction(`http://localhost:5000/api/blogs/${id}`, 'DELETE');
+      if (success) fetchAdminBlogs();
     }
   };
 
@@ -516,6 +570,7 @@ export default function AdminDashboard() {
             if(activeTab === 'all-sellers') fetchUsers('seller');
             if(activeTab === 'support-tickets') fetchSupportTickets();
             if(activeTab === 'announcements') fetchAnnouncements();
+            if(activeTab === 'blogs') fetchAdminBlogs();
           }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-all">
             <RefreshCcw size={20} />
           </button>
@@ -561,6 +616,24 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <div className="font-bold text-gray-800">{user.name}</div>
                         <div className="text-xs text-gray-500">{user.email}</div>
+                        
+                        {/* 🔥 PREMIUM FEATURE: Display Text Location and IP Tracker for Users */}
+                        {user.last_ip && user.last_ip !== 'Unknown' && (
+                          <div className="mt-1.5 flex flex-col items-start gap-1">
+                             <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
+                               🌍 {user.ip_location || 'Location Unknown'}
+                             </span>
+                             <a 
+                               href={`https://ipinfo.io/${user.last_ip}`} 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                               title="Click to view full IP details"
+                             >
+                               <MapPin size={10} /> {user.last_ip}
+                             </a>
+                          </div>
+                        )}
                       </td>
                       <td className="p-4">
                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${user.verification_status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
@@ -970,6 +1043,24 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <p className="font-bold text-gray-800">{app.buyer_name}</p>
                         <p className="text-xs text-gray-500 mb-1">{app.buyer_email}</p>
+                        
+                        {/* 🔥 PREMIUM FEATURE: Display Text Location and IP Tracker for Apps */}
+                        {app.ip_address && app.ip_address !== 'Unknown' && (
+                          <div className="mt-1.5 flex flex-col items-start gap-1">
+                             <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
+                               🌍 {app.ip_location || 'Location Unknown'}
+                             </span>
+                             <a 
+                               href={`https://ipinfo.io/${app.ip_address}`} 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                               title="Track Applicant IP"
+                             >
+                               <MapPin size={10} /> {app.ip_address}
+                             </a>
+                          </div>
+                        )}
                       </td>
                       <td className="p-4 flex items-center gap-3">
                         <img src={app.image_url} alt="Product" className="w-10 h-10 rounded object-contain bg-white border" />
@@ -1259,7 +1350,7 @@ export default function AdminDashboard() {
               <div className="divide-y">
                 {announcements.map(a => (
                   <div key={a.id} className="p-4 hover:bg-gray-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex-1 min-w-0"> {/* FIX: Prevents flex container from overflowing */}
+                    <div className="flex-1 min-w-0"> 
                       <h4 className="font-bold text-gray-800 break-words">{a.title}</h4>
                       <p className="text-sm text-gray-500 mt-1 break-words">{a.message}</p>
                       <p className="text-[10px] text-gray-400 mt-2">{new Date(a.created_at).toLocaleString()}</p>
@@ -1273,6 +1364,92 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 {announcements.length === 0 && <p className="p-8 text-center text-gray-500 font-medium">No announcements published yet.</p>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 🔥 BLOGS TAB CONTENT */}
+        {activeTab === 'blogs' && (
+          <div className="space-y-6 animate-fade-in-up mt-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border">
+              <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
+                <FileText size={20} className="text-[#0066ff]"/> Publish New Blog Post
+              </h3>
+              <form onSubmit={handleCreateBlog} className="space-y-4">
+                <input 
+                  required type="text" placeholder="Blog Title" 
+                  className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff]"
+                  value={newBlog.title}
+                  onChange={e => setNewBlog({...newBlog, title: e.target.value})}
+                />
+                
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Feature Image (Optional)</label>
+                    <input 
+                      type="file" accept="image/*" id="blog-image-upload"
+                      className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                      onChange={e => setBlogImage(e.target.files[0])}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 md:mt-6">
+                    <input 
+                      type="checkbox" id="publish" className="w-4 h-4 cursor-pointer"
+                      checked={newBlog.is_published}
+                      onChange={e => setNewBlog({...newBlog, is_published: e.target.checked})}
+                    />
+                    <label htmlFor="publish" className="text-sm font-bold text-gray-700 cursor-pointer">Publish Immediately</label>
+                  </div>
+                </div>
+
+                <textarea 
+                  required placeholder="Write the blog content here (Supports HTML/Text)..." 
+                  className="w-full p-3 border rounded-xl h-40 outline-none focus:border-[#0066ff]"
+                  value={newBlog.content}
+                  onChange={e => setNewBlog({...newBlog, content: e.target.value})}
+                ></textarea>
+                
+                <button type="submit" disabled={isPublishingBlog} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {isPublishingBlog ? 'Publishing...' : <><FileText size={18} /> Publish Blog</>}
+                </button>
+              </form>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                <h3 className="font-bold text-gray-700">Manage Published Blogs</h3>
+                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">{adminBlogs.length} Total</span>
+              </div>
+              <div className="divide-y">
+                {adminBlogs.map(blog => (
+                  <div key={blog.id} className="p-4 hover:bg-gray-50 flex flex-col md:flex-row items-start md:items-center gap-4">
+                    {blog.image_url ? (
+                      <img src={blog.image_url} alt="blog" className="w-20 h-14 object-cover rounded-lg border bg-gray-100 shrink-0" />
+                    ) : (
+                      <div className="w-20 h-14 bg-gray-100 rounded-lg border flex items-center justify-center text-gray-400 shrink-0">
+                        <ImageIcon size={20} />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0"> 
+                      <h4 className="font-bold text-gray-800 truncate">{blog.title}</h4>
+                      <p className="text-xs text-gray-500 line-clamp-1">{blog.content.substring(0, 100)}...</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${blog.is_published ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {blog.is_published ? 'Published' : 'Draft'}
+                        </span>
+                        <span className="text-[10px] text-gray-400">{new Date(blog.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteBlog(blog.id)} 
+                      className="bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors flex items-center gap-1 shrink-0"
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                ))}
+                {adminBlogs.length === 0 && <p className="p-8 text-center text-gray-500 font-medium">No blogs found.</p>}
               </div>
             </div>
           </div>
@@ -1648,6 +1825,25 @@ export default function AdminDashboard() {
                     <p><span className="font-bold text-gray-700 w-32 inline-block">Telegram:</span> {selectedUserProfile.telegram_account || 'N/A'}</p>
                     <p><span className="font-bold text-gray-700 w-32 inline-block">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
                     
+                    {/* 🔥 PREMIUM FEATURE: Display Last Login Location & IP in Modal */}
+                    {selectedUserProfile.last_ip && (
+                      <div className="mt-2 border-t border-indigo-100 pt-2 space-y-1.5">
+                        <p className="flex items-center">
+                          <span className="font-bold text-gray-700 w-32 inline-block">Login Location:</span>
+                          <span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">🌍 {selectedUserProfile.ip_location || 'Unknown'}</span>
+                        </p>
+                        <p className="flex items-center">
+                          <span className="font-bold text-gray-700 w-32 inline-block">Last Login IP:</span> 
+                          <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded mr-2 text-xs">{selectedUserProfile.last_ip}</span>
+                          {selectedUserProfile.last_ip !== 'Unknown' && (
+                            <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 inline-flex bg-blue-50 border border-blue-200 px-2 py-1 rounded">
+                              <MapPin size={12} /> Track Map
+                            </a>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
                     {selectedUserProfile.amazon_profile_url && (
                       <div className="mt-3">
                         <a href={selectedUserProfile.amazon_profile_url} target="_blank" rel="noreferrer" className="block text-center bg-white border border-indigo-200 text-indigo-600 py-2 rounded-lg font-bold hover:bg-indigo-100">

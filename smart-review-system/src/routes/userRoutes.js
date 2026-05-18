@@ -29,6 +29,7 @@ const {
 
 const { protect } = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
+const { blockVPNAndProxy } = require("../middleware/vpnCheck"); // 🔥 IMPORTED VPN CHECKER
 
 // ==========================================
 // 🛡️ Rate Limiters (Defense in Depth)
@@ -74,10 +75,11 @@ router.get("/live-feed", getPublicLiveFeed);
 router.get("/captcha", generateCaptcha);
 router.post("/send-otp", otpLimiter, sendRegistrationOtp);
 
-router.post("/register", authLimiter, registerUser);
-router.post("/login", authLimiter, loginUser);
+// 🔥 VPN CHECKER ADDED TO SENSITIVE ROUTES
+router.post("/register", blockVPNAndProxy, authLimiter, registerUser);
+router.post("/login", blockVPNAndProxy, authLimiter, loginUser);
+router.post("/social-login", blockVPNAndProxy, authLimiter, socialLogin);
 
-router.post("/social-login", authLimiter, socialLogin);
 router.post("/logout", logoutUser); 
 
 router.post("/forgot-password", passwordResetLimiter, forgotPassword);
