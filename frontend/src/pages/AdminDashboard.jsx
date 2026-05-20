@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   RefreshCcw, CheckCircle, XCircle, Eye, Search, X, 
   ShieldCheck, ShieldAlert, Snowflake, Play, Star, Users, User, Trash2, Scale, Clock, Package, AlertTriangle, Wallet, Image as ImageIcon,
-  BarChart3, Calendar, Headset, MessageCircle, Send, History, Megaphone, MapPin, FileText // 🔥 NEW: FileText icon imported
+  BarChart3, Calendar, Headset, MessageCircle, Send, History, Megaphone, MapPin, FileText, Settings, Edit,
+  Briefcase, LayoutDashboard
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
@@ -13,7 +14,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   
   const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, pendingDeposits: 0, pendingWithdrawals: 0 });
-  
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); 
   const [monthlyReport, setMonthlyReport] = useState({ total_orders: 0, completed_orders: 0, failed_orders: 0 });
   
@@ -37,11 +37,9 @@ export default function AdminDashboard() {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
-  
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundAppId, setRefundAppId] = useState(null);
   const [refundData, setRefundData] = useState({ orderNumber: '', comment: '' });
-  
   const [showAppDetailsModal, setShowAppDetailsModal] = useState(false);
   const [selectedAppDetails, setSelectedAppDetails] = useState(null);
 
@@ -54,7 +52,6 @@ export default function AdminDashboard() {
 
   const [showAppealModal, setShowAppealModal] = useState(false);
   const [selectedAppeal, setSelectedAppeal] = useState(null);
-  
   const [disputeComment, setDisputeComment] = useState('');
 
   const [showApproveWithdrawalModal, setShowApproveWithdrawalModal] = useState(false);
@@ -77,11 +74,18 @@ export default function AdminDashboard() {
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '' });
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // ================= BLOG STATES =================
   const [adminBlogs, setAdminBlogs] = useState([]);
   const [newBlog, setNewBlog] = useState({ title: '', content: '', is_published: true });
   const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
+
+  // 🔥 DYNAMIC FEE CONFIGURATION STATES (MANUAL INPUT)
+  const [feeConfig, setFeeConfig] = useState({
+    country: '', platform: '', platform_charge: '', buyer_reward: '', 
+    buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: ''
+  });
+  const [allFeeConfigs, setAllFeeConfigs] = useState([]);
+  const [feeLoading, setFeeLoading] = useState(false);
 
   const token = localStorage.getItem('token');
   const getAuthHeaders = () => {
@@ -97,13 +101,83 @@ export default function AdminDashboard() {
     else setActiveTab('overview');
   }, [location.search]);
 
+  // 🔥 FETCH ALL SAVED CONFIGURATIONS
+  const fetchAllFeeConfigs = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/config/fees/all`, { 
+        headers: getAuthHeaders(), credentials: 'include' 
+      });
+      const data = await res.json();
+      if (data.success) setAllFeeConfigs(data.data);
+    } catch (err) { console.error(err); }
+  };
+
+  // 🔥 FETCH SPECIFIC FEE CONFIG ON BLUR OR SEARCH
+  const fetchFeeConfig = async (country, platform) => {
+    if (!country.trim() || !platform.trim()) return;
+    setFeeLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/config/fees?country=${country}&platform=${platform}`, { 
+        headers: getAuthHeaders(), credentials: 'include' 
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setFeeConfig({
+          country: data.data.country, platform: data.data.platform, platform_charge: data.data.platform_charge,
+          buyer_reward: data.data.buyer_reward, buyer_refund_fee: data.data.buyer_refund_fee,
+          seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee
+        });
+      } else {
+        setFeeConfig(prev => ({
+          ...prev, platform_charge: '', buyer_reward: '', buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: ''
+        }));
+      }
+    } catch (err) { console.error(err); } 
+    finally { setFeeLoading(false); }
+  };
+
+  const handleFeeSelectorChange = (field, value) => {
+    setFeeConfig(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFeeBlur = () => {
+    if (feeConfig.country && feeConfig.platform) {
+      fetchFeeConfig(feeConfig.country, feeConfig.platform);
+    }
+  };
+
+  const handleEditFeeClick = (config) => {
+    setFeeConfig({
+      country: config.country, platform: config.platform, platform_charge: config.platform_charge,
+      buyer_reward: config.buyer_reward, buyer_refund_fee: config.buyer_refund_fee,
+      seller_deposit_fee: config.seller_deposit_fee, seller_withdrawal_fee: config.seller_withdrawal_fee
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSaveFeeConfig = async (e) => {
+    e.preventDefault();
+    if (!feeConfig.country.trim() || !feeConfig.platform.trim()) {
+      alert("Please enter both country and platform names!");
+      return;
+    }
+    const success = await handleAction('http://localhost:5000/api/config/fees', 'POST', feeConfig);
+    if (success) fetchAllFeeConfigs();
+  };
+
+  const handleDeleteFeeConfig = async (country, platform) => {
+    if (window.confirm(`Are you sure you want to delete the fee configuration for ${country} - ${platform}?`)) {
+        const success = await handleAction(`http://localhost:5000/api/config/fees/${encodeURIComponent(country)}/${encodeURIComponent(platform)}`, 'DELETE');
+        if (success) fetchAllFeeConfigs();
+    }
+  };
+
   const fetchMonthlyReport = async () => {
     try {
       const res = await fetch(`http://localhost:5000/api/admin/monthly-stats?month=${selectedMonth}`, { headers: getAuthHeaders(), credentials: 'include' });
-      if (res.status === 429) return console.warn("Rate limited on stats fetch");
       const data = await res.json();
       if (data.success) setMonthlyReport(data.data);
-    } catch (err) { console.error(err); }
+    } catch (err) { }
   };
 
   const fetchStats = async () => {
@@ -118,10 +192,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('http://localhost:5000/api/admin/deposits', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
-      if (data.success) {
-        setDeposits(data.data.filter(d => d.status === 'pending')); 
-        setHistoryDeposits(data.data); 
-      }
+      if (data.success) { setDeposits(data.data.filter(d => d.status === 'pending')); setHistoryDeposits(data.data); }
     } catch (err) {}
   };
 
@@ -129,10 +200,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('http://localhost:5000/api/withdrawals/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
-      if (data.success) {
-        setWithdrawals(data.data.filter(w => w.status === 'pending'));
-        setHistoryWithdrawals(data.data); 
-      }
+      if (data.success) { setWithdrawals(data.data.filter(w => w.status === 'pending')); setHistoryWithdrawals(data.data); }
     } catch (err) {}
   };
 
@@ -140,9 +208,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('http://localhost:5000/api/products/refunds/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
-      if (data.success) {
-        setHistoryRefunds(data.data); 
-      }
+      if (data.success) setHistoryRefunds(data.data); 
     } catch (err) {}
   };
 
@@ -150,10 +216,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch('http://localhost:5000/api/products', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
-      if (data.success) {
-        setAllProducts(data.data); 
-        setPendingProducts(data.data.filter(p => p.status === 'pending')); 
-      }
+      if (data.success) { setAllProducts(data.data); setPendingProducts(data.data.filter(p => p.status === 'pending')); }
     } catch (err) {}
   };
 
@@ -202,35 +265,28 @@ export default function AdminDashboard() {
       const res = await fetch('http://localhost:5000/api/support/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setSupportTickets(data.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {}
   };
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/announcements/admin/all', { 
-        headers: getAuthHeaders(), 
-        credentials: 'include' 
-      });
+      const res = await fetch('http://localhost:5000/api/announcements/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAnnouncements(data.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {}
   };
 
   const fetchAdminBlogs = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/blogs/admin/all', { 
-        headers: getAuthHeaders(), 
-        credentials: 'include' 
-      });
+      const res = await fetch('http://localhost:5000/api/blogs/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAdminBlogs(data.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {}
   };
 
   const fetchAndShowUserProfile = async (userId) => {
     try {
       const res = await fetch(`http://localhost:5000/api/users/admin/user/${userId}`, { headers: getAuthHeaders(), credentials: 'include' });
-      if (res.status === 429) return alert("Rate limit exceeded. Please wait a moment before viewing more profiles.");
       const data = await res.json();
       
       if (data.success) {
@@ -266,7 +322,7 @@ export default function AdminDashboard() {
           }
         } catch (e) {}
         setShowUserProfileModal(true);
-      } else alert("User data not found.");
+      }
     } catch (err) {}
   };
 
@@ -277,7 +333,7 @@ export default function AdminDashboard() {
     if (activeTab === 'withdrawals' || activeTab === 'history') fetchWithdrawals();
     if (activeTab === 'history') fetchRefunds(); 
     if (activeTab === 'products' || activeTab === 'all-products') fetchProducts();
-    if (activeTab === 'settings') fetchSettings();
+    if (activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); } 
     if (activeTab === 'applications') fetchApplications(); 
     if (activeTab === 'verify-requests') fetchVerifications(); 
     if (activeTab === 'appeals') fetchAppeals(); 
@@ -285,41 +341,19 @@ export default function AdminDashboard() {
     if (activeTab === 'all-sellers') fetchUsers('seller'); 
     if (activeTab === 'support-tickets') fetchSupportTickets(); 
     if (activeTab === 'announcements') fetchAnnouncements(); 
-    if (activeTab === 'blogs') fetchAdminBlogs(); // 🔥 Fetch blogs if tab is active
+    if (activeTab === 'blogs') fetchAdminBlogs();
   }, [activeTab, selectedMonth]);
 
   const handleAction = async (url, method = 'PATCH', bodyData = null) => {
     try {
-      const options = { 
-        method, 
-        headers: getAuthHeaders(),
-        credentials: 'include' 
-      };
-      
-      if (bodyData) {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(bodyData);
-      }
-      
+      const options = { method, headers: getAuthHeaders(), credentials: 'include' };
+      if (bodyData) { options.headers['Content-Type'] = 'application/json'; options.body = JSON.stringify(bodyData); }
       const res = await fetch(url, options);
-      
-      if (res.status === 429) {
-        alert('⚠️ Security Alert: Too many actions performed recently. Rate limiter is active. Please try again after 15 minutes.');
-        return false;
-      }
-      
+      if (res.status === 429) { alert('Rate limiter active.'); return false; }
       const data = await res.json();
-      if (res.ok) {
-        alert(data.message || 'Action successful');
-        return true;
-      } else {
-        alert(data.message || 'Action failed');
-        return false;
-      }
-    } catch (err) { 
-      alert('Server Connection Error. Please check your network.'); 
-      return false; 
-    }
+      if (res.ok) { alert(data.message || 'Action successful'); return true; } 
+      else { alert(data.message || 'Action failed'); return false; }
+    } catch (err) { alert('Connection Error.'); return false; }
   };
 
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`http://localhost:5000/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
@@ -328,10 +362,7 @@ export default function AdminDashboard() {
   const submitWithdrawalApproval = async (e) => {
     e.preventDefault();
     if(await handleAction(`http://localhost:5000/api/withdrawals/${withdrawalToApprove.id}/approve`, 'PATCH', withdrawalProof)) {
-      setShowApproveWithdrawalModal(false);
-      setWithdrawalToApprove(null);
-      setWithdrawalProof({ transaction_id: '', screenshot_url: '' });
-      fetchWithdrawals();
+      setShowApproveWithdrawalModal(false); setWithdrawalToApprove(null); setWithdrawalProof({ transaction_id: '', screenshot_url: '' }); fetchWithdrawals();
     }
   };
 
@@ -382,9 +413,7 @@ export default function AdminDashboard() {
   const submitRefund = async (e) => {
     e.preventDefault();
     if(await handleAction(`http://localhost:5000/api/applications/${refundAppId}/confirm-refund`, 'PATCH', {
-      refund_order_number: refundData.orderNumber, 
-      refund_screenshot_url: refundData.orderNumber, 
-      refund_comment: refundData.comment
+      refund_order_number: refundData.orderNumber, refund_screenshot_url: refundData.orderNumber, refund_comment: refundData.comment
     })) {
       setShowRefundModal(false); setShowAppDetailsModal(false); setRefundData({ orderNumber: '', comment: '' }); fetchApplications();
     }
@@ -405,27 +434,16 @@ export default function AdminDashboard() {
 
   const updateSetting = async (id, newDetails) => {
     if (!newDetails) return alert("Account details cannot be empty");
-    if (await handleAction(`http://localhost:5000/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) {
-      fetchSettings();
-    }
+    if (await handleAction(`http://localhost:5000/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) fetchSettings();
   };
 
   const openTicketView = async (ticket) => {
-    setSelectedTicket(ticket);
-    setShowTicketViewModal(true);
-    setRepliesLoading(true);
+    setSelectedTicket(ticket); setShowTicketViewModal(true); setRepliesLoading(true);
     try {
       const res = await fetch(`http://localhost:5000/api/support/${ticket.id}`, { headers: getAuthHeaders(), credentials: 'include' });
-      if (res.status === 429) {
-          alert('Rate limiter active. Too many requests.');
-          return setShowTicketViewModal(false);
-      }
       const data = await res.json();
-      if(res.ok) {
-        setTicketReplies(data.data.replies || []);
-        setSelectedTicket(data.data.ticket);
-      }
-    } catch (err) { console.error(err); } finally { setRepliesLoading(false); }
+      if(res.ok) { setTicketReplies(data.data.replies || []); setSelectedTicket(data.data.ticket); }
+    } catch (err) {} finally { setRepliesLoading(false); }
   };
 
   const handleReplyTicket = async (e) => {
@@ -433,48 +451,24 @@ export default function AdminDashboard() {
     if(!replyMessage.trim()) return;
     setIsSubmittingTicket(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/support/${selectedTicket.id}/reply`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        credentials: 'include',
-        body: JSON.stringify({ message: replyMessage })
-      });
-      if (res.status === 429) return alert('⚠️ Rate Limit Exceeded. Try again later.');
+      const res = await fetch(`http://localhost:5000/api/support/${selectedTicket.id}/reply`, { method: 'POST', headers: getAuthHeaders(), credentials: 'include', body: JSON.stringify({ message: replyMessage }) });
       const data = await res.json();
-      if(res.ok) {
-        setTicketReplies([...ticketReplies, data.data]);
-        setReplyMessage('');
-        fetchSupportTickets(); 
-        setSelectedTicket(prev => ({...prev, status: 'answered'}));
-      }
-    } catch (err) { alert('Server error'); } finally { setIsSubmittingTicket(false); }
+      if(res.ok) { setTicketReplies([...ticketReplies, data.data]); setReplyMessage(''); fetchSupportTickets(); setSelectedTicket(prev => ({...prev, status: 'answered'})); }
+    } catch (err) {} finally { setIsSubmittingTicket(false); }
   };
 
   const handleCloseTicket = async (ticketId) => {
     if(!window.confirm("Are you sure you want to close this ticket? It will be marked as resolved.")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/support/${ticketId}/close`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(),
-        credentials: 'include'
-      });
-      if (res.status === 429) return alert('⚠️ Rate Limit Exceeded.');
-      if(res.ok) {
-        alert("Ticket closed successfully");
-        setShowTicketViewModal(false);
-        fetchSupportTickets();
-      }
-    } catch(err) { alert("Server error"); }
+      const res = await fetch(`http://localhost:5000/api/support/${ticketId}/close`, { method: 'PATCH', headers: getAuthHeaders(), credentials: 'include' });
+      if(res.ok) { alert("Ticket closed successfully"); setShowTicketViewModal(false); fetchSupportTickets(); }
+    } catch(err) {}
   };
 
   const handleCreateAnnouncement = async (e) => {
-    e.preventDefault();
-    setIsPublishing(true);
+    e.preventDefault(); setIsPublishing(true);
     const success = await handleAction('http://localhost:5000/api/announcements', 'POST', newAnnouncement);
-    if (success) {
-      setNewAnnouncement({ title: '', message: '' });
-      fetchAnnouncements();
-    }
+    if (success) { setNewAnnouncement({ title: '', message: '' }); fetchAnnouncements(); }
     setIsPublishing(false);
   };
 
@@ -485,39 +479,21 @@ export default function AdminDashboard() {
     }
   };
 
-  // ================= BLOG LOGIC =================
   const handleCreateBlog = async (e) => {
     e.preventDefault();
     if (!newBlog.title || !newBlog.content) return alert("Title and content are required.");
     setIsPublishingBlog(true);
-    
     const formData = new FormData();
-    formData.append("title", newBlog.title);
-    formData.append("content", newBlog.content);
-    formData.append("is_published", newBlog.is_published);
+    formData.append("title", newBlog.title); formData.append("content", newBlog.content); formData.append("is_published", newBlog.is_published);
     if (blogImage) formData.append("image", blogImage);
-
     try {
-      const res = await fetch("http://localhost:5000/api/blogs", {
-        method: "POST",
-        headers: getAuthHeaders(), // fetch will auto-set Content-Type with boundary for FormData
-        body: formData
-      });
+      const res = await fetch("http://localhost:5000/api/blogs", { method: "POST", headers: getAuthHeaders(), body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert("Blog published successfully!");
-        setNewBlog({ title: '', content: '', is_published: true });
-        setBlogImage(null);
-        // Reset file input UI manually if needed, or rely on state
-        const fileInput = document.getElementById('blog-image-upload');
-        if (fileInput) fileInput.value = '';
-        fetchAdminBlogs();
-      } else {
-        alert(data.message || "Failed to publish blog.");
-      }
-    } catch (err) {
-      alert("Server Connection Error.");
-    }
+        alert("Blog published successfully!"); setNewBlog({ title: '', content: '', is_published: true }); setBlogImage(null);
+        document.getElementById('blog-image-upload').value = ''; fetchAdminBlogs();
+      } else alert(data.message || "Failed to publish blog.");
+    } catch (err) {}
     setIsPublishingBlog(false);
   };
 
@@ -544,9 +520,7 @@ export default function AdminDashboard() {
   };
 
   const openTrxDetails = (trx, type) => {
-    setSelectedTrx(trx);
-    setTrxType(type);
-    setShowTrxDetailsModal(true);
+    setSelectedTrx(trx); setTrxType(type); setShowTrxDetailsModal(true);
   };
 
   return (
@@ -571,6 +545,7 @@ export default function AdminDashboard() {
             if(activeTab === 'support-tickets') fetchSupportTickets();
             if(activeTab === 'announcements') fetchAnnouncements();
             if(activeTab === 'blogs') fetchAdminBlogs();
+            if(activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); }
           }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-all">
             <RefreshCcw size={20} />
           </button>
@@ -578,6 +553,39 @@ export default function AdminDashboard() {
       </div>
       
       <div className="max-w-7xl mx-auto p-4 md:p-6 -mt-6">
+
+        {/* 🔥 TAB NAVIGATION MENU (This was missing earlier) */}
+        <div className="bg-white p-2 rounded-xl shadow-sm border mb-6 flex overflow-x-auto gap-2 scrollbar-hide">
+          {[
+            { id: 'overview', icon: <BarChart3 size={16} />, label: 'Overview' },
+            { id: 'all-buyers', icon: <Users size={16} />, label: 'Buyers' },
+            { id: 'all-sellers', icon: <Briefcase size={16} />, label: 'Sellers' },
+            { id: 'verify-requests', icon: <ShieldCheck size={16} />, label: 'Verifications' },
+            { id: 'products', icon: <Package size={16} />, label: 'Pending Products' },
+            { id: 'all-products', icon: <LayoutDashboard size={16} />, label: 'All Products' },
+            { id: 'applications', icon: <FileText size={16} />, label: 'Applications' },
+            { id: 'deposits', icon: <Wallet size={16} />, label: 'Deposits' },
+            { id: 'withdrawals', icon: <History size={16} />, label: 'Withdrawals' },
+            { id: 'history', icon: <History size={16} />, label: 'Trx History' },
+            { id: 'appeals', icon: <Scale size={16} />, label: 'Appeals' },
+            { id: 'support-tickets', icon: <Headset size={16} />, label: 'Support Tickets' },
+            { id: 'announcements', icon: <Megaphone size={16} />, label: 'Announcements' },
+            { id: 'blogs', icon: <FileText size={16} />, label: 'Blogs' },
+            { id: 'settings', icon: <Settings size={16} />, label: 'Settings' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${
+                activeTab === tab.id 
+                  ? 'bg-[#0066ff] text-white shadow-md' 
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
 
         {/* ALL BUYERS / SELLERS TAB */}
         {(activeTab === 'all-buyers' || activeTab === 'all-sellers') && (
@@ -617,7 +625,6 @@ export default function AdminDashboard() {
                         <div className="font-bold text-gray-800">{user.name}</div>
                         <div className="text-xs text-gray-500">{user.email}</div>
                         
-                        {/* 🔥 PREMIUM FEATURE: Display Text Location and IP Tracker for Users */}
                         {user.last_ip && user.last_ip !== 'Unknown' && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
@@ -842,12 +849,10 @@ export default function AdminDashboard() {
                           {ticket.user_role}
                         </span>
                       </td>
-                      
                       <td className="p-4 max-w-xs md:max-w-sm">
                         <p className="font-bold text-gray-800 truncate" title={ticket.subject}>{ticket.subject}</p>
                         <p className="text-xs text-gray-500 line-clamp-2 mt-1" title={ticket.message}>{ticket.message}</p>
                       </td>
-                      
                       <td className="p-4">
                          <span className={`px-2 py-1 inline-block rounded text-[10px] font-bold uppercase tracking-wider mb-1 ${
                              ticket.status === 'open' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
@@ -896,7 +901,6 @@ export default function AdminDashboard() {
                       <p className="text-xs text-gray-500">{v.email}</p>
                     </div>
                   </div>
-                  
                   <div className="space-y-3 text-sm mb-5">
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Amazon Location & Account</p>
@@ -916,11 +920,8 @@ export default function AdminDashboard() {
                       <p className="text-xs font-semibold text-gray-400">Payment & Contacts</p>
                       <p className="font-medium text-gray-700">PayPal: {v.paypal_account || 'N/A'}</p>
                       <p className="font-medium text-gray-700">WA: {v.whatsapp_account || 'N/A'}</p>
-                      {v.facebook_account && <p className="font-medium text-gray-700">FB: {v.facebook_account}</p>}
-                      {v.telegram_account && <p className="font-medium text-gray-700">TG: {v.telegram_account}</p>}
                     </div>
                   </div>
-
                   <div className="flex gap-2">
                     <button onClick={() => verifyUser(v.id, 'approved')} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-1">
                       <CheckCircle size={16} /> Approve
@@ -949,13 +950,11 @@ export default function AdminDashboard() {
                     <h4 className="font-bold text-gray-800 truncate">{p.product_name || p.store_name}</h4>
                     <div className="flex justify-between text-sm mt-2"><span className="text-gray-600">Price: <b className="text-black">${p.price}</b></span><span className="text-gray-600">Reward: <b className="text-green-600">${p.reward}</b></span></div>
                     <p className="text-xs text-gray-500 mt-2 truncate">Platform: {p.platform} | Qty: {p.required_orders}</p>
-                    
                     <div className="mt-3 bg-blue-50 p-2 rounded border border-blue-100">
                       <p className="text-xs text-blue-800 font-bold truncate">👤 {p.seller_name || 'N/A'}</p>
                       <p className="text-xs text-blue-600 truncate">✉️ {p.seller_email || 'N/A'} (ID: #{p.seller_id})</p>
                     </div>
                   </div>
-                  
                   <div className="flex gap-2 mt-4 pt-3 border-t">
                     <button onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded font-bold hover:bg-gray-300 text-sm">View Details</button>
                     <button onClick={() => approveProduct(p.id)} className="flex-1 bg-indigo-600 text-white py-2 rounded font-bold hover:bg-indigo-700 text-sm">Approve</button>
@@ -1025,7 +1024,7 @@ export default function AdminDashboard() {
 
         {/* APPLICATIONS TAB */}
         {activeTab === 'applications' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b"><h3 className="font-bold text-gray-700">Manage Buyer Orders & Applications</h3></div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -1043,8 +1042,6 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <p className="font-bold text-gray-800">{app.buyer_name}</p>
                         <p className="text-xs text-gray-500 mb-1">{app.buyer_email}</p>
-                        
-                        {/* 🔥 PREMIUM FEATURE: Display Text Location and IP Tracker for Apps */}
                         {app.ip_address && app.ip_address !== 'Unknown' && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
@@ -1164,155 +1161,200 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
               <h3 className="font-bold text-gray-700">Transaction History</h3>
-              
               <div className="flex flex-wrap gap-2 bg-gray-200 p-1 rounded-lg">
-                <button 
-                  onClick={() => setSubTabHistory('withdrawals')} 
-                  className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'withdrawals' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Withdrawals
-                </button>
-                <button 
-                  onClick={() => setSubTabHistory('deposits')} 
-                  className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'deposits' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Deposits
-                </button>
-                <button 
-                  onClick={() => setSubTabHistory('refunds')} 
-                  className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'refunds' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  Product Refunds
-                </button>
+                <button onClick={() => setSubTabHistory('withdrawals')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'withdrawals' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Withdrawals</button>
+                <button onClick={() => setSubTabHistory('deposits')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'deposits' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Deposits</button>
+                <button onClick={() => setSubTabHistory('refunds')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'refunds' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Product Refunds</button>
               </div>
             </div>
-
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   {subTabHistory === 'withdrawals' ? (
-                    <tr>
-                      <th className="p-4">User Info</th>
-                      <th className="p-4">Amount</th>
-                      <th className="p-4">Method & Account</th>
-                      <th className="p-4">Date</th>
-                      <th className="p-4 text-right">Status & Details</th>
-                    </tr>
+                    <tr><th>User Info</th><th>Amount</th><th>Method & Account</th><th>Date</th><th className="text-right">Status & Details</th></tr>
                   ) : subTabHistory === 'deposits' ? (
-                    <tr>
-                      <th className="p-4">User Info</th>
-                      <th className="p-4">Amount</th>
-                      <th className="p-4">Method & Trx ID</th>
-                      <th className="p-4">Date</th>
-                      <th className="p-4 text-right">Status & Details</th>
-                    </tr>
+                    <tr><th>User Info</th><th>Amount</th><th>Method & Trx ID</th><th>Date</th><th className="text-right">Status & Details</th></tr>
                   ) : (
-                    <tr>
-                      <th className="p-4">Seller Info</th>
-                      <th className="p-4">Refund Amount</th>
-                      <th className="p-4">Description</th>
-                      <th className="p-4 text-right">Date & Status</th>
-                    </tr>
+                    <tr><th>Seller Info</th><th>Refund Amount</th><th>Description</th><th className="text-right">Date & Status</th></tr>
                   )}
                 </thead>
                 <tbody>
-                  {subTabHistory === 'withdrawals' && historyWithdrawals.length > 0 && historyWithdrawals.map(w => (
+                  {subTabHistory === 'withdrawals' && historyWithdrawals.map(w => (
                     <tr key={w.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4">
-                        <p className="font-bold text-gray-700">{w.name}</p>
-                        <p className="text-xs text-gray-500">{w.email}</p>
-                      </td>
+                      <td className="p-4"><p className="font-bold text-gray-700">{w.name}</p><p className="text-xs text-gray-500">{w.email}</p></td>
                       <td className="p-4 text-red-600 font-bold">${w.amount}</td>
-                      <td className="p-4">
-                        <p className="font-bold text-gray-700">{w.payment_method}</p>
-                        <p className="text-xs text-gray-500 max-w-[200px] truncate">{w.account_details}</p>
-                      </td>
+                      <td className="p-4"><p className="font-bold text-gray-700">{w.payment_method}</p><p className="text-xs text-gray-500 max-w-[200px] truncate">{w.account_details}</p></td>
                       <td className="p-4 text-gray-600 text-xs">{new Date(w.created_at).toLocaleDateString()}</td>
                       <td className="p-4 text-right flex flex-col items-end gap-1">
                         {renderStatusBadge(w.status)}
-                        <button onClick={() => openTrxDetails(w, 'withdrawal')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 mt-1">
-                          <Eye size={12}/> View Details
-                        </button>
+                        <button onClick={() => openTrxDetails(w, 'withdrawal')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 mt-1"><Eye size={12}/> View Details</button>
                       </td>
                     </tr>
                   ))}
-                  
-                  {subTabHistory === 'withdrawals' && historyWithdrawals.length === 0 && (
-                    <tr><td colSpan="5" className="p-8 text-center text-gray-500">No withdrawal history found.</td></tr>
-                  )}
-
-                  {subTabHistory === 'deposits' && historyDeposits.length > 0 && historyDeposits.map(d => (
+                  {subTabHistory === 'deposits' && historyDeposits.map(d => (
                     <tr key={d.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4">
-                        <p className="font-bold text-gray-700">{d.name}</p>
-                        <p className="text-xs text-gray-500">{d.email}</p>
-                      </td>
+                      <td className="p-4"><p className="font-bold text-gray-700">{d.name}</p><p className="text-xs text-gray-500">{d.email}</p></td>
                       <td className="p-4 text-green-600 font-bold">${d.amount}</td>
-                      <td className="p-4">
-                        <p className="font-bold text-gray-700">{d.payment_method}</p>
-                        <p className="text-xs text-gray-500 font-mono">{d.transaction_id}</p>
-                      </td>
+                      <td className="p-4"><p className="font-bold text-gray-700">{d.payment_method}</p><p className="text-xs text-gray-500 font-mono">{d.transaction_id}</p></td>
                       <td className="p-4 text-gray-600 text-xs">{new Date(d.created_at).toLocaleDateString()}</td>
                       <td className="p-4 text-right flex flex-col items-end gap-1">
                         {renderStatusBadge(d.status)}
-                        <button onClick={() => openTrxDetails(d, 'deposit')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 mt-1">
-                          <Eye size={12}/> View Details
-                        </button>
+                        <button onClick={() => openTrxDetails(d, 'deposit')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 mt-1"><Eye size={12}/> View Details</button>
                       </td>
                     </tr>
                   ))}
-
-                  {subTabHistory === 'deposits' && historyDeposits.length === 0 && (
-                    <tr><td colSpan="5" className="p-8 text-center text-gray-500">No deposit history found.</td></tr>
-                  )}
-
-                  {subTabHistory === 'refunds' && historyRefunds.length > 0 && historyRefunds.map(r => (
+                  {subTabHistory === 'refunds' && historyRefunds.map(r => (
                     <tr key={r.id} className="border-b hover:bg-gray-50 bg-red-50/20">
-                      <td className="p-4">
-                        <p className="font-bold text-gray-700">{r.name}</p>
-                        <p className="text-xs text-gray-500">{r.email}</p>
-                      </td>
+                      <td className="p-4"><p className="font-bold text-gray-700">{r.name}</p><p className="text-xs text-gray-500">{r.email}</p></td>
                       <td className="p-4 text-green-600 font-bold">+${Number(r.amount).toFixed(2)}</td>
-                      <td className="p-4">
-                        <p className="text-sm text-gray-700 italic">{r.description}</p>
-                      </td>
-                      <td className="p-4 text-right">
-                        <span className="block text-gray-600 text-xs mb-1">{new Date(r.created_at).toLocaleDateString()}</span>
-                        {renderStatusBadge(r.status)}
-                      </td>
+                      <td className="p-4"><p className="text-sm text-gray-700 italic">{r.description}</p></td>
+                      <td className="p-4 text-right"><span className="block text-gray-600 text-xs mb-1">{new Date(r.created_at).toLocaleDateString()}</span>{renderStatusBadge(r.status)}</td>
                     </tr>
                   ))}
-
-                  {subTabHistory === 'refunds' && historyRefunds.length === 0 && (
-                    <tr><td colSpan="4" className="p-8 text-center text-gray-500">No product refund history found.</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* SETTINGS TAB */}
+        {/* 🔥 DYNAMIC SETTINGS TAB (Manual Inputs + Data Table) */}
         {activeTab === 'settings' && (
-          <div className="bg-white rounded-xl shadow-sm border p-6 animate-fade-in-up mt-6 max-w-3xl mx-auto">
-            <h3 className="font-bold text-xl text-gray-800 mb-6 border-b pb-2">Payment Receiving Accounts</h3>
-            <div className="space-y-6">
-              {paymentSettings.map(setting => (
-                <div key={setting.id} className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <div className="w-full md:w-1/4">
-                    <label className="block text-sm font-bold text-gray-600 mb-1">Method</label>
-                    <input type="text" readOnly value={setting.method_name} className="w-full p-2 bg-gray-200 border rounded font-semibold text-gray-700 outline-none" />
+          <div className="space-y-8 animate-fade-in-up mt-6 max-w-5xl mx-auto">
+            
+            {/* 1. Dynamic Tariffs & Fees Configuration Form */}
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-bold text-xl text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                <Settings size={22} className="text-[#0066ff]" /> Dynamic Tariffs & Fee Configuration
+              </h3>
+              <p className="text-xs text-gray-500 mb-6 font-semibold">
+                Type Country and Platform to automatically fetch, configure, or update active system parameters using UPSERT logic.
+              </p>
+
+              <form onSubmit={handleSaveFeeConfig} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                  <div>
+                    <label className="block text-xs font-black uppercase text-gray-600 mb-1">Target Country</label>
+                    <input 
+                      type="text" required placeholder="e.g. USA, India, Bangladesh..."
+                      value={feeConfig.country}
+                      onChange={(e) => handleFeeSelectorChange('country', e.target.value)}
+                      onBlur={handleFeeBlur}
+                      className="w-full p-2.5 bg-white border rounded-lg font-bold text-sm text-gray-800 outline-none focus:border-[#0066ff]"
+                    />
                   </div>
-                  <div className="w-full md:w-2/4">
-                    <label className="block text-sm font-bold text-gray-600 mb-1">Account Details / Wallet Address</label>
-                    <input type="text" defaultValue={setting.account_details} id={`setting-${setting.id}`} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
-                  </div>
-                  <div className="w-full md:w-1/4">
-                    <button onClick={() => updateSetting(setting.id, document.getElementById(`setting-${setting.id}`).value)} className="w-full bg-gray-800 text-white p-2 rounded font-bold hover:bg-gray-900">Save Changes</button>
+                  <div>
+                    <label className="block text-xs font-black uppercase text-gray-600 mb-1">Target Platform</label>
+                    <input 
+                      type="text" required placeholder="e.g. Amazon, Daraz, Shopee..."
+                      value={feeConfig.platform}
+                      onChange={(e) => handleFeeSelectorChange('platform', e.target.value)}
+                      onBlur={handleFeeBlur}
+                      className="w-full p-2.5 bg-white border rounded-lg font-bold text-sm text-gray-800 outline-none focus:border-[#0066ff]"
+                    />
                   </div>
                 </div>
-              ))}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative">
+                  {feeLoading && (
+                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center text-sm font-bold text-[#0066ff]">
+                      Fetching active configurations...
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Platform Charge (%)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.platform_charge} onChange={(e) => setFeeConfig({...feeConfig, platform_charge: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Buyer Reward (Fixed Amt)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_reward} onChange={(e) => setFeeConfig({...feeConfig, buyer_reward: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Refund Fee (%)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_refund_fee} onChange={(e) => setFeeConfig({...feeConfig, buyer_refund_fee: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Seller Deposit Fee (%)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_deposit_fee} onChange={(e) => setFeeConfig({...feeConfig, seller_deposit_fee: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Seller Withdraw Fee (%)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_withdrawal_fee} onChange={(e) => setFeeConfig({...feeConfig, seller_withdrawal_fee: e.target.value})} />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button type="submit" disabled={feeLoading || !feeConfig.country || !feeConfig.platform} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50">
+                    Save & Apply Tariffs
+                  </button>
+                </div>
+              </form>
             </div>
+
+            {/* 2. SAVED CONFIGURATIONS DATA TABLE */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                <h3 className="font-bold text-gray-700">All Saved Fee Configurations</h3>
+                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">{allFeeConfigs.length} Total</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-100 text-gray-600">
+                    <tr>
+                      <th className="p-3">Country</th><th className="p-3">Platform</th><th className="p-3 text-center">Charge (%)</th>
+                      <th className="p-3 text-center">Reward (Fixed)</th><th className="p-3 text-center">Refund Fee (%)</th>
+                      <th className="p-3 text-center">Dep. Fee (%)</th><th className="p-3 text-center">W.Draw Fee (%)</th>
+                      <th className="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allFeeConfigs.map(conf => (
+                      <tr key={`${conf.country}-${conf.platform}`} className="border-b hover:bg-gray-50 transition-colors">
+                        <td className="p-3 font-bold text-gray-800 capitalize">{conf.country}</td>
+                        <td className="p-3 font-bold text-indigo-700 capitalize">{conf.platform}</td>
+                        <td className="p-3 text-center font-semibold">{conf.platform_charge}%</td>
+                        <td className="p-3 text-center font-semibold text-green-600">${conf.buyer_reward}</td>
+                        <td className="p-3 text-center font-semibold text-red-500">{conf.buyer_refund_fee}%</td>
+                        <td className="p-3 text-center font-semibold">{conf.seller_deposit_fee}%</td>
+                        <td className="p-3 text-center font-semibold">{conf.seller_withdrawal_fee}%</td>
+                        <td className="p-3 text-right flex items-center justify-end gap-1">
+                          <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] hover:bg-blue-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Edit">
+                            <Edit size={16}/>
+                          </button>
+                          <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Delete">
+                            <Trash2 size={16}/>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {allFeeConfigs.length === 0 && <tr><td colSpan="8" className="p-6 text-center text-gray-500">No custom fees configured yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 3. Payment Receiving Accounts */}
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-bold text-xl text-gray-800 mb-6 border-b pb-2">Payment Receiving Accounts</h3>
+              <div className="space-y-6">
+                {paymentSettings.map(setting => (
+                  <div key={setting.id} className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="w-full md:w-1/4">
+                      <label className="block text-sm font-bold text-gray-600 mb-1">Method</label>
+                      <input type="text" readOnly value={setting.method_name} className="w-full p-2 bg-gray-200 border rounded font-semibold text-gray-700 outline-none" />
+                    </div>
+                    <div className="w-full md:w-2/4">
+                      <label className="block text-sm font-bold text-gray-600 mb-1">Account Details / Wallet Address</label>
+                      <input type="text" defaultValue={setting.account_details} id={`setting-${setting.id}`} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
+                    </div>
+                    <div className="w-full md:w-1/4">
+                      <button onClick={() => updateSetting(setting.id, document.getElementById(`setting-${setting.id}`).value)} className="w-full bg-gray-800 text-white p-2 rounded font-bold hover:bg-gray-900">Save Changes</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -1324,18 +1366,8 @@ export default function AdminDashboard() {
                 <Megaphone size={20} className="text-[#0066ff]"/> Create New Announcement
               </h3>
               <form onSubmit={handleCreateAnnouncement} className="space-y-4">
-                <input 
-                  required type="text" placeholder="Announcement Title" 
-                  className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff]"
-                  value={newAnnouncement.title}
-                  onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
-                />
-                <textarea 
-                  required placeholder="Write your message here..." 
-                  className="w-full p-3 border rounded-xl h-24 outline-none focus:border-[#0066ff]"
-                  value={newAnnouncement.message}
-                  onChange={e => setNewAnnouncement({...newAnnouncement, message: e.target.value})}
-                ></textarea>
+                <input required type="text" placeholder="Announcement Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff]" value={newAnnouncement.title} onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})} />
+                <textarea required placeholder="Write your message here..." className="w-full p-3 border rounded-xl h-24 outline-none focus:border-[#0066ff]" value={newAnnouncement.message} onChange={e => setNewAnnouncement({...newAnnouncement, message: e.target.value})}></textarea>
                 <button type="submit" disabled={isPublishing} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
                   {isPublishing ? 'Publishing...' : 'Publish Announcement'}
                 </button>
@@ -1355,10 +1387,7 @@ export default function AdminDashboard() {
                       <p className="text-sm text-gray-500 mt-1 break-words">{a.message}</p>
                       <p className="text-[10px] text-gray-400 mt-2">{new Date(a.created_at).toLocaleString()}</p>
                     </div>
-                    <button 
-                      onClick={() => handleDeleteAnnouncement(a.id)} 
-                      className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1 shrink-0"
-                    >
+                    <button onClick={() => handleDeleteAnnouncement(a.id)} className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1 shrink-0">
                       <Trash2 size={16} /> Delete
                     </button>
                   </div>
@@ -1377,38 +1406,20 @@ export default function AdminDashboard() {
                 <FileText size={20} className="text-[#0066ff]"/> Publish New Blog Post
               </h3>
               <form onSubmit={handleCreateBlog} className="space-y-4">
-                <input 
-                  required type="text" placeholder="Blog Title" 
-                  className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff]"
-                  value={newBlog.title}
-                  onChange={e => setNewBlog({...newBlog, title: e.target.value})}
-                />
+                <input required type="text" placeholder="Blog Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff]" value={newBlog.title} onChange={e => setNewBlog({...newBlog, title: e.target.value})} />
                 
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Feature Image (Optional)</label>
-                    <input 
-                      type="file" accept="image/*" id="blog-image-upload"
-                      className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                      onChange={e => setBlogImage(e.target.files[0])}
-                    />
+                    <input type="file" accept="image/*" id="blog-image-upload" className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" onChange={e => setBlogImage(e.target.files[0])} />
                   </div>
                   <div className="flex items-center gap-2 md:mt-6">
-                    <input 
-                      type="checkbox" id="publish" className="w-4 h-4 cursor-pointer"
-                      checked={newBlog.is_published}
-                      onChange={e => setNewBlog({...newBlog, is_published: e.target.checked})}
-                    />
+                    <input type="checkbox" id="publish" className="w-4 h-4 cursor-pointer" checked={newBlog.is_published} onChange={e => setNewBlog({...newBlog, is_published: e.target.checked})} />
                     <label htmlFor="publish" className="text-sm font-bold text-gray-700 cursor-pointer">Publish Immediately</label>
                   </div>
                 </div>
 
-                <textarea 
-                  required placeholder="Write the blog content here (Supports HTML/Text)..." 
-                  className="w-full p-3 border rounded-xl h-40 outline-none focus:border-[#0066ff]"
-                  value={newBlog.content}
-                  onChange={e => setNewBlog({...newBlog, content: e.target.value})}
-                ></textarea>
+                <textarea required placeholder="Write the blog content here (Supports HTML/Text)..." className="w-full p-3 border rounded-xl h-40 outline-none focus:border-[#0066ff]" value={newBlog.content} onChange={e => setNewBlog({...newBlog, content: e.target.value})}></textarea>
                 
                 <button type="submit" disabled={isPublishingBlog} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
                   {isPublishingBlog ? 'Publishing...' : <><FileText size={18} /> Publish Blog</>}
@@ -1427,24 +1438,17 @@ export default function AdminDashboard() {
                     {blog.image_url ? (
                       <img src={blog.image_url} alt="blog" className="w-20 h-14 object-cover rounded-lg border bg-gray-100 shrink-0" />
                     ) : (
-                      <div className="w-20 h-14 bg-gray-100 rounded-lg border flex items-center justify-center text-gray-400 shrink-0">
-                        <ImageIcon size={20} />
-                      </div>
+                      <div className="w-20 h-14 bg-gray-100 rounded-lg border flex items-center justify-center text-gray-400 shrink-0"><ImageIcon size={20} /></div>
                     )}
                     <div className="flex-1 min-w-0"> 
                       <h4 className="font-bold text-gray-800 truncate">{blog.title}</h4>
                       <p className="text-xs text-gray-500 line-clamp-1">{blog.content.substring(0, 100)}...</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${blog.is_published ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                          {blog.is_published ? 'Published' : 'Draft'}
-                        </span>
+                        <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${blog.is_published ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{blog.is_published ? 'Published' : 'Draft'}</span>
                         <span className="text-[10px] text-gray-400">{new Date(blog.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => handleDeleteBlog(blog.id)} 
-                      className="bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors flex items-center gap-1 shrink-0"
-                    >
+                    <button onClick={() => handleDeleteBlog(blog.id)} className="bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors flex items-center gap-1 shrink-0">
                       <Trash2 size={14} /> Delete
                     </button>
                   </div>
@@ -1459,46 +1463,28 @@ export default function AdminDashboard() {
         {showTicketViewModal && selectedTicket && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up">
-              
-              {/* Header */}
               <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                  <div>
                     <h3 className="font-bold text-gray-800 text-sm pr-2">Ticket: {selectedTicket.subject}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-0.5 inline-block rounded text-[10px] font-bold uppercase tracking-wider ${
-                         selectedTicket.status === 'open' ? 'bg-yellow-100 text-yellow-700' :
-                         selectedTicket.status === 'answered' ? 'bg-green-100 text-green-700' :
-                         'bg-gray-200 text-gray-600'
-                      }`}>
-                         Status: {selectedTicket.status}
-                      </span>
+                      <span className={`px-2 py-0.5 inline-block rounded text-[10px] font-bold uppercase tracking-wider ${selectedTicket.status === 'open' ? 'bg-yellow-100 text-yellow-700' : selectedTicket.status === 'answered' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>Status: {selectedTicket.status}</span>
                       <span className="text-[10px] text-gray-500 font-bold uppercase bg-white border px-1.5 py-0.5 rounded">User: {selectedTicket.user_name}</span>
                     </div>
                  </div>
                  <button onClick={() => setShowTicketViewModal(false)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm rounded-full p-1 border border-gray-200 shrink-0"><X size={20} /></button>
               </div>
 
-              {/* Chat Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white relative">
-                 
-                 {/* Main Ticket Message (By User) */}
                  <div className="flex flex-col items-start">
-                    <div className="max-w-[85%] bg-gray-100 border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-sm">
-                       {selectedTicket.message}
-                    </div>
+                    <div className="max-w-[85%] bg-gray-100 border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-sm">{selectedTicket.message}</div>
                     <span className="text-[10px] text-gray-400 mt-1 font-bold">{selectedTicket.user_name} • {new Date(selectedTicket.created_at).toLocaleString()}</span>
                  </div>
-
                  {repliesLoading ? (
                    <div className="text-center text-xs text-gray-400 py-4 animate-pulse">Loading replies...</div>
                  ) : (
                    ticketReplies.map(reply => (
                      <div key={reply.id} className={`flex flex-col ${reply.user_role === 'admin' ? 'items-end' : 'items-start'}`}>
-                        <div className={`max-w-[85%] p-3 rounded-2xl shadow-sm text-sm ${
-                          reply.user_role === 'admin' 
-                            ? 'bg-[#0066ff] text-white rounded-tr-sm' 
-                            : 'bg-gray-100 border border-gray-200 text-gray-800 rounded-tl-sm'
-                        }`}>
+                        <div className={`max-w-[85%] p-3 rounded-2xl shadow-sm text-sm ${reply.user_role === 'admin' ? 'bg-[#0066ff] text-white rounded-tr-sm' : 'bg-gray-100 border border-gray-200 text-gray-800 rounded-tl-sm'}`}>
                            {reply.message}
                         </div>
                         <span className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
@@ -1509,48 +1495,28 @@ export default function AdminDashboard() {
                  )}
               </div>
 
-              {/* Reply Input Area */}
               <div className="p-3 border-t border-gray-100 bg-gray-50 flex flex-col gap-2">
                  {selectedTicket.status === 'closed' ? (
-                    <div className="text-center py-2 text-sm font-bold text-gray-500 bg-gray-200 rounded-xl border border-gray-300">
-                      This ticket is closed and resolved.
-                    </div>
+                    <div className="text-center py-2 text-sm font-bold text-gray-500 bg-gray-200 rounded-xl border border-gray-300">This ticket is closed and resolved.</div>
                  ) : (
                     <>
                       <form onSubmit={handleReplyTicket} className="flex gap-2">
-                        <input 
-                           type="text" 
-                           required 
-                           value={replyMessage}
-                           onChange={e => setReplyMessage(e.target.value)}
-                           placeholder="Type your reply to the user..." 
-                           className="flex-1 p-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#0066ff] focus:ring-1 focus:ring-[#0066ff] transition-all"
-                        />
-                        <button type="submit" disabled={isSubmittingTicket} className="bg-[#0066ff] text-white p-3 rounded-xl shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center">
-                           <Send size={18} className={isSubmittingTicket ? 'animate-pulse' : ''} />
-                        </button>
+                        <input type="text" required value={replyMessage} onChange={e => setReplyMessage(e.target.value)} placeholder="Type your reply to the user..." className="flex-1 p-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#0066ff] focus:ring-1 focus:ring-[#0066ff] transition-all" />
+                        <button type="submit" disabled={isSubmittingTicket} className="bg-[#0066ff] text-white p-3 rounded-xl shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"><Send size={18} className={isSubmittingTicket ? 'animate-pulse' : ''} /></button>
                       </form>
-                      <button 
-                        onClick={() => handleCloseTicket(selectedTicket.id)}
-                        className="w-full mt-2 text-xs font-bold text-gray-500 bg-white border border-gray-300 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                         Mark Ticket as Resolved & Close
-                      </button>
+                      <button onClick={() => handleCloseTicket(selectedTicket.id)} className="w-full mt-2 text-xs font-bold text-gray-500 bg-white border border-gray-300 py-2 rounded-lg hover:bg-gray-100 transition-colors">Mark Ticket as Resolved & Close</button>
                     </>
                  )}
               </div>
-
             </div>
           </div>
         )}
 
-        {/* APPROVE WITHDRAWAL MODAL WITH PROOFS z-[80] */}
+        {/* APPROVE WITHDRAWAL MODAL */}
         {showApproveWithdrawalModal && withdrawalToApprove && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
             <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
-              <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-                <Wallet className="text-green-500" /> Confirm Payment Sent
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2"><Wallet className="text-green-500" /> Confirm Payment Sent</h3>
               <p className="text-sm text-gray-600 mb-4">You are marking a withdrawal of <b className="text-red-600">${withdrawalToApprove.amount}</b> to <b className="text-gray-800">{withdrawalToApprove.name}</b> as Paid.</p>
               
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
@@ -1577,14 +1543,12 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TRANSACTION DETAILS MODAL z-[80] */}
+        {/* TRANSACTION DETAILS MODAL */}
         {showTrxDetailsModal && selectedTrx && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
             <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm animate-fade-in-up">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 capitalize">
-                  <Wallet size={20} className={trxType === 'deposit' ? 'text-green-500' : 'text-red-500'}/> {trxType} Details
-                </h3>
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 capitalize"><Wallet size={20} className={trxType === 'deposit' ? 'text-green-500' : 'text-red-500'}/> {trxType} Details</h3>
                 <button onClick={() => setShowTrxDetailsModal(false)} className="text-gray-400 hover:text-red-500"><X size={20} /></button>
               </div>
               
@@ -1597,25 +1561,14 @@ export default function AdminDashboard() {
                 <div className="w-full h-px bg-gray-200"></div>
                 
                 {trxType === 'withdrawal' && selectedTrx.account_details && (
-                  <>
-                    <div className="bg-white p-2 border rounded">
-                      <span className="font-bold text-gray-500 block text-xs mb-1">To Account:</span>
-                      <span className="font-mono text-xs break-all">{selectedTrx.account_details}</span>
-                    </div>
-                  </>
+                  <div className="bg-white p-2 border rounded"><span className="font-bold text-gray-500 block text-xs mb-1">To Account:</span><span className="font-mono text-xs break-all">{selectedTrx.account_details}</span></div>
                 )}
 
                 {(selectedTrx.transaction_id || selectedTrx.screenshot_url) && (
                   <div className="bg-blue-50 border border-blue-100 p-3 rounded mt-2">
                     <p className="font-bold text-blue-800 text-xs mb-2 uppercase border-b border-blue-200 pb-1">Payment Proof</p>
-                    {selectedTrx.transaction_id && (
-                       <p className="text-xs mb-2"><span className="font-semibold">Trx ID:</span> <span className="font-mono bg-white px-1 border rounded">{selectedTrx.transaction_id}</span></p>
-                    )}
-                    {selectedTrx.screenshot_url && (
-                       <a href={selectedTrx.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#0066ff] font-bold hover:underline text-xs bg-white px-2 py-1 rounded border border-blue-200 w-max">
-                         <ImageIcon size={14} /> View Screenshot
-                       </a>
-                    )}
+                    {selectedTrx.transaction_id && <p className="text-xs mb-2"><span className="font-semibold">Trx ID:</span> <span className="font-mono bg-white px-1 border rounded">{selectedTrx.transaction_id}</span></p>}
+                    {selectedTrx.screenshot_url && <a href={selectedTrx.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#0066ff] font-bold hover:underline text-xs bg-white px-2 py-1 rounded border border-blue-200 w-max"><ImageIcon size={14} /> View Screenshot</a>}
                   </div>
                 )}
                 
@@ -1624,10 +1577,7 @@ export default function AdminDashboard() {
                 <div className="w-full h-px bg-gray-200"></div>
                 <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Status:</span> {renderStatusBadge(selectedTrx.status)}</p>
               </div>
-              
-              <div className="mt-6">
-                <button onClick={() => setShowTrxDetailsModal(false)} className="w-full bg-gray-200 text-gray-800 font-bold py-2.5 rounded-xl hover:bg-gray-300 transition-colors">Close</button>
-              </div>
+              <div className="mt-6"><button onClick={() => setShowTrxDetailsModal(false)} className="w-full bg-gray-200 text-gray-800 font-bold py-2.5 rounded-xl hover:bg-gray-300 transition-colors">Close</button></div>
             </div>
           </div>
         )}
@@ -1637,89 +1587,44 @@ export default function AdminDashboard() {
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
             <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  <Scale size={24} className="text-indigo-500"/> Appeal Details
-                </h3>
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Scale size={24} className="text-indigo-500"/> Appeal Details</h3>
                 <button onClick={() => setShowAppealModal(false)} className="text-gray-500 hover:text-red-500"><X size={24} /></button>
               </div>
 
               <div className="space-y-4">
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 relative">
-                  <button 
-                    onClick={() => fetchAndShowUserProfile(selectedAppeal.user_id)} 
-                    className="absolute top-4 right-4 text-[#0066ff] text-xs font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-100 px-2 py-1 rounded"
-                  >
-                    <Eye size={14} /> View Profile
-                  </button>
-
+                  <button onClick={() => fetchAndShowUserProfile(selectedAppeal.user_id)} className="absolute top-4 right-4 text-[#0066ff] text-xs font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-100 px-2 py-1 rounded"><Eye size={14} /> View Profile</button>
                   <p className="font-bold text-gray-800 text-lg">{selectedAppeal.name}</p>
                   <p className="text-sm text-gray-500">{selectedAppeal.email}</p>
-                  <div className="flex gap-2 mt-2">
-                    <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-bold uppercase border border-gray-300">
-                      {selectedAppeal.role}
-                    </span>
-                    {renderStatusBadge(selectedAppeal.status)}
-                  </div>
+                  <div className="flex gap-2 mt-2"><span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-bold uppercase border border-gray-300">{selectedAppeal.role}</span>{renderStatusBadge(selectedAppeal.status)}</div>
                 </div>
 
                 <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                  <p className="font-bold text-indigo-800 mb-2 text-sm">
-                    {selectedAppeal.appeal_type === 'order_dispute' ? 'Seller Reason for Rejecting Review:' : 'Appeal Message:'}
-                  </p>
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto bg-white p-3 rounded-lg border border-indigo-50">
-                    {selectedAppeal.reason}
-                  </div>
+                  <p className="font-bold text-indigo-800 mb-2 text-sm">{selectedAppeal.appeal_type === 'order_dispute' ? 'Seller Reason for Rejecting Review:' : 'Appeal Message:'}</p>
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto bg-white p-3 rounded-lg border border-indigo-50">{selectedAppeal.reason}</div>
                 </div>
 
                 {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type === 'order_dispute' && (
                   <div className="mt-4">
-                    <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-1">
-                      <AlertTriangle size={16} className="text-orange-500"/> Admin Decision Comment
-                    </label>
-                    <textarea 
-                      className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-20 text-sm"
-                      placeholder="Explain why you are favoring the buyer or seller. This will be sent to the user..."
-                      value={disputeComment}
-                      onChange={(e) => setDisputeComment(e.target.value)}
-                    ></textarea>
+                    <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-1"><AlertTriangle size={16} className="text-orange-500"/> Admin Decision Comment</label>
+                    <textarea className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-20 text-sm" placeholder="Explain why you are favoring the buyer or seller. This will be sent to the user..." value={disputeComment} onChange={(e) => setDisputeComment(e.target.value)}></textarea>
                     <p className="text-[10px] text-gray-500 mt-1">Required to resolve the dispute.</p>
                   </div>
                 )}
               </div>
               
               <div className="mt-6 flex flex-wrap justify-end gap-2 pt-4 border-t border-gray-200">
-                <button 
-                  onClick={() => setShowAppealModal(false)} 
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto"
-                >
-                  Close
-                </button>
-                
+                <button onClick={() => setShowAppealModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close</button>
                 {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type !== 'order_dispute' && (
                   <>
-                    <button 
-                      onClick={() => { rejectAppeal(selectedAppeal.id); setShowAppealModal(false); }} 
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors"
-                    >
-                      Reject
-                    </button>
-                    <button 
-                      onClick={() => { approveAppeal(selectedAppeal.id); setShowAppealModal(false); }} 
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors"
-                    >
-                      Approve & Unban
-                    </button>
+                    <button onClick={() => { rejectAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors">Reject</button>
+                    <button onClick={() => { approveAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors">Approve & Unban</button>
                   </>
                 )}
-
                 {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type === 'order_dispute' && (
                   <>
-                    <button onClick={() => handleDisputeFavorSeller(selectedAppeal.id, selectedAppeal.application_id)} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm text-xs">
-                      Favor Seller (Reject Order)
-                    </button>
-                    <button onClick={() => handleDisputeFavorBuyer(selectedAppeal.id, selectedAppeal.application_id)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm text-xs">
-                      Favor Buyer (Go to Refund)
-                    </button>
+                    <button onClick={() => handleDisputeFavorSeller(selectedAppeal.id, selectedAppeal.application_id)} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm text-xs">Favor Seller (Reject Order)</button>
+                    <button onClick={() => handleDisputeFavorBuyer(selectedAppeal.id, selectedAppeal.application_id)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm text-xs">Favor Buyer (Go to Refund)</button>
                   </>
                 )}
               </div>
@@ -1732,9 +1637,7 @@ export default function AdminDashboard() {
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
             <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  <User size={24} className="text-blue-500"/> User Profile
-                </h3>
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><User size={24} className="text-blue-500"/> User Profile</h3>
                 <button onClick={() => setShowUserProfileModal(false)} className="text-gray-500 hover:text-red-500"><X size={24} /></button>
               </div>
 
@@ -1751,26 +1654,17 @@ export default function AdminDashboard() {
 
                 {selectedUserProfile.role === 'buyer' && (
                   <div className="grid grid-cols-3 gap-3">
-                    <div 
-                      onClick={() => setProfileViewMode(profileViewMode === 'pending' ? 'details' : 'pending')}
-                      className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'pending' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : 'bg-blue-50 border-blue-100'}`}
-                    >
+                    <div onClick={() => setProfileViewMode(profileViewMode === 'pending' ? 'details' : 'pending')} className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'pending' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : 'bg-blue-50 border-blue-100'}`}>
                       <Clock size={18} className="text-blue-500 mb-1" />
                       <p className="text-xl font-black text-blue-700 leading-none">{userAppStats.active}</p>
                       <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">Pending</p>
                     </div>
-                    <div 
-                      onClick={() => setProfileViewMode(profileViewMode === 'success' ? 'details' : 'success')}
-                      className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'success' ? 'bg-green-100 border-green-300 ring-2 ring-green-500' : 'bg-green-50 border-green-100'}`}
-                    >
+                    <div onClick={() => setProfileViewMode(profileViewMode === 'success' ? 'details' : 'success')} className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'success' ? 'bg-green-100 border-green-300 ring-2 ring-green-500' : 'bg-green-50 border-green-100'}`}>
                       <CheckCircle size={18} className="text-green-500 mb-1" />
                       <p className="text-xl font-black text-green-700 leading-none">{userAppStats.success}</p>
                       <p className="text-[10px] font-bold text-green-500 uppercase mt-1">Success</p>
                     </div>
-                    <div 
-                      onClick={() => setProfileViewMode(profileViewMode === 'failed' ? 'details' : 'failed')}
-                      className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'failed' ? 'bg-red-100 border-red-300 ring-2 ring-red-500' : 'bg-red-50 border-red-100'}`}
-                    >
+                    <div onClick={() => setProfileViewMode(profileViewMode === 'failed' ? 'details' : 'failed')} className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'failed' ? 'bg-red-100 border-red-300 ring-2 ring-red-500' : 'bg-red-50 border-red-100'}`}>
                       <XCircle size={18} className="text-red-500 mb-1" />
                       <p className="text-xl font-black text-red-700 leading-none">{userAppStats.failed}</p>
                       <p className="text-[10px] font-bold text-red-500 uppercase mt-1">Failed</p>
@@ -1780,34 +1674,22 @@ export default function AdminDashboard() {
 
                 {selectedUserProfile.role === 'seller' && (
                   <div className="grid grid-cols-4 gap-2">
-                    <div 
-                      onClick={() => setProfileViewMode(profileViewMode === 'listed' ? 'details' : 'listed')}
-                      className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'listed' ? 'bg-purple-100 border-purple-300 ring-2 ring-purple-500' : 'bg-purple-50 border-purple-100'}`}
-                    >
+                    <div onClick={() => setProfileViewMode(profileViewMode === 'listed' ? 'details' : 'listed')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'listed' ? 'bg-purple-100 border-purple-300 ring-2 ring-purple-500' : 'bg-purple-50 border-purple-100'}`}>
                       <Package size={16} className="text-purple-500 mb-1" />
                       <p className="text-lg font-black text-purple-700 leading-none">{userAppStats.listed}</p>
                       <p className="text-[9px] font-bold text-purple-500 uppercase mt-1">Listed</p>
                     </div>
-                    <div 
-                      onClick={() => setProfileViewMode(profileViewMode === 'pending' ? 'details' : 'pending')}
-                      className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'pending' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : 'bg-blue-50 border-blue-100'}`}
-                    >
+                    <div onClick={() => setProfileViewMode(profileViewMode === 'pending' ? 'details' : 'pending')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'pending' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : 'bg-blue-50 border-blue-100'}`}>
                       <Clock size={16} className="text-blue-500 mb-1" />
                       <p className="text-lg font-black text-blue-700 leading-none">{userAppStats.active}</p>
                       <p className="text-[9px] font-bold text-blue-500 uppercase mt-1">Pending</p>
                     </div>
-                    <div 
-                      onClick={() => setProfileViewMode(profileViewMode === 'success' ? 'details' : 'success')}
-                      className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'success' ? 'bg-green-100 border-green-300 ring-2 ring-green-500' : 'bg-green-50 border-green-100'}`}
-                    >
+                    <div onClick={() => setProfileViewMode(profileViewMode === 'success' ? 'details' : 'success')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'success' ? 'bg-green-100 border-green-300 ring-2 ring-green-500' : 'bg-green-50 border-green-100'}`}>
                       <CheckCircle size={16} className="text-green-500 mb-1" />
                       <p className="text-lg font-black text-green-700 leading-none">{userAppStats.success}</p>
                       <p className="text-[9px] font-bold text-green-500 uppercase mt-1">Success</p>
                     </div>
-                    <div 
-                      onClick={() => setProfileViewMode(profileViewMode === 'failed' ? 'details' : 'failed')}
-                      className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'failed' ? 'bg-red-100 border-red-300 ring-2 ring-red-500' : 'bg-red-50 border-red-100'}`}
-                    >
+                    <div onClick={() => setProfileViewMode(profileViewMode === 'failed' ? 'details' : 'failed')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'failed' ? 'bg-red-100 border-red-300 ring-2 ring-red-500' : 'bg-red-50 border-red-100'}`}>
                       <AlertTriangle size={16} className="text-red-500 mb-1" />
                       <p className="text-lg font-black text-red-700 leading-none">{userAppStats.failed}</p>
                       <p className="text-[9px] font-bold text-red-500 uppercase mt-1">Issues</p>
@@ -1825,67 +1707,32 @@ export default function AdminDashboard() {
                     <p><span className="font-bold text-gray-700 w-32 inline-block">Telegram:</span> {selectedUserProfile.telegram_account || 'N/A'}</p>
                     <p><span className="font-bold text-gray-700 w-32 inline-block">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
                     
-                    {/* 🔥 PREMIUM FEATURE: Display Last Login Location & IP in Modal */}
                     {selectedUserProfile.last_ip && (
                       <div className="mt-2 border-t border-indigo-100 pt-2 space-y-1.5">
-                        <p className="flex items-center">
-                          <span className="font-bold text-gray-700 w-32 inline-block">Login Location:</span>
-                          <span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">🌍 {selectedUserProfile.ip_location || 'Unknown'}</span>
-                        </p>
-                        <p className="flex items-center">
-                          <span className="font-bold text-gray-700 w-32 inline-block">Last Login IP:</span> 
-                          <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded mr-2 text-xs">{selectedUserProfile.last_ip}</span>
+                        <p className="flex items-center"><span className="font-bold text-gray-700 w-32 inline-block">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">🌍 {selectedUserProfile.ip_location || 'Unknown'}</span></p>
+                        <p className="flex items-center"><span className="font-bold text-gray-700 w-32 inline-block">Last Login IP:</span><span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded mr-2 text-xs">{selectedUserProfile.last_ip}</span>
                           {selectedUserProfile.last_ip !== 'Unknown' && (
-                            <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 inline-flex bg-blue-50 border border-blue-200 px-2 py-1 rounded">
-                              <MapPin size={12} /> Track Map
-                            </a>
+                            <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 inline-flex bg-blue-50 border border-blue-200 px-2 py-1 rounded"><MapPin size={12} /> Track Map</a>
                           )}
                         </p>
                       </div>
                     )}
-
                     {selectedUserProfile.amazon_profile_url && (
-                      <div className="mt-3">
-                        <a href={selectedUserProfile.amazon_profile_url} target="_blank" rel="noreferrer" className="block text-center bg-white border border-indigo-200 text-indigo-600 py-2 rounded-lg font-bold hover:bg-indigo-100">
-                          Open Amazon Profile ↗
-                        </a>
-                      </div>
+                      <div className="mt-3"><a href={selectedUserProfile.amazon_profile_url} target="_blank" rel="noreferrer" className="block text-center bg-white border border-indigo-200 text-indigo-600 py-2 rounded-lg font-bold hover:bg-indigo-100">Open Amazon Profile ↗</a></div>
                     )}
                   </div>
                 ) : profileViewMode === 'listed' ? (
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 max-h-60 overflow-y-auto">
-                     <div className="flex justify-between items-center mb-3 sticky top-0 bg-gray-50 pb-2 border-b">
-                       <h4 className="font-bold text-gray-700 capitalize flex items-center gap-1">
-                         <Package size={16} className="text-purple-500"/> Listed Products
-                       </h4>
-                       <button onClick={() => setProfileViewMode('details')} className="text-xs text-blue-600 hover:underline font-bold">
-                         Back to Details
-                       </button>
-                     </div>
+                     <div className="flex justify-between items-center mb-3 sticky top-0 bg-gray-50 pb-2 border-b"><h4 className="font-bold text-gray-700 capitalize flex items-center gap-1"><Package size={16} className="text-purple-500"/> Listed Products</h4><button onClick={() => setProfileViewMode('details')} className="text-xs text-blue-600 hover:underline font-bold">Back to Details</button></div>
                      <div className="space-y-2">
                        {sellerProductsList.map(p => (
-                          <div 
-                            key={p.id} 
-                            onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }}
-                            className="flex gap-3 bg-white p-2 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group"
-                          >
-                             {p.image_url ? (
-                               <img src={p.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5" />
-                             ) : (
-                               <div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400">No Img</div>
-                             )}
-                             <div className="flex-1 min-w-0">
-                               <p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors" title={p.product_name}>{p.product_name || p.store_name}</p>
-                               <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Price: ${p.price} | Target: {p.required_orders}</p>
-                             </div>
-                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 ${p.status === 'approved' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'stopped' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                               {p.status}
-                             </span>
+                          <div key={p.id} onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }} className="flex gap-3 bg-white p-2 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
+                             {p.image_url ? (<img src={p.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400">No Img</div>)}
+                             <div className="flex-1 min-w-0"><p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{p.product_name || p.store_name}</p><p className="text-[10px] text-gray-500 font-semibold mt-0.5">Price: ${p.price} | Target: {p.required_orders}</p></div>
+                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 ${p.status === 'approved' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'stopped' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
                           </div>
                        ))}
-                       {sellerProductsList.length === 0 && (
-                          <div className="text-center py-6 text-gray-400 text-xs font-semibold">No listed products found.</div>
-                       )}
+                       {sellerProductsList.length === 0 && <div className="text-center py-6 text-gray-400 text-xs font-semibold">No listed products found.</div>}
                      </div>
                   </div>
                 ) : (
@@ -1897,11 +1744,8 @@ export default function AdminDashboard() {
                          {profileViewMode === 'failed' && <AlertTriangle size={16} className="text-red-500"/>}
                          {profileViewMode} Orders
                        </h4>
-                       <button onClick={() => setProfileViewMode('details')} className="text-xs text-blue-600 hover:underline font-bold">
-                         Back to Details
-                       </button>
+                       <button onClick={() => setProfileViewMode('details')} className="text-xs text-blue-600 hover:underline font-bold">Back to Details</button>
                      </div>
-                     
                      <div className="space-y-2">
                        {selectedUserApps.filter(app => {
                            if(profileViewMode === 'pending') return !['completed', 'rejected'].includes(app.status);
@@ -1909,27 +1753,13 @@ export default function AdminDashboard() {
                            if(profileViewMode === 'failed') return app.status === 'rejected';
                            return false;
                        }).map(app => (
-                          <div 
-                            key={app.id} 
-                            onClick={() => { setSelectedAppDetails(app); setShowAppDetailsModal(true); }}
-                            className="flex gap-3 bg-white p-2 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group"
-                          >
-                             {app.image_url ? (
-                               <img src={app.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5" />
-                             ) : (
-                               <div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400">No Img</div>
-                             )}
+                          <div key={app.id} onClick={() => { setSelectedAppDetails(app); setShowAppDetailsModal(true); }} className="flex gap-3 bg-white p-2 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
+                             {app.image_url ? (<img src={app.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400">No Img</div>)}
                              <div className="flex-1 min-w-0">
-                               <p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors" title={app.product_name}>{app.product_name}</p>
-                               {selectedUserProfile.role === 'seller' ? (
-                                 <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Buyer: {app.buyer_email}</p>
-                               ) : (
-                                 <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Reward: <span className="text-green-600 font-bold">${app.reward}</span></p>
-                               )}
+                               <p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{app.product_name}</p>
+                               {selectedUserProfile.role === 'seller' ? (<p className="text-[10px] text-gray-500 font-semibold mt-0.5">Buyer: {app.buyer_email}</p>) : (<p className="text-[10px] text-gray-500 font-semibold mt-0.5">Reward: <span className="text-green-600 font-bold">${app.reward}</span></p>)}
                              </div>
-                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 ${app.status === 'completed' ? 'bg-green-100 text-green-700' : app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                               {app.status.replace('_', ' ')}
-                             </span>
+                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 ${app.status === 'completed' ? 'bg-green-100 text-green-700' : app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{app.status.replace('_', ' ')}</span>
                           </div>
                        ))}
                        {selectedUserApps.filter(app => {
@@ -1937,17 +1767,12 @@ export default function AdminDashboard() {
                            if(profileViewMode === 'success') return app.status === 'completed';
                            if(profileViewMode === 'failed') return app.status === 'rejected';
                            return false;
-                       }).length === 0 && (
-                          <div className="text-center py-6 text-gray-400 text-xs font-semibold">No {profileViewMode} orders found.</div>
-                       )}
+                       }).length === 0 && <div className="text-center py-6 text-gray-400 text-xs font-semibold">No {profileViewMode} orders found.</div>}
                      </div>
                   </div>
                 )}
               </div>
-              
-              <div className="mt-6 flex justify-end pt-4 border-t">
-                <button onClick={() => setShowUserProfileModal(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300">Close Profile</button>
-              </div>
+              <div className="mt-6 flex justify-end pt-4 border-t"><button onClick={() => setShowUserProfileModal(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300">Close Profile</button></div>
             </div>
           </div>
         )}
@@ -1958,20 +1783,15 @@ export default function AdminDashboard() {
             <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl overflow-y-auto max-h-[90vh]">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
                 <h3 className="text-2xl font-bold text-gray-800">Review Product Details</h3>
-                <button onClick={() => setShowProductModal(false)} className="text-gray-500 hover:text-red-500 transition-colors">
-                  <X size={24} />
-                </button>
+                <button onClick={() => setShowProductModal(false)} className="text-gray-500 hover:text-red-500 transition-colors"><X size={24} /></button>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-1">
                    <img src={selectedProductDetails.image_url} alt="Product" className="w-full h-48 object-contain bg-white rounded-lg border shadow-sm p-2" />
-                   
                    <div className="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200">
                       <p className="text-xs text-gray-500 uppercase font-bold">Total Deposit Deducted</p>
-                      <p className="text-xl font-black text-yellow-700">
-                        ${((parseFloat(selectedProductDetails.price) + parseFloat(selectedProductDetails.reward)) * selectedProductDetails.required_orders).toFixed(2)}
-                      </p>
+                      <p className="text-xl font-black text-yellow-700">${((parseFloat(selectedProductDetails.price) + parseFloat(selectedProductDetails.reward)) * selectedProductDetails.required_orders).toFixed(2)}</p>
                       <p className="text-xs text-gray-400 mt-1">Safely held by system</p>
                    </div>
                 </div>
@@ -1983,13 +1803,7 @@ export default function AdminDashboard() {
                       <p className="font-bold text-gray-800">{selectedProductDetails.seller_name || 'N/A'}</p>
                       <p className="text-xs text-gray-500">{selectedProductDetails.seller_email || 'N/A'} (ID: #{selectedProductDetails.seller_id})</p>
                     </div>
-                    <button 
-                      onClick={() => {
-                        setShowProductModal(false);
-                        fetchAndShowUserProfile(selectedProductDetails.seller_id);
-                      }}
-                      className="ml-auto bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1"
-                    >
+                    <button onClick={() => { setShowProductModal(false); fetchAndShowUserProfile(selectedProductDetails.seller_id); }} className="ml-auto bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1">
                       <Eye size={14} /> View Profile
                     </button>
                   </div>
@@ -2003,58 +1817,24 @@ export default function AdminDashboard() {
                   <p><span className="font-semibold text-gray-500 w-24 inline-block">Status:</span> {renderStatusBadge(selectedProductDetails.status)}</p>
                   
                   <div className="flex flex-wrap items-center gap-4 bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 mt-2">
-                    <p className="text-sm">
-                      <span className="font-semibold text-gray-500 mr-2">Target Qty:</span> 
-                      <b className="text-gray-800">{selectedProductDetails.required_orders}</b>
-                    </p>
+                    <p className="text-sm"><span className="font-semibold text-gray-500 mr-2">Target Qty:</span> <b className="text-gray-800">{selectedProductDetails.required_orders}</b></p>
                     <div className="w-px h-4 bg-blue-200 hidden sm:block"></div>
-                    <p className="text-sm">
-                      <span className="font-semibold text-gray-500 mr-2">Available Qty:</span> 
-                      <b className="text-[#0066ff] text-lg">
-                        {Math.max(0, selectedProductDetails.required_orders - (selectedProductDetails.application_count || 0))}
-                      </b>
-                    </p>
+                    <p className="text-sm"><span className="font-semibold text-gray-500 mr-2">Available Qty:</span> <b className="text-[#0066ff] text-lg">{Math.max(0, selectedProductDetails.required_orders - (selectedProductDetails.application_count || 0))}</b></p>
                   </div>
                   
-                  <div className="mt-2">
-                    <span className="font-semibold text-gray-500 block mb-1">Product Link:</span>
-                    <a href={selectedProductDetails.product_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all bg-gray-50 p-2 block rounded border">
-                      {selectedProductDetails.product_link}
-                    </a>
-                  </div>
-
-                  <div className="mt-2">
-                    <span className="font-semibold text-gray-500 block mb-1">Seller Instructions:</span>
-                    <p className="bg-gray-100 p-3 rounded text-gray-800 whitespace-pre-wrap border">{selectedProductDetails.instructions}</p>
-                  </div>
+                  <div className="mt-2"><span className="font-semibold text-gray-500 block mb-1">Product Link:</span><a href={selectedProductDetails.product_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all bg-gray-50 p-2 block rounded border">{selectedProductDetails.product_link}</a></div>
+                  <div className="mt-2"><span className="font-semibold text-gray-500 block mb-1">Seller Instructions:</span><p className="bg-gray-100 p-3 rounded text-gray-800 whitespace-pre-wrap border">{selectedProductDetails.instructions}</p></div>
                 </div>
               </div>
 
               <div className="mt-6 flex justify-end gap-3 pt-4 border-t">
                 <button onClick={() => setShowProductModal(false)} className="px-5 py-2 bg-gray-200 text-gray-800 rounded font-semibold hover:bg-gray-300 mr-auto">Close</button>
-                
                 {selectedProductDetails.status === 'pending' && (
-                  <>
-                    <button onClick={() => rejectProduct(selectedProductDetails.id)} className="px-5 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 shadow-md">Reject & Refund</button>
-                    <button onClick={() => approveProduct(selectedProductDetails.id)} className="px-5 py-2 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 shadow-md">Approve Product</button>
-                  </>
+                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="px-5 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 shadow-md">Reject & Refund</button><button onClick={() => approveProduct(selectedProductDetails.id)} className="px-5 py-2 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 shadow-md">Approve Product</button></>
                 )}
-
-                {selectedProductDetails.status === 'approved' && (
-                  <button onClick={() => stopProductAction(selectedProductDetails.id)} className="px-5 py-2 bg-yellow-500 text-white rounded font-bold hover:bg-yellow-600 shadow-md">
-                    Stop Product
-                  </button>
-                )}
-
+                {selectedProductDetails.status === 'approved' && (<button onClick={() => stopProductAction(selectedProductDetails.id)} className="px-5 py-2 bg-yellow-500 text-white rounded font-bold hover:bg-yellow-600 shadow-md">Stop Product</button>)}
                 {selectedProductDetails.status === 'stopped' && (
-                  <>
-                    <button onClick={() => rejectProduct(selectedProductDetails.id)} className="px-5 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 shadow-md">
-                      Delete & Refund
-                    </button>
-                    <button onClick={() => resumeProductAction(selectedProductDetails.id)} className="px-5 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600 shadow-md">
-                      Resume Product
-                    </button>
-                  </>
+                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="px-5 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 shadow-md">Delete & Refund</button><button onClick={() => resumeProductAction(selectedProductDetails.id)} className="px-5 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600 shadow-md">Resume Product</button></>
                 )}
               </div>
             </div>
@@ -2065,29 +1845,19 @@ export default function AdminDashboard() {
         {showAppDetailsModal && selectedAppDetails && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
             <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl overflow-y-auto max-h-[90vh] flex flex-col">
-              
               <div className="flex justify-between items-center mb-4 border-b pb-2">
                 <h3 className="text-2xl font-bold text-gray-800">Application & Order Details</h3>
-                <button onClick={() => setShowAppDetailsModal(false)} className="text-gray-500 hover:text-red-500 transition-colors">
-                  <X size={24} />
-                </button>
+                <button onClick={() => setShowAppDetailsModal(false)} className="text-gray-500 hover:text-red-500 transition-colors"><X size={24} /></button>
               </div>
 
               <div className="mb-4 flex flex-wrap gap-2">
-                 <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded font-bold uppercase text-sm border border-purple-200">
-                   Status: {selectedAppDetails.status.replace('_', ' ')}
-                 </span>
-                 {selectedAppDetails.category && (
-                   <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded font-bold uppercase text-sm border border-yellow-300">
-                     Task: {selectedAppDetails.category}
-                   </span>
-                 )}
+                 <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded font-bold uppercase text-sm border border-purple-200">Status: {selectedAppDetails.status.replace('_', ' ')}</span>
+                 {selectedAppDetails.category && (<span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded font-bold uppercase text-sm border border-yellow-300">Task: {selectedAppDetails.category}</span>)}
               </div>
 
               {selectedAppDetails.status === 'disputed' && (
                 <div className="bg-pink-100 text-pink-800 p-4 rounded-xl border border-pink-200 mb-4 font-bold text-center flex flex-col items-center justify-center gap-2">
-                  <AlertTriangle size={24}/>
-                  This order is currently under dispute. Please resolve it from the "User Appeals" tab.
+                  <AlertTriangle size={24}/>This order is currently under dispute. Please resolve it from the "User Appeals" tab.
                 </div>
               )}
 
@@ -2095,7 +1865,6 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                    <div className="bg-gray-50 p-4 rounded-lg border">
                      <h4 className="font-bold text-gray-700 mb-2 border-b pb-1">Product Info</h4>
-                     
                      <img src={selectedAppDetails.image_url} alt="Product" className="w-16 h-16 object-contain bg-white border rounded mb-2" />
                      <p className="text-sm font-semibold text-gray-800">{selectedAppDetails.product_name}</p>
                      <p className="text-xs text-gray-500 mt-1 mb-2">Product Reward: <span className="text-green-600 font-bold">${selectedAppDetails.reward}</span></p>
@@ -2108,41 +1877,23 @@ export default function AdminDashboard() {
                      </div>
                      {selectedAppDetails.instructions && (
                         <div className="mt-3 bg-white p-2.5 rounded-lg border border-gray-200 text-xs">
-                          <span className="font-bold text-gray-500 block mb-1">Seller Instructions:</span>
-                          <p className="text-gray-700 italic">{selectedAppDetails.instructions}</p>
+                          <span className="font-bold text-gray-500 block mb-1">Seller Instructions:</span><p className="text-gray-700 italic">{selectedAppDetails.instructions}</p>
                         </div>
                      )}
                    </div>
 
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 relative">
-                       <h4 className="font-bold text-blue-800 mb-2 border-b border-blue-200 pb-1 flex items-center justify-between">
-                         Buyer
-                         <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded">⭐ {selectedAppDetails.trust_score ? parseFloat(selectedAppDetails.trust_score).toFixed(1) : '5.0'}</span>
-                       </h4>
+                       <h4 className="font-bold text-blue-800 mb-2 border-b border-blue-200 pb-1 flex items-center justify-between">Buyer<span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded">⭐ {selectedAppDetails.trust_score ? parseFloat(selectedAppDetails.trust_score).toFixed(1) : '5.0'}</span></h4>
                        <p className="text-sm font-semibold truncate">{selectedAppDetails.buyer_name}</p>
                        <p className="text-xs text-gray-600 truncate">{selectedAppDetails.buyer_email}</p>
-                       
-                       <button 
-                         onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.user_id); }} 
-                         className="mt-3 w-full bg-white border border-blue-200 text-blue-600 py-1.5 rounded text-xs font-bold hover:bg-blue-100"
-                       >
-                         Buyer Profile
-                       </button>
+                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.user_id); }} className="mt-3 w-full bg-white border border-blue-200 text-blue-600 py-1.5 rounded text-xs font-bold hover:bg-blue-100">Buyer Profile</button>
                      </div>
-
                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-100 relative">
                        <h4 className="font-bold text-purple-800 mb-2 border-b border-purple-200 pb-1">Seller</h4>
                        <p className="text-sm font-semibold truncate">{selectedAppDetails.seller_name || 'N/A'}</p>
                        <p className="text-xs text-gray-600 truncate">{selectedAppDetails.seller_email || 'N/A'}</p>
-                       
-                       <button 
-                         onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.seller_id); }} 
-                         disabled={!selectedAppDetails.seller_id}
-                         className="mt-3 w-full bg-white border border-purple-200 text-purple-600 py-1.5 rounded text-xs font-bold hover:bg-purple-100 disabled:opacity-50"
-                       >
-                         Seller Profile
-                       </button>
+                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.seller_id); }} disabled={!selectedAppDetails.seller_id} className="mt-3 w-full bg-white border border-purple-200 text-purple-600 py-1.5 rounded text-xs font-bold hover:bg-purple-100 disabled:opacity-50">Seller Profile</button>
                      </div>
                    </div>
                 </div>
@@ -2152,40 +1903,16 @@ export default function AdminDashboard() {
                      <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
                        <h4 className="font-bold text-indigo-800 mb-2 border-b border-indigo-200 pb-1">Order Submission</h4>
                        <p className="text-sm"><span className="font-semibold text-gray-600">Order No:</span> {selectedAppDetails.order_number || 'N/A'}</p>
-                       
-                       {selectedAppDetails.screenshot_url && (
-                         <p className="text-sm mt-1">
-                           <span className="font-semibold text-gray-600">Screenshot:</span>{' '}
-                           <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a>
-                         </p>
-                       )}
-                       
-                       {selectedAppDetails.order_comment && (
-                         <div className="mt-3 text-sm bg-white p-2 rounded border border-indigo-100">
-                           <span className="font-semibold text-gray-600 text-xs block mb-1">Buyer Comment:</span>
-                           <p className="text-gray-700 italic">{selectedAppDetails.order_comment}</p>
-                         </div>
-                       )}
+                       {selectedAppDetails.screenshot_url && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot:</span> <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
+                       {selectedAppDetails.order_comment && (<div className="mt-3 text-sm bg-white p-2 rounded border border-indigo-100"><span className="font-semibold text-gray-600 text-xs block mb-1">Buyer Comment:</span><p className="text-gray-700 italic">{selectedAppDetails.order_comment}</p></div>)}
                      </div>
                    )}
 
                    {(selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && selectedAppDetails.review_link && (
                      <div className="bg-pink-50 p-4 rounded-lg border border-pink-100">
                        <h4 className="font-bold text-pink-800 mb-2 border-b border-pink-200 pb-1">Review Submission</h4>
-                       
-                       {selectedAppDetails.review_link && (
-                         <p className="text-sm mb-2">
-                           <span className="font-semibold text-gray-600">Review Link:</span>{' '}
-                           <a href={selectedAppDetails.review_link} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">Click to Open</a>
-                         </p>
-                       )}
-                       
-                       {selectedAppDetails.review_screenshot_url && (
-                         <p className="text-sm">
-                           <span className="font-semibold text-gray-600">Screenshot:</span>{' '}
-                           <a href={selectedAppDetails.review_screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a>
-                         </p>
-                       )}
+                       {selectedAppDetails.review_link && (<p className="text-sm mb-2"><span className="font-semibold text-gray-600">Review Link:</span> <a href={selectedAppDetails.review_link} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">Click to Open</a></p>)}
+                       {selectedAppDetails.review_screenshot_url && (<p className="text-sm"><span className="font-semibold text-gray-600">Screenshot:</span> <a href={selectedAppDetails.review_screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
                      </div>
                    )}
                 </div>
@@ -2194,63 +1921,24 @@ export default function AdminDashboard() {
               {/* ACTION BUTTONS */}
               <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-200 bg-gray-50 -mx-6 -mb-6 p-4 rounded-b-xl flex-wrap">
                 <button onClick={() => setShowAppDetailsModal(false)} className="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close</button>
-                
-                {/* STATUS: PENDING */}
                 {selectedAppDetails.status === 'pending' && (
                   <>
                     <button onClick={() => actionApplication(selectedAppDetails.id, 'reject')} className="bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-600 shadow-md">Reject Apply</button>
-                    {selectedAppDetails.category === 'Pre-Pay' ? (
-                       <button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-orange-600 shadow-md">
-                         Approve & Pay (External)
-                       </button>
-                    ) : (
-                       <button onClick={() => actionApplication(selectedAppDetails.id, 'approve')} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow-md">
-                         Approve Apply
-                       </button>
-                    )}
+                    {selectedAppDetails.category === 'Pre-Pay' ? (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-orange-600 shadow-md">Approve & Pay (External)</button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve')} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow-md">Approve Apply</button>)}
                   </>
                 )}
-                
-                {/* STATUS: ORDER SUBMITTED */}
                 {selectedAppDetails.status === 'order_submitted' && (
                   <>
                     <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-order')} className="bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-600 shadow-md">Reject Order</button>
-                    {selectedAppDetails.category === 'No Review' ? (
-                       <button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 shadow-md">
-                         Forward to Seller
-                       </button>
-                    ) : (
-                       <button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 shadow-md">
-                         Approve Order
-                       </button>
-                    )}
+                    {selectedAppDetails.category === 'No Review' ? (<button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 shadow-md">Forward to Seller</button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 shadow-md">Approve Order</button>)}
                   </>
                 )}
-
-                {/* STATUS: FORWARDED TO SELLER */}
-                {selectedAppDetails.status === 'forwarded_to_seller' && (
-                   <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-bold w-full md:w-auto text-center border border-yellow-200">
-                     Waiting for Seller Verification
-                   </div>
-                )}
-                
-                {/* STATUS: REVIEW SUBMITTED */}
+                {selectedAppDetails.status === 'forwarded_to_seller' && (<div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-bold w-full md:w-auto text-center border border-yellow-200">Waiting for Seller Verification</div>)}
                 {selectedAppDetails.status === 'review_submitted' && (
-                  <>
-                     <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-review')} className="bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-600 shadow-md">Reject Review</button>
-                     <button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-600 shadow-md">Forward to Seller</button>
-                     <button onClick={() => actionApplication(selectedAppDetails.id, 'approve-review')} className="bg-pink-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-pink-700 shadow-md">Force Approve (Admin)</button>
-                  </>
+                  <><button onClick={() => actionApplication(selectedAppDetails.id, 'reject-review')} className="bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-600 shadow-md">Reject Review</button><button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-600 shadow-md">Forward to Seller</button><button onClick={() => actionApplication(selectedAppDetails.id, 'approve-review')} className="bg-pink-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-pink-700 shadow-md">Force Approve (Admin)</button></>
                 )}
-                
-                {/* STATUS: PENDING REFUND (Normal Flow) */}
-                {selectedAppDetails.status === 'pending_refund' && (
-                  <button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-orange-600 shadow-md">
-                    Process Refund
-                  </button>
-                )}
+                {selectedAppDetails.status === 'pending_refund' && (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-orange-600 shadow-md">Process Refund</button>)}
               </div>
-
             </div>
           </div>
         )}
@@ -2259,27 +1947,17 @@ export default function AdminDashboard() {
         {showRefundModal && selectedAppDetails && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
             <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                {selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Pre-Pay (External)' : 'Confirm Refund Payment'}
-              </h3>
-              
+              <h3 className="text-xl font-bold text-gray-800 mb-4">{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Pre-Pay (External)' : 'Confirm Refund Payment'}</h3>
               <div className={`border p-3 rounded-lg mb-4 ${selectedAppDetails.category === 'Pre-Pay' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
                  {selectedAppDetails.category === 'Pre-Pay' ? (
-                   <p className="text-sm text-orange-800 font-semibold leading-relaxed">
-                     You are marking this Pre-Pay application as paid. Send the funds directly to the buyer's external account (e.g. PayPal) and submit the proof below. <strong className="font-black text-red-600">Funds will NOT be added to the system wallet.</strong>
-                   </p>
+                   <p className="text-sm text-orange-800 font-semibold leading-relaxed">You are marking this Pre-Pay application as paid. Send the funds directly to the buyer's external account (e.g. PayPal) and submit the proof below. <strong className="font-black text-red-600">Funds will NOT be added to the system wallet.</strong></p>
                  ) : (
-                   <p className="text-sm text-green-800 font-semibold leading-relaxed">
-                     Funds (Product Price + Reward) will be added directly to the buyer's wallet. The buyer will be notified that they can withdraw this balance at any time.
-                   </p>
+                   <p className="text-sm text-green-800 font-semibold leading-relaxed">Funds (Product Price + Reward) will be added directly to the buyer's wallet. The buyer will be notified that they can withdraw this balance at any time.</p>
                  )}
               </div>
-
               <form onSubmit={submitRefund} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">
-                    {selectedAppDetails.category === 'Pre-Pay' ? 'Transaction ID / Screenshot Link' : 'Admin Order Number'}
-                  </label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">{selectedAppDetails.category === 'Pre-Pay' ? 'Transaction ID / Screenshot Link' : 'Admin Order Number'}</label>
                   <input required type="text" className="w-full p-2 border rounded focus:ring-blue-500 outline-none" value={refundData.orderNumber} onChange={e => setRefundData({...refundData, orderNumber: e.target.value})} placeholder={selectedAppDetails.category === 'Pre-Pay' ? 'Enter Trx ID or Link...' : 'Enter Order Number...'} />
                 </div>
                 <div>
@@ -2288,9 +1966,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <button type="button" onClick={() => setShowRefundModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded font-semibold">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded font-bold hover:bg-orange-600 shadow-md">
-                    {selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Payment' : 'Send Refund'}
-                  </button>
+                  <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded font-bold hover:bg-orange-600 shadow-md">{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Payment' : 'Send Refund'}</button>
                 </div>
               </form>
             </div>

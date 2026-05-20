@@ -1,5 +1,5 @@
 const pool = require("../config/db");
-const axios = require("axios"); // 🔥 NEW: Axios for Premium IP Location API
+const axios = require("axios");
 
 // 🛡️ XSS Protection Utility
 const escapeHTML = (str) => {
@@ -9,14 +9,14 @@ const escapeHTML = (str) => {
   }[tag] || tag));
 };
 
-// 🔥 NEW: IP Tracking Helper
+// 🔥 IP Tracking Helper
 const getClientIp = (req) => {
   const forwarded = req.headers['x-forwarded-for'];
   const ip = forwarded ? forwarded.split(/, /)[0] : req.socket.remoteAddress;
   return ip || 'Unknown';
 };
 
-// 🔥 PREMIUM: Automated IP to Location Resolver
+// 🔥 Automated IP to Location Resolver
 const getIpLocation = async (ip) => {
   if (!ip || ip === 'Unknown' || ip === '::1' || ip === '127.0.0.1') return 'Localhost';
   try {
@@ -32,7 +32,7 @@ const getIpLocation = async (ip) => {
 };
 
 // =======================
-// ✅ Apply to Product (Buyer) - 🔥 SECURED TRANSACTION
+// ✅ Apply to Product (Buyer)
 // =======================
 const applyToProduct = async (req, res) => {
   const client = await pool.connect();
@@ -41,14 +41,11 @@ const applyToProduct = async (req, res) => {
     if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
     const user_id = req.user.id;
-    
-    // 🔥 Track IP and Location when applying
     const ipAddress = getClientIp(req); 
     const ipLocation = await getIpLocation(ipAddress);
 
     await client.query('BEGIN');
 
-    // Check User Status from Database with ROW-LEVEL LOCK
     const userCheck = await client.query("SELECT is_active, is_frozen FROM users WHERE id = $1 FOR UPDATE", [user_id]);
     if (userCheck.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -82,7 +79,6 @@ const applyToProduct = async (req, res) => {
       return res.status(400).json({ message: "Already applied" });
     }
 
-    // 🔥 Add IP & Location to insertion
     const result = await client.query(
       `INSERT INTO applications (user_id, product_id, status, ip_address, ip_location) VALUES ($1, $2, 'pending', $3, $4) RETURNING *`,
       [user_id, product_id, ipAddress, ipLocation]
@@ -113,7 +109,6 @@ const approveApplication = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ message: "Application not found" });
     res.json({ message: "Application approved successfully", application: result.rows[0] });
   } catch (error) {
-    console.error("APPROVE APPLICATION ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -132,7 +127,6 @@ const rejectApplication = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ message: "Application not found" });
     res.json({ message: "Application rejected successfully", application: result.rows[0] });
   } catch (error) {
-    console.error("REJECT APPLICATION ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -151,7 +145,6 @@ const deleteApplicationAdmin = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ message: "Application not found" });
     res.status(200).json({ success: true, message: "Application history cleared successfully" });
   } catch (error) {
-    console.error("DELETE APPLICATION ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -171,7 +164,6 @@ const getApplicationsByProduct = async (req, res) => {
     );
     res.json({ message: "Applications fetched successfully", applications: result.rows });
   } catch (error) {
-    console.error("GET APPLICATIONS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -193,7 +185,6 @@ const getMyApplications = async (req, res) => {
     );
     res.status(200).json({ success: true, count: result.rows.length, data: result.rows });
   } catch (error) {
-    console.error("GET MY APPLICATIONS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -222,18 +213,16 @@ const submitOrder = async (req, res) => {
 
     res.status(200).json({ success: true, message: "Order submitted successfully with screenshot", data: result.rows[0] });
   } catch (error) {
-    console.error("SUBMIT ORDER ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 // ==========================================
-// ➡️ Forward Order to Seller (Admin) - UNIFIED LOGIC
+// ➡️ Forward Order to Seller (Admin)
 // ==========================================
 const forwardOrderToSeller = async (req, res) => {
   try {
     const applicationId = req.params.id;
-    
     const result = await pool.query(
       `UPDATE applications SET status = 'forwarded_to_seller' WHERE id = $1 AND status IN ('order_submitted', 'review_submitted') RETURNING *`,
       [applicationId]
@@ -242,13 +231,12 @@ const forwardOrderToSeller = async (req, res) => {
     if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or invalid status" });
     res.status(200).json({ success: true, message: "Forwarded to seller for verification.", data: result.rows[0] });
   } catch (error) {
-    console.error("FORWARD ORDER ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 // ==========================================
-// 👑 Approve Order (Admin) - Standard Flow
+// 👑 Approve Order (Admin)
 // ==========================================
 const approveOrder = async (req, res) => {
   try {
@@ -261,7 +249,6 @@ const approveOrder = async (req, res) => {
     if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or order has not been submitted yet" });
     res.status(200).json({ success: true, message: "Order approved successfully. Buyer can now submit a review.", data: result.rows[0] });
   } catch (error) {
-    console.error("APPROVE ORDER ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -280,7 +267,6 @@ const rejectOrder = async (req, res) => {
     if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or order has not been submitted yet" });
     res.status(200).json({ success: true, message: "Order rejected successfully.", data: result.rows[0] });
   } catch (error) {
-    console.error("REJECT ORDER ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -313,7 +299,6 @@ const submitReview = async (req, res) => {
 
     res.status(200).json({ success: true, message: "Review submitted successfully", data: result.rows[0] });
   } catch (error) {
-    console.error("SUBMIT REVIEW ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -332,7 +317,6 @@ const approveReview = async (req, res) => {
     if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or review has not been submitted yet" });
     res.status(200).json({ success: true, message: "Review approved successfully. Status changed to pending_refund.", data: result.rows[0] });
   } catch (error) {
-    console.error("APPROVE REVIEW ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -351,13 +335,12 @@ const rejectReview = async (req, res) => {
     if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or review has not been submitted yet" });
     res.status(200).json({ success: true, message: "Review rejected successfully.", data: result.rows[0] });
   } catch (error) {
-    console.error("REJECT REVIEW ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 // ==========================================
-// 🔥 Seller Approve Review / Order - SECURED TRANSACTION
+// 🔥 Seller Approve Review / Order
 // ==========================================
 const sellerApproveReview = async (req, res) => {
   const client = await pool.connect();
@@ -398,7 +381,6 @@ const sellerApproveReview = async (req, res) => {
     }
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Seller approve error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   } finally {
     client.release();
@@ -406,7 +388,7 @@ const sellerApproveReview = async (req, res) => {
 };
 
 // ==========================================
-// 💰 Confirm Refund (Admin) - SECURED TRANSACTION
+// 💰 Confirm Refund (Admin) - 🔥 PERCENTAGE REFUND LOGIC INTEGRATED
 // ==========================================
 const confirmRefund = async (req, res) => {
   const client = await pool.connect();
@@ -416,8 +398,9 @@ const confirmRefund = async (req, res) => {
 
     await client.query('BEGIN');
 
+    // 🔥 1. Fetch Application & Product details
     const appResult = await client.query(
-      `SELECT a.user_id, a.status, p.price, p.reward, p.category 
+      `SELECT a.user_id, a.status, p.price, p.reward, p.category, p.country, p.platform 
        FROM applications a JOIN products p ON a.product_id = p.id 
        WHERE a.id = $1 FOR UPDATE`,
       [applicationId]
@@ -435,22 +418,47 @@ const confirmRefund = async (req, res) => {
        return res.status(400).json({ message: "Refund already processed for this application." });
     }
 
-    const totalAmount = parseFloat(app.price) + parseFloat(app.reward);
+    const totalGrossAmount = parseFloat(app.price) + parseFloat(app.reward);
+    let finalRefundAmount = totalGrossAmount;
+    let refundFeeAmount = 0;
     let message = "";
 
     if (app.category !== 'Pre-Pay') {
-      await client.query(`UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [totalAmount, app.user_id]);
-      message = `Refund confirmed successfully. $${totalAmount.toFixed(2)} added to buyer's wallet.`;
+      // 🔥 2. FETCH DYNAMIC REFUND FEE PERCENTAGE
+      const feeResult = await client.query(
+        "SELECT buyer_refund_fee FROM dynamic_fees_config WHERE LOWER(country) = LOWER($1) AND LOWER(platform) = LOWER($2)",
+        [app.country, app.platform]
+      );
+      
+      // If config found, calculate fee percentage (e.g. 5.00 -> 0.05)
+      const refundFeePercent = feeResult.rows.length > 0 ? (parseFloat(feeResult.rows[0].buyer_refund_fee) / 100) : 0;
+      
+      refundFeeAmount = totalGrossAmount * refundFeePercent;
+      finalRefundAmount = totalGrossAmount - refundFeeAmount;
+
+      // 3. Update User Wallet with Final Net Amount
+      await client.query(`UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2`, [finalRefundAmount, app.user_id]);
+      
+      message = `Refund confirmed successfully. $${finalRefundAmount.toFixed(2)} added to buyer's wallet. (Network Fee: $${refundFeeAmount.toFixed(2)} deducted)`;
     } else {
       message = `Payment confirmed for Pre-Pay task. Amount sent to external account, wallet not updated.`;
     }
 
     const finalOrderText = refund_order_number ? escapeHTML(refund_order_number.trim()) : (refund_screenshot_url ? escapeHTML(refund_screenshot_url.trim()) : '');
 
+    // 4. Log the refund
     const updateResult = await client.query(
       `UPDATE applications SET status = 'completed', refund_screenshot_url = $1, refund_comment = $2 WHERE id = $3 RETURNING *`,
       [finalOrderText, refund_comment ? escapeHTML(refund_comment.trim()) : null, applicationId]
     );
+
+    // 🔥 SECURITY FIX: Log transaction for the buyer
+    if (app.category !== 'Pre-Pay') {
+        await client.query(
+            "INSERT INTO transactions (user_id, amount, type, description, status) VALUES ($1, $2, 'refund', $3, 'completed')",
+            [app.user_id, finalRefundAmount, `Refund received for Application #${applicationId} (Fee deducted: $${refundFeeAmount.toFixed(2)})`]
+        );
+    }
 
     await client.query('COMMIT');
     res.status(200).json({ success: true, message: message, data: updateResult.rows[0] });
@@ -486,7 +494,6 @@ const getSellerProductReviews = async (req, res) => {
 
     res.status(200).json({ success: true, count: result.rows.length, data: result.rows });
   } catch (error) {
-    console.error("GET SELLER REVIEWS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -511,7 +518,6 @@ const getAllApplicationsAdmin = async (req, res) => {
     `);
     res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
-    console.error("GET ALL APPS ADMIN ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

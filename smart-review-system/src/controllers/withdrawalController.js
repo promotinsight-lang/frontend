@@ -1,7 +1,7 @@
 const pool = require("../config/db");
 
 // ==========================================
-// 💸 Request Withdrawal (Buyer/Seller) - 🔥 SECURED TRANSACTION
+// 💸 Request Withdrawal (Buyer/Seller) - 🔥 SECURED TRANSACTION WITH DYNAMIC % FEE
 // ==========================================
 const requestWithdrawal = async (req, res) => {
   const client = await pool.connect();
@@ -17,8 +17,8 @@ const requestWithdrawal = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 1. Lock user's wallet to prevent concurrent double-spending (Race Condition prevention)
-    const userResult = await client.query("SELECT wallet_balance FROM users WHERE id = $1 FOR UPDATE", [userId]);
+    // 1. Lock user's wallet to prevent concurrent double-spending
+    const userResult = await client.query("SELECT wallet_balance, role FROM users WHERE id = $1 FOR UPDATE", [userId]);
     
     if (userResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -32,24 +32,45 @@ const requestWithdrawal = async (req, res) => {
       return res.status(400).json({ success: false, message: "Insufficient wallet balance" });
     }
 
-    // 2. Deduct amount from wallet balance securely
+    // 🔥 2. DYNAMIC WITHDRAWAL FEE CALCULATION (%)
+    // Since withdrawal is global, we fetch the first available withdrawal fee config.
+    const feeConfig = await client.query("SELECT seller_withdrawal_fee FROM dynamic_fees_config LIMIT 1");
+    let feePercent = 0.0; // Default 0%
+    
+    if (feeConfig.rows.length > 0) {
+        feePercent = parseFloat(feeConfig.rows[0].seller_withdrawal_fee) / 100;
+    }
+
+    const feeAmount = amountValue * feePercent;
+    const netPayable = amountValue - feeAmount;
+
+    // 3. Deduct total requested amount from wallet
     await client.query(
       "UPDATE users SET wallet_balance = wallet_balance - $1 WHERE id = $2",
       [amountValue, userId]
     );
 
-    // 3. Insert withdrawal request into database (Sanitized strings)
+    // 🔥 SMART TRICK: Append fee breakdown to account_details so Admin sees exactly what to pay
+    const finalAccountDetails = `${account_details.trim()}\n[SYSTEM CALCULATION -> Gross: $${amountValue.toFixed(2)} | Fee: $${feeAmount.toFixed(2)} (${(feePercent * 100).toFixed(1)}%) | Net Payable: $${netPayable.toFixed(2)}]`;
+
+    // 4. Insert withdrawal request
     const withdrawalResult = await client.query(
       `INSERT INTO withdrawals (user_id, amount, payment_method, account_details, status)
        VALUES ($1, $2, $3, $4, 'pending') RETURNING *`,
-      [userId, amountValue, payment_method.trim(), account_details.trim()]
+      [userId, amountValue, payment_method.trim(), finalAccountDetails]
+    );
+
+    // 5. Log the transaction securely
+    await client.query(
+        "INSERT INTO transactions (user_id, amount, type, description, status) VALUES ($1, $2, 'withdrawal', $3, 'pending')",
+        [userId, amountValue, `Withdrawal requested. Fee deducted: $${feeAmount.toFixed(2)}. Net to receive: $${netPayable.toFixed(2)}`]
     );
 
     await client.query('COMMIT');
 
     res.status(201).json({
       success: true,
-      message: "Withdrawal request submitted successfully. Balance deducted.",
+      message: `Withdrawal request submitted successfully. Processing Fee: $${feeAmount.toFixed(2)}. Net to receive: $${netPayable.toFixed(2)}`,
       data: withdrawalResult.rows[0]
     });
 
@@ -120,14 +141,16 @@ const approveWithdrawal = async (req, res) => {
     await client.query('BEGIN');
 
     // Lock withdrawal record to prevent duplicate approvals/rejections
-    const checkResult = await client.query("SELECT status FROM withdrawals WHERE id = $1 FOR UPDATE", [withdrawalId]);
+    const checkResult = await client.query("SELECT * FROM withdrawals WHERE id = $1 FOR UPDATE", [withdrawalId]);
     
     if (checkResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ success: false, message: "Withdrawal not found" });
     }
     
-    if (checkResult.rows[0].status !== 'pending') {
+    const withdrawal = checkResult.rows[0];
+
+    if (withdrawal.status !== 'pending') {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, message: "Only pending requests can be approved" });
     }
@@ -139,6 +162,12 @@ const approveWithdrawal = async (req, res) => {
     const updateResult = await client.query(
       "UPDATE withdrawals SET status = 'approved', transaction_id = $2, screenshot_url = $3 WHERE id = $1 RETURNING *",
       [withdrawalId, safeTxId, safeUrl]
+    );
+
+    // Log the transaction as completed
+    await client.query(
+        "UPDATE transactions SET status = 'completed' WHERE user_id = $1 AND amount = $2 AND type = 'withdrawal' AND status = 'pending'",
+        [withdrawal.user_id, withdrawal.amount]
     );
 
     await client.query('COMMIT');
@@ -193,6 +222,12 @@ const rejectWithdrawal = async (req, res) => {
     await client.query(
       "UPDATE users SET wallet_balance = wallet_balance + $1 WHERE id = $2",
       [withdrawal.amount, withdrawal.user_id]
+    );
+
+    // 3. Log the refund transaction
+    await client.query(
+        "INSERT INTO transactions (user_id, amount, type, description, status) VALUES ($1, $2, 'refund', $3, 'completed')",
+        [withdrawal.user_id, withdrawal.amount, `Refund for rejected withdrawal request ID: ${withdrawalId}`]
     );
 
     await client.query('COMMIT');

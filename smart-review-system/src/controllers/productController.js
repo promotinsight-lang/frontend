@@ -1,7 +1,7 @@
 const pool = require("../config/db");
 
 // =======================
-// ✅ CREATE PRODUCT - 🔥 SECURED
+// ✅ CREATE PRODUCT - 🔥 SECURED & DYNAMIC FEE INTEGRATED
 // =======================
 const createProduct = async (req, res) => {
   const client = await pool.connect();
@@ -24,13 +24,20 @@ const createProduct = async (req, res) => {
        return res.status(400).json({ success: false, message: "Invalid pricing or quantity values" });
     }
 
+    await client.query('BEGIN');
+
+    // 🔥 DYNAMIC FEE FETCH: Fetch platform charge for the selected country and platform
+    const feeResult = await client.query(
+      "SELECT platform_charge FROM dynamic_fees_config WHERE country = $1 AND platform = $2",
+      [country, platform]
+    );
+    const platformChargePercent = feeResult.rows.length > 0 ? (parseFloat(feeResult.rows[0].platform_charge) / 100) : 0.10;
+
     const costPerOrder = priceVal + rewardVal;
-    const commissionPerOrder = costPerOrder * 0.10; 
+    const commissionPerOrder = costPerOrder * platformChargePercent; 
     const requiredDepositPerProduct = costPerOrder + commissionPerOrder;
     
     const totalRequiredDeposit = requiredDepositPerProduct * qtyVal;
-
-    await client.query('BEGIN');
 
     // Row-level lock on user to check balance securely
     const userResult = await client.query("SELECT wallet_balance FROM users WHERE id = $1 FOR UPDATE", [sellerId]);
@@ -96,7 +103,7 @@ const createProduct = async (req, res) => {
 };
 
 // =======================
-// ❌ CANCEL PRODUCT & REFUND (Seller) - 🔥 SECURED
+// ❌ CANCEL PRODUCT & REFUND (Seller) - 🔥 SECURED & DYNAMIC REFUND
 // =======================
 const cancelProduct = async (req, res) => {
   const client = await pool.connect();
@@ -124,8 +131,15 @@ const cancelProduct = async (req, res) => {
     const rewardVal = parseFloat(product.reward) || 0;
     const qtyVal = parseInt(product.required_orders) || 1;
     
+    // 🔥 DYNAMIC FEE FETCH FOR ACCURATE REFUND
+    const feeResult = await client.query(
+      "SELECT platform_charge FROM dynamic_fees_config WHERE country = $1 AND platform = $2",
+      [product.country, product.platform]
+    );
+    const platformChargePercent = feeResult.rows.length > 0 ? (parseFloat(feeResult.rows[0].platform_charge) / 100) : 0.10;
+
     const costPerOrder = priceVal + rewardVal;
-    const commissionPerOrder = costPerOrder * 0.10;
+    const commissionPerOrder = costPerOrder * platformChargePercent;
     const refundAmount = (costPerOrder + commissionPerOrder) * qtyVal;
 
     // Refund wallet
@@ -322,8 +336,15 @@ const rejectProductAdmin = async (req, res) => {
     const rewardVal = parseFloat(product.reward) || 0;
     const qtyVal = parseInt(product.required_orders) || 1;
     
+    // 🔥 DYNAMIC FEE FETCH FOR ACCURATE ADMIN REFUND
+    const feeResult = await client.query(
+      "SELECT platform_charge FROM dynamic_fees_config WHERE country = $1 AND platform = $2",
+      [product.country, product.platform]
+    );
+    const platformChargePercent = feeResult.rows.length > 0 ? (parseFloat(feeResult.rows[0].platform_charge) / 100) : 0.10;
+
     const costPerOrder = priceVal + rewardVal;
-    const commissionPerOrder = costPerOrder * 0.10;
+    const commissionPerOrder = costPerOrder * platformChargePercent;
 
     // Smart Refund Logic: Check how many applications are already submitted
     const appCheck = await client.query("SELECT COUNT(*) FROM applications WHERE product_id = $1 AND status != 'rejected'", [productId]);
@@ -439,7 +460,7 @@ const getProductById = async (req, res) => {
 };
 
 // ============================================
-// 🔥 GET MY REFUNDS (SELLER) - [NEW FUNCTION ADDED]
+// 🔥 GET MY REFUNDS (SELLER) 
 // ============================================
 const getMyRefunds = async (req, res) => {
   try {
@@ -456,7 +477,7 @@ const getMyRefunds = async (req, res) => {
 };
 
 // ============================================
-// 🔥 GET ALL REFUNDS (ADMIN) - [NEW FUNCTION ADDED]
+// 🔥 GET ALL REFUNDS (ADMIN) 
 // ============================================
 const getAllRefunds = async (req, res) => {
   try {
@@ -486,6 +507,6 @@ module.exports = {
   rejectProductAdmin, 
   getMyProducts,
   getProductById,
-  getMyRefunds,     // 🔥 Exported successfully
-  getAllRefunds     // 🔥 Exported successfully
+  getMyRefunds,     
+  getAllRefunds     
 };

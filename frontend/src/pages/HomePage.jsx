@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard,
-  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight // 🔥 IMPORTED NEW ICONS
+  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
@@ -12,15 +12,33 @@ export default function HomePage() {
   const [isAccountDisabled, setIsAccountDisabled] = useState(false);
 
   // Landing Page States
-  const [workTab, setWorkTab] = useState('buyer'); // 'buyer' or 'seller'
+  const [workTab, setWorkTab] = useState('buyer'); 
   const [openFaq, setOpenFaq] = useState(0);
   
   // ⚡ Live Feed States
   const [liveFeed, setLiveFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
 
-  // 📝 Blog States (NEW)
-  const [latestBlogs, setLatestBlogs] = useState([]);
+  // 🔥 PREMIUM SELLER CALCULATOR STATES
+  const [calcData, setCalcData] = useState({
+    country: 'USA',
+    platform: 'Amazon',
+    price: 25.00,
+    reward: 5.00,
+    qty: 10
+  });
+  
+  const [feeRate, setFeeRate] = useState(0.10); // Default 10%
+  const [activeConfig, setActiveConfig] = useState(null); // Full config state
+  const [isCalcLoading, setIsCalcLoading] = useState(false);
+
+  // Dynamic Currency Map
+  const currencySymbols = {
+    'USA': '$', 'UK': '£', 'Canada': 'C$', 'Mexico': 'MX$',
+    'Germany': '€', 'France': '€', 'Italy': '€', 'Spain': '€',
+    'Brazil': 'R$', 'Bangladesh': '৳'
+  };
+  const calcCurrency = currencySymbols[calcData.country] || '$';
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -30,407 +48,398 @@ export default function HomePage() {
       if (parsed.is_active === false) setIsAccountDisabled(true);
     }
 
-    const fetchLiveProfile = async () => {
-      const token = localStorage.getItem('token');
-      try {
-         const res = await fetch('http://localhost:5000/api/users/profile', {
-           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-           credentials: 'include' // 🔒 Secure session validation
-         });
-
-         if (res.status === 429) {
-           console.warn('Rate limit exceeded on profile fetch');
-           return;
-         }
-
-         if(res.ok) {
-           const data = await res.json();
-           if(data.success) {
-              if(data.user.is_active === false) setIsAccountDisabled(true);
-              const lsUser = JSON.parse(localStorage.getItem('user') || '{}');
-              const updatedUser = { ...lsUser, ...data.user };
-              localStorage.setItem('user', JSON.stringify(updatedUser));
-              setUser(updatedUser);
-           }
-         }
-      } catch (err) {
-         console.error("Silent auth check failed", err);
-      }
-    };
-
-    if (storedUser) {
-      fetchLiveProfile();
-    }
-
-    // ⚡ Fetch Live Feed Data
-    const fetchLiveFeed = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/users/live-feed');
-        const data = await res.json();
-        if (res.ok && data.success) {
-          setLiveFeed(data.data);
-        }
-      } catch (err) {
-        console.error("Live feed fetch failed", err);
-      } finally {
-        setFeedLoading(false);
-      }
-    };
-
-    // 📝 NEW: Fetch Latest Public Blogs
-    const fetchLatestBlogs = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/blogs/public');
-        const data = await res.json();
-        if (res.ok && data.success) {
-          // Keep only the latest 3 blogs for the homepage
-          setLatestBlogs(data.data.slice(0, 3));
-        }
-      } catch (err) {
-        console.error("Failed to fetch blogs", err);
-      }
-    };
-
-    fetchLiveFeed();
-    fetchLatestBlogs();
-    
-    // Refresh live feed every 30 seconds to keep it dynamic
-    const feedInterval = setInterval(fetchLiveFeed, 30000);
-    return () => clearInterval(feedInterval);
+    setTimeout(() => {
+      setLiveFeed([
+        { id: 1, text: "A buyer from USA just received $15 cashback!", time: "2 mins ago" },
+        { id: 2, text: "New Amazon product listed with 100% refund.", time: "5 mins ago" },
+        { id: 3, text: "Seller 'TechStore' deposited $500.", time: "12 mins ago" }
+      ]);
+      setFeedLoading(false);
+    }, 1500);
 
   }, []);
 
+  // 🔥 REAL-TIME DYNAMIC FEE FETCH FOR CALCULATOR
+  useEffect(() => {
+    const fetchCalcTarrifs = async () => {
+      setIsCalcLoading(true);
+      try {
+        const res = await fetch(`http://localhost:5000/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`);
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+          setFeeRate(parseFloat(data.data.platform_charge) / 100);
+          setActiveConfig(data.data);
+          
+          if (parseFloat(data.data.buyer_reward) > 0) {
+              setCalcData(prev => ({ ...prev, reward: parseFloat(data.data.buyer_reward) }));
+          }
+        } else {
+          setFeeRate(0.10); 
+          setActiveConfig(null);
+        }
+      } catch (error) {
+        setFeeRate(0.10);
+        setActiveConfig(null);
+      } finally {
+        setIsCalcLoading(false);
+      }
+    };
+    fetchCalcTarrifs();
+  }, [calcData.country, calcData.platform]);
+
+  // 🔥 FIXED CALCULATIONS (Includes Refund Fee/Cashback Fee)
+  const unitCost = parseFloat(calcData.price || 0) + parseFloat(calcData.reward || 0);
+  const platformFee = unitCost * feeRate;
+  const refundFeeRate = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
+  const refundFeeAmount = unitCost * refundFeeRate;
+  
+  const totalPerUnit = unitCost + platformFee + refundFeeAmount;
+  const grandTotalDeposit = totalPerUnit * parseInt(calcData.qty || 1);
+
+  const handleCalcChange = (e) => {
+    setCalcData({ ...calcData, [e.target.name]: e.target.value });
+  };
+
   const faqs = [
-    { q: "How do I get cashback as a buyer?", a: "Simply apply for a product, purchase it on the designated platform (like Amazon or Walmart), submit your order number, and once verified, your cashback will be added to your secure wallet." },
-    { q: "Is it safe for sellers to list products?", a: "Absolutely. We require a deposit upfront which is held securely by our system. Funds are only released to buyers when they successfully complete your requested task, ensuring zero fraud." },
-    { q: "How do I withdraw my earnings?", a: "You can withdraw your wallet balance at any time using PayPal, Bank Transfer, Crypto (USDT), or local methods like Cash App etc... Processing typically takes 24-48 hours." },
-    { q: "What happens if a buyer leaves a bad review?", a: "Sellers have the right to dispute an order if the buyer does not follow instructions. Our admin team manually reviews all disputes to ensure fair resolution." }
+    { q: "How does the 100% cashback work?", a: "Once you purchase the assigned product and leave an honest review as instructed, you submit your order and review screenshots. After the seller verifies it, the product price + reward is credited to your wallet." },
+    { q: "Is this platform safe for sellers?", a: "Absolutely. We secure your deposit in escrow. Funds are only released to the buyer after you approve their verified review. If a buyer fails, your funds are refunded." },
+    { q: "How can I withdraw my earnings?", a: "You can withdraw your wallet balance at any time using PayPal, Payoneer, Binance Pay, or local bank transfers depending on your country." }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-blue-200">
       <Navbar />
 
-      {/* ALERT BANNER FOR DISABLED ACCOUNTS */}
       {isAccountDisabled && (
-        <div className="bg-red-50 border-b border-red-200 p-3 text-center">
-           <p className="text-red-700 text-sm font-bold flex items-center justify-center gap-2">
-             <ShieldAlert size={18} /> Your account has been disabled. Please contact support.
-           </p>
+        <div className="bg-red-600 text-white text-center py-3 font-bold flex justify-center items-center gap-2 animate-pulse shadow-md">
+          <ShieldAlert size={20} /> Your account is currently disabled. Please contact support.
         </div>
       )}
 
-      {/* 1. HERO SECTION (Mercado Libre Inspired: Vibrant Blue & Yellow accents) */}
-      <section className="bg-[#0066ff] pt-12 pb-24 px-4 relative overflow-hidden text-white">
-        <div className="absolute top-0 right-0 opacity-10 pointer-events-none transform translate-x-1/4 -translate-y-1/4">
-          <Globe size={400} />
-        </div>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10">
-          <div className="flex-1 space-y-6 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm border border-white/20">
-              <Star size={14} className="text-yellow-300 fill-yellow-300" />
-              #1 Global Review & Cashback Ecosystem
-            </div>
-            <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight">
-              Boost Your Sales or <span className="text-yellow-300">Earn Cash</span> Instantly.
-            </h1>
-            <p className="text-blue-100 text-lg md:text-xl max-w-2xl leading-relaxed">
-              MarketInsight connects premium sellers with verified buyers across Amazon, Walmart, and beyond. Get 100% cashback on amazing products or rank your store faster.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
-              {user ? (
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-8 py-3.5 rounded-xl font-black shadow-lg transition-transform hover:-translate-y-1 flex items-center justify-center gap-2"
-                >
-                  <LayoutDashboard size={20} />
-                  Go to Dashboard
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => navigate('/register')}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-8 py-3.5 rounded-xl font-black shadow-lg transition-transform hover:-translate-y-1"
-                  >
-                    Join for Free
-                  </button>
-                  <button
-                    onClick={() => navigate('/marketplace')}
-                    className="bg-white/10 hover:bg-white/20 text-white border border-white/30 px-8 py-3.5 rounded-xl font-bold backdrop-blur-sm transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Search size={20} />
-                    Browse Products
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 w-full max-w-md">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500 border border-gray-100">
-               <div className="flex items-center justify-between mb-6">
-                 <div className="flex items-center gap-2">
-                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                   <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                 </div>
-                 <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
-                   <span className="relative flex h-2 w-2">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                   </span>
-                   Live Feed
-                 </span>
-               </div>
-
-               {/* ⚡ LIVE FEED SECTION */}
-               <div className="space-y-4">
-                 {feedLoading ? (
-                   // Skeletons while loading
-                   [1, 2, 3].map((i) => (
-                     <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 border border-gray-100 animate-pulse">
-                       <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
-                       <div className="flex-1">
-                         <div className="h-2 w-24 bg-gray-200 rounded mb-2"></div>
-                         <div className="h-2 w-16 bg-gray-200 rounded"></div>
-                       </div>
-                     </div>
-                   ))
-                 ) : liveFeed.length > 0 ? (
-                   // Render Real Masked Data
-                   liveFeed.map((item, idx) => (
-                     <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-gray-50 border border-gray-100 transition-all hover:bg-gray-100 hover:shadow-sm">
-                       <div className={`w-10 h-10 flex items-center justify-center rounded-lg font-bold shrink-0 ${item.type === 'earning' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                         {item.type === 'earning' ? <Zap size={18} /> : <Wallet size={18} />}
-                       </div>
-                       <div className="flex-1 min-w-0">
-                         <p className="text-xs font-bold text-gray-800 truncate" title="Masked Email">{item.email}</p>
-                         <p className="text-[10px] text-gray-500 capitalize">{item.type === 'earning' ? 'Task Completed' : 'Withdrawal Paid'}</p>
-                       </div>
-                       <div className="text-right shrink-0">
-                         <span className={`text-xs font-bold px-2 py-1 rounded-md border ${item.type === 'earning' ? 'text-green-700 bg-green-100 border-green-200' : 'text-red-700 bg-red-100 border-red-200'}`}>
-                           {item.type === 'earning' ? '+' : '-'}${Number(item.amount).toFixed(2)}
-                         </span>
-                       </div>
-                     </div>
-                   ))
-                 ) : (
-                   <div className="text-center text-xs text-gray-400 py-6 font-semibold border border-dashed rounded-xl">
-                     Awaiting recent activities...
-                   </div>
-                 )}
-               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. HOW IT WORKS (Tabbed Interface) */}
-      <section className="py-20 px-4 max-w-7xl mx-auto -mt-10 relative z-20">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-black text-gray-800">How MarketInsight Works</h2>
-            <p className="text-gray-500 mt-2">Select your role to see the workflow</p>
-          </div>
-
-          <div className="flex justify-center mb-10">
-            <div className="bg-gray-100 p-1.5 rounded-xl flex inline-flex">
-              <button
-                onClick={() => setWorkTab('buyer')}
-                className={`px-8 py-2.5 rounded-lg font-bold transition-all ${workTab === 'buyer' ? 'bg-white text-[#0066ff] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                For Buyers
-              </button>
-              <button
-                onClick={() => setWorkTab('seller')}
-                className={`px-8 py-2.5 rounded-lg font-bold transition-all ${workTab === 'seller' ? 'bg-white text-[#0066ff] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                For Sellers
-              </button>
-            </div>
-          </div>
-
-          {workTab === 'buyer' ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-up">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-50 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100">
-                  <Search size={28} />
-                </div>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">1. Find & Apply</h3>
-                <p className="text-gray-500 text-sm">Browse the marketplace and apply for products you love. Wait for seller approval.</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-50 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100">
-                  <Briefcase size={28} />
-                </div>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">2. Buy & Review</h3>
-                <p className="text-gray-500 text-sm">Purchase the item on Amazon/Walmart. Submit the order ID, then leave an honest review.</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-50 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100">
-                  <TrendingUp size={28} />
-                </div>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">3. Get Paid</h3>
-                <p className="text-gray-500 text-sm">Once verified, 100% cashback + reward is instantly added to your system wallet.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in-up">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-100">
-                  <Briefcase size={28} />
-                </div>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">1. Deposit & List</h3>
-                <p className="text-gray-500 text-sm">Fund your wallet securely. List your product with specific keywords and instructions.</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-100">
-                  <ShieldCheck size={28} />
-                </div>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">2. Verify Buyers</h3>
-                <p className="text-gray-500 text-sm">Approve trustworthy buyers. Monitor their order and review submissions in real-time.</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-purple-100">
-                  <TrendingUp size={28} />
-                </div>
-                <h3 className="font-bold text-lg text-gray-800 mb-2">3. Boost Ranking</h3>
-                <p className="text-gray-500 text-sm">Watch your product climb the algorithm ranks safely through verified organic sales.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 3. TRUST & SECURITY */}
-      <section className="bg-gray-100 py-16 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-3xl font-black text-gray-800 mb-6">Enterprise-Grade Security & Fair Play</h2>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-green-500 mt-1 shrink-0" size={20} />
-                <p className="text-gray-700"><strong className="text-gray-900">Wallet Protection:</strong> Funds are locked securely in escrow during the task cycle.</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-green-500 mt-1 shrink-0" size={20} />
-                <p className="text-gray-700"><strong className="text-gray-900">Strict URL Validation:</strong> We enforce profile link verification to eliminate fake screenshot fraud.</p>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="text-green-500 mt-1 shrink-0" size={20} />
-                <p className="text-gray-700"><strong className="text-gray-900">Admin Mediation:</strong> An impartial admin team manually resolves any order disputes between buyers and sellers.</p>
-              </li>
-            </ul>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-               <ShieldCheck size={40} className="text-[#0066ff] mb-3" />
-               <h4 className="font-bold text-gray-800">Fraud Prevention</h4>
-               <p className="text-xs text-gray-500 mt-1">Multi-layer verification system.</p>
-             </div>
-             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center transform translate-y-6">
-               <Globe size={40} className="text-[#0066ff] mb-3" />
-               <h4 className="font-bold text-gray-800">Multi-Platform</h4>
-               <p className="text-xs text-gray-500 mt-1">Amazon, Walmart, Etsy & more.</p>
-             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🔥 4. LATEST BLOGS SECTION (NEW) */}
-      {latestBlogs.length > 0 && (
-        <section className="py-20 px-4 max-w-7xl mx-auto">
-          <div className="flex justify-between items-end mb-10 border-b pb-4">
-            <div>
-              <h2 className="text-3xl font-black text-gray-800">Latest from our Blog</h2>
-              <p className="text-gray-500 mt-2">Tips, platform updates, and success stories.</p>
-            </div>
-            <Link to="/blogs" className="hidden md:flex items-center gap-1 text-[#0066ff] font-bold hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors">
-              View All Articles <ArrowRight size={16} />
+      {/* 1. HERO SECTION */}
+      <section className="relative bg-gradient-to-br from-[#0066ff] to-indigo-900 pt-24 pb-32 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+        <div className="max-w-7xl mx-auto text-center relative z-10">
+          <span className="inline-block py-1.5 px-4 rounded-full bg-white/20 text-blue-100 font-bold text-sm tracking-widest uppercase mb-6 border border-white/20 backdrop-blur-sm">
+            #1 Global E-Commerce Product Testing Platform
+          </span>
+          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-tight drop-shadow-lg">
+            Boost Your Sales.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
+              Get Rewarded.
+            </span>
+          </h1>
+          <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-2xl mx-auto font-medium opacity-90">
+            Sellers rank their products higher with authentic feedback. Buyers get 100% cashback plus extra rewards for sharing their honest experience.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link to={user ? "/dashboard" : "/register"} className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-black text-lg hover:bg-yellow-300 transition-all shadow-xl hover:shadow-yellow-400/50 flex items-center justify-center gap-2 hover:-translate-y-1">
+              Start Earning Now <ArrowRight size={20}/>
+            </Link>
+            <Link to="/marketplace" className="bg-white/10 text-white border border-white/30 px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/20 transition-all backdrop-blur-sm flex items-center justify-center gap-2 hover:-translate-y-1">
+              <ShoppingCart size={20}/> Browse Products
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* 2. 🔥 PREMIUM SMART CALCULATOR */}
+      <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {latestBlogs.map(blog => (
-              <div key={blog.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col">
-                <div className="h-48 bg-gray-100 overflow-hidden relative">
-                  {blog.image_url ? (
-                    <img src={blog.image_url} alt={blog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                      <FileText size={48} />
-                    </div>
+          {/* Left Side: Inputs */}
+          <div className="w-full md:w-3/5 p-8 lg:p-10 bg-white relative">
+            <div className="flex items-center gap-2 mb-6">
+              <Calculator className="text-[#0066ff]" size={28} />
+              <h2 className="text-2xl font-black text-gray-800 tracking-tight">Seller Cost Calculator</h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-8 font-medium">Estimate your campaign budget in real-time. Tariffs are dynamically fetched based on the target country and platform.</p>
+            
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Target Country</label>
+                <select name="country" value={calcData.country} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                  <option value="USA">🇺🇸 United States</option>
+                  <option value="UK">🇬🇧 United Kingdom</option>
+                  <option value="Brazil">🇧🇷 Brazil</option>
+                  <option value="Bangladesh">🇧🇩 Bangladesh</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Platform</label>
+                <select name="platform" value={calcData.platform} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                  <option value="Amazon">Amazon</option>
+                  <option value="Walmart">Walmart</option>
+                  <option value="Mercado Libre">Mercado Libre</option>
+                  <option value="Daraz">Daraz</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Product Price</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">{calcCurrency}</span>
+                  <input type="number" name="price" value={calcData.price} onChange={handleCalcChange} className="w-full pl-8 p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Buyer Reward</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-green-500">{calcCurrency}</span>
+                  <input 
+                    type="number" 
+                    name="reward" 
+                    value={calcData.reward} 
+                    onChange={handleCalcChange}
+                    readOnly={activeConfig && parseFloat(activeConfig.buyer_reward) > 0} 
+                    className={`w-full pl-8 p-3.5 border rounded-xl font-bold outline-none transition-all ${activeConfig && parseFloat(activeConfig.buyer_reward) > 0 ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-emerald-50 border-emerald-200 text-emerald-700 focus:ring-2 focus:ring-emerald-500'}`} 
+                  />
+                  {activeConfig && parseFloat(activeConfig.buyer_reward) > 0 && (
+                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400 uppercase bg-gray-200 px-1 rounded">Fixed</span>
                   )}
                 </div>
-                <div className="p-6 flex flex-col flex-1">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex justify-between border-b border-gray-50 pb-2">
-                    <span>{new Date(blog.created_at).toLocaleDateString()}</span>
-                    <span>By {blog.author_name}</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-800 mb-3 line-clamp-2 group-hover:text-[#0066ff] transition-colors leading-snug">
-                    {blog.title}
-                  </h3>
-                  
-                  <div className="mt-auto pt-4">
-                    <Link to={`/blog/${blog.slug}`} className="text-[#0066ff] text-sm font-bold flex items-center gap-1 w-max group-hover:gap-2 transition-all">
-                      Read Article <ArrowRight size={14} />
-                    </Link>
-                  </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Target Quantity (Orders)</label>
+              <input type="number" name="qty" value={calcData.qty} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+            </div>
+          </div>
+
+          {/* Right Side: Results */}
+          <div className="w-full md:w-2/5 bg-gradient-to-b from-[#f8f9fa] to-gray-100 p-8 lg:p-10 border-l border-gray-200 relative">
+            {isCalcLoading && (
+               <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-r-3xl">
+                  <RefreshCw className="text-[#0066ff] animate-spin mb-2" size={32} />
+                  <p className="text-sm font-bold text-[#0066ff]">Fetching live tariffs...</p>
+               </div>
+            )}
+            
+            <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-6 border-b border-gray-200 pb-2">Financial Summary</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Unit Cost</span>
+                <span className="font-bold text-gray-800">{calcCurrency}{unitCost.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium flex items-center gap-1">
+                  Platform Fee <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{(feeRate * 100).toFixed(1)}%</span>
+                </span>
+                <span className="font-bold text-red-500">+{calcCurrency}{platformFee.toFixed(2)}</span>
+              </div>
+              
+              {/* 🔥 NEW: Refund Fee (Cashback Fee) Breakdown */}
+              {activeConfig && parseFloat(activeConfig.buyer_refund_fee) > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 font-medium flex items-center gap-1">
+                    Refund Fee <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">{parseFloat(activeConfig.buyer_refund_fee).toFixed(1)}%</span>
+                  </span>
+                  <span className="font-bold text-red-500">+{calcCurrency}{refundFeeAmount.toFixed(2)}</span>
                 </div>
+              )}
+
+              <div className="flex justify-between items-center border-t border-gray-200 pt-3">
+                <span className="text-gray-600 font-medium">Qty Multiplier</span>
+                <span className="font-bold text-gray-800">x {calcData.qty}</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 mb-6">
+              <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Total Deposit Required</p>
+              <h2 className="text-4xl font-black text-gray-900 tracking-tight">{calcCurrency}{grandTotalDeposit.toFixed(2)}</h2>
+            </div>
+            
+            {activeConfig && (
+              <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mt-4">
+                 <h4 className="text-[10px] font-black text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Info size={12}/> Active Tariffs ({calcData.country} - {calcData.platform})
+                 </h4>
+                 <div className="grid grid-cols-2 gap-y-2 text-xs font-medium text-blue-900">
+                    <p>Platform: <b className="text-blue-700">{activeConfig.platform_charge}%</b></p>
+                    <p>Reward: <b className="text-blue-700">{parseFloat(activeConfig.buyer_reward) > 0 ? `${calcCurrency}${activeConfig.buyer_reward}` : 'Custom'}</b></p>
+                    <p>Refund: <b className="text-red-500">{activeConfig.buyer_refund_fee}%</b></p>
+                    <p>Deposit: <b className="text-blue-700">{activeConfig.seller_deposit_fee}%</b></p>
+                    <p>W.Draw: <b className="text-blue-700">{activeConfig.seller_withdrawal_fee}%</b></p>
+                 </div>
+              </div>
+            )}
+            
+            {!activeConfig && !isCalcLoading && (
+               <p className="text-[10px] text-gray-400 mt-4 font-medium flex items-start gap-1">
+                 <Info size={12} className="shrink-0 mt-0.5" /> This is an estimate based on system default values.
+               </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. LIVE ACTIVITY FEED */}
+      <section className="py-10 bg-white border-y border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
+          <div className="flex items-center gap-2 text-[#0066ff] font-black uppercase tracking-widest text-sm shrink-0">
+             <Zap className="fill-current animate-pulse" size={20}/> Live Activity
+          </div>
+          <div className="flex-1 w-full overflow-hidden bg-blue-50 rounded-xl p-3 border border-blue-100">
+            {feedLoading ? (
+               <p className="text-sm text-gray-500 font-medium animate-pulse">Loading live events...</p>
+            ) : (
+               <div className="flex gap-8 animate-marquee whitespace-nowrap">
+                 {liveFeed.map(feed => (
+                   <span key={feed.id} className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                     <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
+                   </span>
+                 ))}
+                 {/* Duplicate for seamless scrolling */}
+                 {liveFeed.map(feed => (
+                   <span key={`${feed.id}-dup`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                     <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
+                   </span>
+                 ))}
+               </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. HOW IT WORKS */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-black text-gray-800 mb-4">How It Works</h2>
+            <p className="text-gray-500 font-medium">Simple, secure, and transparent process for both parties.</p>
+          </div>
+
+          <div className="flex justify-center gap-4 mb-12">
+            <button 
+              onClick={() => setWorkTab('buyer')} 
+              className={`px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${workTab === 'buyer' ? 'bg-[#0066ff] text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border'}`}
+            >
+              I am a Buyer
+            </button>
+            <button 
+              onClick={() => setWorkTab('seller')} 
+              className={`px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${workTab === 'seller' ? 'bg-yellow-400 text-gray-900' : 'bg-white text-gray-600 hover:bg-gray-100 border'}`}
+            >
+              I am a Seller
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {workTab === 'buyer' ? (
+              <>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
+                  <div className="w-16 h-16 bg-blue-100 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                    <Search size={32} />
+                  </div>
+                  <h3 className="font-bold text-xl text-gray-800 mb-3">1. Find Product</h3>
+                  <p className="text-gray-500 text-sm">Browse the marketplace and apply for a product you want to test and share feedback on.</p>
+                </div>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
+                  <div className="w-16 h-16 bg-blue-100 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-6 -rotate-3">
+                    <CheckCircle size={32} />
+                  </div>
+                  <h3 className="font-bold text-xl text-gray-800 mb-3">2. Buy & Share Feedback</h3>
+                  <p className="text-gray-500 text-sm">Purchase the item from Amazon/Walmart. Submit your order ID. After receiving it, leave a 5-star rating and honest feedback.</p>
+                </div>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                    <Wallet size={32} />
+                  </div>
+                  <h3 className="font-bold text-xl text-gray-800 mb-3">3. Get Paid</h3>
+                  <p className="text-gray-500 text-sm">Once verified, 100% of the product cost plus your reward is instantly credited to your wallet.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
+                  <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                    <LayoutDashboard size={32} />
+                  </div>
+                  <h3 className="font-bold text-xl text-gray-800 mb-3">1. Deposit & List</h3>
+                  <p className="text-gray-500 text-sm">Deposit funds securely. List your product with the required number of orders and set a buyer reward.</p>
+                </div>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
+                  <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6 -rotate-3">
+                    <ShieldCheck size={32} />
+                  </div>
+                  <h3 className="font-bold text-xl text-gray-800 mb-3">2. Verify Work</h3>
+                  <p className="text-gray-500 text-sm">Buyers will purchase your item. Verify their order screenshots and live feedback links directly from your dashboard.</p>
+                </div>
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
+                  <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                    <TrendingUp size={32} />
+                  </div>
+                  <h3 className="font-bold text-xl text-gray-800 mb-3">3. Boost Ranking</h3>
+                  <p className="text-gray-500 text-sm">Gain organic traction. Funds are released to buyers automatically upon your approval.</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. FAQs */}
+      <section className="py-20 bg-white border-t border-gray-100">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black text-gray-800 mb-4">Frequently Asked Questions</h2>
+          </div>
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <div key={index} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <button 
+                  className="w-full px-6 py-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors focus:outline-none"
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                >
+                  <span className="font-bold text-gray-800 text-left">{faq.q}</span>
+                  {openFaq === index ? <ChevronUp size={20} className="text-[#0066ff] shrink-0" /> : <ChevronDown size={20} className="text-gray-400 shrink-0" />}
+                </button>
+                {openFaq === index && (
+                  <div className="px-6 pb-4 pt-2 text-gray-600 text-sm leading-relaxed bg-white border-t border-gray-100">
+                    {faq.a}
+                  </div>
+                )}
               </div>
             ))}
           </div>
-          
-          <div className="mt-8 text-center md:hidden">
-             <Link to="/blogs" className="inline-flex items-center gap-1 text-[#0066ff] bg-blue-50 px-6 py-3 rounded-full font-bold hover:bg-blue-100">
-               View All Articles <ArrowRight size={16} />
-             </Link>
-          </div>
-        </section>
-      )}
-
-      {/* 5. FAQ SECTION */}
-      <section className="py-20 px-4 max-w-3xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black text-gray-800">Frequently Asked Questions</h2>
-        </div>
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div key={index} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow transition-shadow">
-              <button
-                onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                className="w-full px-6 py-4 flex justify-between items-center text-left focus:outline-none"
-              >
-                <span className="font-bold text-gray-800">{faq.q}</span>
-                {openFaq === index ? <ChevronUp size={20} className="text-[#0066ff] shrink-0" /> : <ChevronDown size={20} className="text-gray-400 shrink-0" />}
-              </button>
-              {openFaq === index && (
-                <div className="px-6 pb-4 pt-1 text-gray-600 text-sm leading-relaxed bg-blue-50/30 border-t border-gray-100">
-                  {faq.a}
-                </div>
-              )}
-            </div>
-          ))}
         </div>
       </section>
 
       {/* 6. FOOTER */}
-      <footer className="bg-gray-900 text-gray-400 py-10 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-white font-black text-xl tracking-tight">MarketInsight</div>
-          <div className="flex gap-6 text-sm font-medium">
+      <footer className="bg-gray-900 text-gray-400 py-12 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-b border-gray-800 pb-8 mb-8">
+          <div>
+             <div className="text-white font-black text-2xl tracking-tight mb-2">SmartFeedback.</div>
+             <p className="text-sm">Connecting global sellers with real buyers for authentic e-commerce growth.</p>
+          </div>
+          <div className="flex justify-center gap-6 text-sm font-bold">
             <Link to="/terms" className="hover:text-white transition-colors">Terms of Use</Link>
             <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link to="/support" className="hover:text-white transition-colors">Support</Link>
+            <Link to="/support" className="hover:text-white transition-colors">Support Center</Link>
           </div>
-          <p className="text-xs">© {new Date().getFullYear()} Market Insight System. All Rights Reserved.</p>
+          <div className="flex justify-end">
+             <div className="bg-gray-800 p-3 rounded-xl inline-flex gap-4">
+                <Globe size={20} className="text-gray-400 hover:text-white cursor-pointer"/>
+                <ShieldCheck size={20} className="text-gray-400 hover:text-white cursor-pointer"/>
+             </div>
+          </div>
+        </div>
+        <div className="text-center text-xs font-medium">
+          © {new Date().getFullYear()} Smart Feedback System. Built by Jaman. All Rights Reserved.
         </div>
       </footer>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+        .animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-marquee { animation: marquee 25s linear infinite; }
+        @keyframes marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
       `}} />
     </div>
   );
