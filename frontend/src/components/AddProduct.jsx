@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
 
 export default function AddProduct({ onProductAdded }) {
@@ -29,7 +29,7 @@ export default function AddProduct({ onProductAdded }) {
   );
   const currency = typedCountryKey ? currencySymbols[typedCountryKey] : '$';
 
-  // 🔥 Fetch Dynamic Fee from Backend on Blur
+  // 🔥 Fetch Dynamic Fee from Backend
   const fetchDynamicFee = async () => {
     if (!formData.country.trim() || !formData.platform.trim()) return;
     
@@ -63,11 +63,16 @@ export default function AddProduct({ onProductAdded }) {
     }
   };
 
-  const handleFeeBlur = () => {
-    if (formData.country.trim() && formData.platform.trim()) {
-      fetchDynamicFee();
-    }
-  };
+  // 🔥 Auto-fetch fees with 500ms debounce when country/platform changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.country.trim() && formData.platform.trim()) {
+        fetchDynamicFee();
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.country, formData.platform]);
 
   // 🔥 Commission & Total Deposit Calculation
   const priceNum = parseFloat(formData.price) || 0;
@@ -79,7 +84,14 @@ export default function AddProduct({ onProductAdded }) {
   const totalDeposit = (costPerOrder + platformCommission) * qtyNum;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    // Reset dynamic fee if country or platform is changed
+    if (name === 'country' || name === 'platform') {
+      setPlatformChargePercent(0.10); // Fallback to default
+      setActiveConfig(null);
+    }
   };
 
   const handleImageChange = (e) => {
@@ -108,6 +120,10 @@ export default function AddProduct({ onProductAdded }) {
     Object.keys(formData).forEach(key => {
       submitData.append(key, formData[key].trim());
     });
+    
+    // 🔥 SECURITY FIX: Send calculated deposit to backend for verification
+    submitData.append('totalDeposit', totalDeposit.toFixed(2));
+    
     submitData.append('image', imageFile);
 
     try {
@@ -136,6 +152,8 @@ export default function AddProduct({ onProductAdded }) {
         });
         setImageFile(null);
         setImagePreview(null);
+        setActiveConfig(null); // Reset fee config on successful submit
+        setPlatformChargePercent(0.10);
         if(onProductAdded) onProductAdded();
       } else {
         alert(data.message || "Failed to publish product.");
@@ -194,18 +212,24 @@ export default function AddProduct({ onProductAdded }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Target Country *</label>
-              <input required type="text" name="country" value={formData.country} 
+              <input 
+                required 
+                type="text" 
+                name="country" 
+                value={formData.country} 
                 onChange={handleChange} 
-                onBlur={handleFeeBlur}
                 className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 focus:bg-white font-semibold"
                 placeholder="e.g. USA, UK, Bangladesh..." 
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Platform *</label>
-              <input required type="text" name="platform" value={formData.platform} 
+              <input 
+                required 
+                type="text" 
+                name="platform" 
+                value={formData.platform} 
                 onChange={handleChange} 
-                onBlur={handleFeeBlur}
                 className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 focus:bg-white font-semibold"
                 placeholder="e.g. Amazon, Daraz..." 
               />
@@ -380,3 +404,4 @@ export default function AddProduct({ onProductAdded }) {
     </div>
   );
 }
+export default AddProduct;

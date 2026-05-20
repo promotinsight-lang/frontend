@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
+// 🔥 API Base URL (Environment Variable বা localhost ব্যবহার করুন)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -48,15 +51,23 @@ export default function HomePage() {
       if (parsed.is_active === false) setIsAccountDisabled(true);
     }
 
-    setTimeout(() => {
-      setLiveFeed([
-        { id: 1, text: "A buyer from USA just received $15 cashback!", time: "2 mins ago" },
-        { id: 2, text: "New Amazon product listed with 100% refund.", time: "5 mins ago" },
-        { id: 3, text: "Seller 'TechStore' deposited $500.", time: "12 mins ago" }
-      ]);
-      setFeedLoading(false);
-    }, 1500);
+    // 🔥 FIX: Real API Call for Live Feed (Replaced setTimeout)
+    const fetchLiveFeed = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/users/live-feed`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          setLiveFeed(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch live feed:", error);
+        setLiveFeed([]);
+      } finally {
+        setFeedLoading(false);
+      }
+    };
 
+    fetchLiveFeed();
   }, []);
 
   // 🔥 REAL-TIME DYNAMIC FEE FETCH FOR CALCULATOR
@@ -64,7 +75,8 @@ export default function HomePage() {
     const fetchCalcTarrifs = async () => {
       setIsCalcLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`);
+        // 🔥 FIX: Used API_URL instead of hardcoded localhost
+        const res = await fetch(`${API_URL}/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`);
         const data = await res.json();
         
         if (data.success && data.data) {
@@ -288,7 +300,7 @@ export default function HomePage() {
           <div className="flex-1 w-full overflow-hidden bg-blue-50 rounded-xl p-3 border border-blue-100">
             {feedLoading ? (
                <p className="text-sm text-gray-500 font-medium animate-pulse">Loading live events...</p>
-            ) : (
+            ) : liveFeed.length > 0 ? (
                <div className="flex gap-8 animate-marquee whitespace-nowrap">
                  {liveFeed.map(feed => (
                    <span key={feed.id} className="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -302,6 +314,8 @@ export default function HomePage() {
                    </span>
                  ))}
                </div>
+            ) : (
+               <p className="text-sm text-gray-400 font-medium">No recent activities.</p>
             )}
           </div>
         </div>
@@ -444,3 +458,4 @@ export default function HomePage() {
     </div>
   );
 }
+export default HomePage;
