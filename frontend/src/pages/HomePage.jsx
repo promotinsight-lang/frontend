@@ -6,9 +6,6 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
-// 🔥 API Base URL (Environment Variable বা localhost ব্যবহার করুন)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 export default function HomePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -22,26 +19,33 @@ export default function HomePage() {
   const [liveFeed, setLiveFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
 
-  // 🔥 PREMIUM SELLER CALCULATOR STATES
+  // 🔥 DYNAMIC DROPDOWN STATES
+  const [allConfigs, setAllConfigs] = useState([]);
+  const [availableCountries, setAvailableCountries] = useState([]);
+  const [availablePlatforms, setAvailablePlatforms] = useState([]);
+
   const [calcData, setCalcData] = useState({
-    country: 'USA',
-    platform: 'Amazon',
+    country: '',
+    platform: '',
     price: 25.00,
     reward: 5.00,
     qty: 10
   });
   
-  const [feeRate, setFeeRate] = useState(0.10); // Default 10%
-  const [activeConfig, setActiveConfig] = useState(null); // Full config state
+  const [feeRate, setFeeRate] = useState(0.10); 
+  const [activeConfig, setActiveConfig] = useState(null); 
   const [isCalcLoading, setIsCalcLoading] = useState(false);
 
-  // Dynamic Currency Map
   const currencySymbols = {
     'USA': '$', 'UK': '£', 'Canada': 'C$', 'Mexico': 'MX$',
     'Germany': '€', 'France': '€', 'Italy': '€', 'Spain': '€',
-    'Brazil': 'R$', 'Bangladesh': '৳'
+    'Brazil': 'R$', 'Bangladesh': '৳', 'India': '₹'
   };
-  const calcCurrency = currencySymbols[calcData.country] || '$';
+  
+  const typedCountryKey = Object.keys(currencySymbols).find(
+    key => key.toLowerCase() === calcData.country.trim().toLowerCase()
+  );
+  const calcCurrency = typedCountryKey ? currencySymbols[typedCountryKey] : '$';
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -51,32 +55,63 @@ export default function HomePage() {
       if (parsed.is_active === false) setIsAccountDisabled(true);
     }
 
-    // 🔥 FIX: Real API Call for Live Feed (Replaced setTimeout)
-    const fetchLiveFeed = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/users/live-feed`);
-        const data = await res.json();
-        if (data.success && data.data) {
-          setLiveFeed(data.data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch live feed:", error);
-        setLiveFeed([]);
-      } finally {
-        setFeedLoading(false);
-      }
-    };
+    setTimeout(() => {
+      setLiveFeed([
+        { id: "lf-1", text: "A buyer from USA just received $15 cashback!", time: "2 mins ago" },
+        { id: "lf-2", text: "New Amazon product listed with 100% refund.", time: "5 mins ago" },
+        { id: "lf-3", text: "Seller 'TechStore' deposited $500.", time: "12 mins ago" }
+      ]);
+      setFeedLoading(false);
+    }, 1500);
 
-    fetchLiveFeed();
   }, []);
 
-  // 🔥 REAL-TIME DYNAMIC FEE FETCH FOR CALCULATOR
+  // 🔥 FETCH ALL CONFIGS ON MOUNT TO POPULATE DROPDOWNS
   useEffect(() => {
-    const fetchCalcTarrifs = async () => {
+    const initConfigs = async () => {
       setIsCalcLoading(true);
       try {
-        // 🔥 FIX: Used API_URL instead of hardcoded localhost
-        const res = await fetch(`${API_URL}/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`);
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        const res = await fetch(`http://localhost:5000/api/config/fees/all`, { headers });
+        const data = await res.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+          setAllConfigs(data.data);
+          
+          const uniqueCountries = [...new Set(data.data.map(item => item.country))];
+          setAvailableCountries(uniqueCountries);
+          
+          if (uniqueCountries.length > 0) {
+            const firstCountry = uniqueCountries[0];
+            const platformsForCountry = data.data.filter(c => c.country === firstCountry).map(c => c.platform);
+            setAvailablePlatforms(platformsForCountry);
+            
+            const firstPlatform = platformsForCountry[0] || '';
+            setCalcData(prev => ({ ...prev, country: firstCountry, platform: firstPlatform }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load dynamic configs", error);
+      } finally {
+        setIsCalcLoading(false);
+      }
+    };
+    initConfigs();
+  }, []);
+
+  // 🔥 REAL-TIME DYNAMIC FEE FETCH WHEN COUNTRY/PLATFORM CHANGES
+  useEffect(() => {
+    const fetchCalcTarrifs = async () => {
+      if (!calcData.country || !calcData.platform) return;
+      
+      setIsCalcLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        const res = await fetch(`http://localhost:5000/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`, { headers });
         const data = await res.json();
         
         if (data.success && data.data) {
@@ -100,7 +135,7 @@ export default function HomePage() {
     fetchCalcTarrifs();
   }, [calcData.country, calcData.platform]);
 
-  // 🔥 FIXED CALCULATIONS (Includes Refund Fee/Cashback Fee)
+  // CALCULATIONS
   const unitCost = parseFloat(calcData.price || 0) + parseFloat(calcData.reward || 0);
   const platformFee = unitCost * feeRate;
   const refundFeeRate = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
@@ -108,6 +143,19 @@ export default function HomePage() {
   
   const totalPerUnit = unitCost + platformFee + refundFeeAmount;
   const grandTotalDeposit = totalPerUnit * parseInt(calcData.qty || 1);
+
+  // 🔥 Handle Dropdown Changes Dynamically
+  const handleCountryChange = (e) => {
+    const selectedCountry = e.target.value;
+    const platforms = allConfigs.filter(c => c.country === selectedCountry).map(c => c.platform);
+    
+    setAvailablePlatforms(platforms);
+    setCalcData({ ...calcData, country: selectedCountry, platform: platforms[0] || '' });
+  };
+
+  const handlePlatformChange = (e) => {
+    setCalcData({ ...calcData, platform: e.target.value });
+  };
 
   const handleCalcChange = (e) => {
     setCalcData({ ...calcData, [e.target.name]: e.target.value });
@@ -129,7 +177,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 1. HERO SECTION */}
+      {/* HERO SECTION */}
       <section className="relative bg-gradient-to-br from-[#0066ff] to-indigo-900 pt-24 pb-32 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
         <div className="max-w-7xl mx-auto text-center relative z-10">
@@ -157,11 +205,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. 🔥 PREMIUM SMART CALCULATOR */}
+      {/* 🔥 SMART CALCULATOR */}
       <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
           
-          {/* Left Side: Inputs */}
           <div className="w-full md:w-3/5 p-8 lg:p-10 bg-white relative">
             <div className="flex items-center gap-2 mb-6">
               <Calculator className="text-[#0066ff]" size={28} />
@@ -169,23 +216,26 @@ export default function HomePage() {
             </div>
             <p className="text-sm text-gray-500 mb-8 font-medium">Estimate your campaign budget in real-time. Tariffs are dynamically fetched based on the target country and platform.</p>
             
+            {/* 🔥 DYNAMIC DROPDOWNS */}
             <div className="grid grid-cols-2 gap-4 mb-5">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Target Country</label>
-                <select name="country" value={calcData.country} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
-                  <option value="USA">🇺🇸 United States</option>
-                  <option value="UK">🇬🇧 United Kingdom</option>
-                  <option value="Brazil">🇧🇷 Brazil</option>
-                  <option value="Bangladesh">🇧🇩 Bangladesh</option>
+                <select name="country" value={calcData.country} onChange={handleCountryChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-50 transition-all cursor-pointer">
+                  {availableCountries.length > 0 ? (
+                    availableCountries.map(c => <option key={c} value={c}>{c}</option>)
+                  ) : (
+                    <option value="">No Data</option>
+                  )}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Platform</label>
-                <select name="platform" value={calcData.platform} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
-                  <option value="Amazon">Amazon</option>
-                  <option value="Walmart">Walmart</option>
-                  <option value="Mercado Libre">Mercado Libre</option>
-                  <option value="Daraz">Daraz</option>
+                <select name="platform" value={calcData.platform} onChange={handlePlatformChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                  {availablePlatforms.length > 0 ? (
+                    availablePlatforms.map(p => <option key={p} value={p}>{p}</option>)
+                  ) : (
+                    <option value="">No Data</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -223,7 +273,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Side: Results */}
           <div className="w-full md:w-2/5 bg-gradient-to-b from-[#f8f9fa] to-gray-100 p-8 lg:p-10 border-l border-gray-200 relative">
             {isCalcLoading && (
                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-r-3xl">
@@ -246,7 +295,6 @@ export default function HomePage() {
                 <span className="font-bold text-red-500">+{calcCurrency}{platformFee.toFixed(2)}</span>
               </div>
               
-              {/* 🔥 NEW: Refund Fee (Cashback Fee) Breakdown */}
               {activeConfig && parseFloat(activeConfig.buyer_refund_fee) > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 font-medium flex items-center gap-1">
@@ -291,7 +339,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. LIVE ACTIVITY FEED */}
+      {/* LIVE ACTIVITY FEED */}
       <section className="py-10 bg-white border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
           <div className="flex items-center gap-2 text-[#0066ff] font-black uppercase tracking-widest text-sm shrink-0">
@@ -300,28 +348,25 @@ export default function HomePage() {
           <div className="flex-1 w-full overflow-hidden bg-blue-50 rounded-xl p-3 border border-blue-100">
             {feedLoading ? (
                <p className="text-sm text-gray-500 font-medium animate-pulse">Loading live events...</p>
-            ) : liveFeed.length > 0 ? (
+            ) : (
                <div className="flex gap-8 animate-marquee whitespace-nowrap">
-                 {liveFeed.map(feed => (
-                   <span key={feed.id} className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                 {liveFeed.map((feed, index) => (
+                   <span key={`feed-${index}`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
                      <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
                    </span>
                  ))}
-                 {/* Duplicate for seamless scrolling */}
-                 {liveFeed.map(feed => (
-                   <span key={`${feed.id}-dup`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                 {liveFeed.map((feed, index) => (
+                   <span key={`feed-dup-${index}`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
                      <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
                    </span>
                  ))}
                </div>
-            ) : (
-               <p className="text-sm text-gray-400 font-medium">No recent activities.</p>
             )}
           </div>
         </div>
       </section>
 
-      {/* 4. HOW IT WORKS */}
+      {/* HOW IT WORKS */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
@@ -330,16 +375,10 @@ export default function HomePage() {
           </div>
 
           <div className="flex justify-center gap-4 mb-12">
-            <button 
-              onClick={() => setWorkTab('buyer')} 
-              className={`px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${workTab === 'buyer' ? 'bg-[#0066ff] text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border'}`}
-            >
+            <button onClick={() => setWorkTab('buyer')} className={`px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${workTab === 'buyer' ? 'bg-[#0066ff] text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border'}`}>
               I am a Buyer
             </button>
-            <button 
-              onClick={() => setWorkTab('seller')} 
-              className={`px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${workTab === 'seller' ? 'bg-yellow-400 text-gray-900' : 'bg-white text-gray-600 hover:bg-gray-100 border'}`}
-            >
+            <button onClick={() => setWorkTab('seller')} className={`px-8 py-3 rounded-full font-bold text-sm transition-all shadow-sm ${workTab === 'seller' ? 'bg-yellow-400 text-gray-900' : 'bg-white text-gray-600 hover:bg-gray-100 border'}`}>
               I am a Seller
             </button>
           </div>
@@ -348,23 +387,17 @@ export default function HomePage() {
             {workTab === 'buyer' ? (
               <>
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
-                  <div className="w-16 h-16 bg-blue-100 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
-                    <Search size={32} />
-                  </div>
+                  <div className="w-16 h-16 bg-blue-100 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3"><Search size={32} /></div>
                   <h3 className="font-bold text-xl text-gray-800 mb-3">1. Find Product</h3>
                   <p className="text-gray-500 text-sm">Browse the marketplace and apply for a product you want to test and share feedback on.</p>
                 </div>
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
-                  <div className="w-16 h-16 bg-blue-100 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-6 -rotate-3">
-                    <CheckCircle size={32} />
-                  </div>
+                  <div className="w-16 h-16 bg-blue-100 text-[#0066ff] rounded-2xl flex items-center justify-center mx-auto mb-6 -rotate-3"><CheckCircle size={32} /></div>
                   <h3 className="font-bold text-xl text-gray-800 mb-3">2. Buy & Share Feedback</h3>
                   <p className="text-gray-500 text-sm">Purchase the item from Amazon/Walmart. Submit your order ID. After receiving it, leave a 5-star rating and honest feedback.</p>
                 </div>
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
-                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
-                    <Wallet size={32} />
-                  </div>
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3"><Wallet size={32} /></div>
                   <h3 className="font-bold text-xl text-gray-800 mb-3">3. Get Paid</h3>
                   <p className="text-gray-500 text-sm">Once verified, 100% of the product cost plus your reward is instantly credited to your wallet.</p>
                 </div>
@@ -372,23 +405,17 @@ export default function HomePage() {
             ) : (
               <>
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
-                  <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
-                    <LayoutDashboard size={32} />
-                  </div>
+                  <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3"><LayoutDashboard size={32} /></div>
                   <h3 className="font-bold text-xl text-gray-800 mb-3">1. Deposit & List</h3>
                   <p className="text-gray-500 text-sm">Deposit funds securely. List your product with the required number of orders and set a buyer reward.</p>
                 </div>
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
-                  <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6 -rotate-3">
-                    <ShieldCheck size={32} />
-                  </div>
+                  <div className="w-16 h-16 bg-yellow-100 text-yellow-600 rounded-2xl flex items-center justify-center mx-auto mb-6 -rotate-3"><ShieldCheck size={32} /></div>
                   <h3 className="font-bold text-xl text-gray-800 mb-3">2. Verify Work</h3>
                   <p className="text-gray-500 text-sm">Buyers will purchase your item. Verify their order screenshots and live feedback links directly from your dashboard.</p>
                 </div>
                 <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center hover:-translate-y-2 transition-transform">
-                  <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3">
-                    <TrendingUp size={32} />
-                  </div>
+                  <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 rotate-3"><TrendingUp size={32} /></div>
                   <h3 className="font-bold text-xl text-gray-800 mb-3">3. Boost Ranking</h3>
                   <p className="text-gray-500 text-sm">Gain organic traction. Funds are released to buyers automatically upon your approval.</p>
                 </div>
@@ -398,7 +425,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. FAQs */}
+      {/* FAQs */}
       <section className="py-20 bg-white border-t border-gray-100">
         <div className="max-w-3xl mx-auto px-4">
           <div className="text-center mb-12">
@@ -425,7 +452,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. FOOTER */}
+      {/* FOOTER */}
       <footer className="bg-gray-900 text-gray-400 py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-b border-gray-800 pb-8 mb-8">
           <div>
@@ -458,4 +485,3 @@ export default function HomePage() {
     </div>
   );
 }
-export default HomePage;

@@ -53,8 +53,9 @@ const getFeeConfig = async (req, res) => {
         const query = `SELECT * FROM dynamic_fees_config WHERE LOWER(country) = LOWER($1) AND LOWER(platform) = LOWER($2)`;
         const result = await pool.query(query, [country.trim(), platform.trim()]);
 
+        // 🔥 FIXED: 404 এর বদলে 200 রিটার্ন করা হলো null ডেটা সহ। এর ফলে ব্রাউজার কনসোলে আর লাল এরর আসবে না।
         if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'No configuration found.' });
+            return res.status(200).json({ success: true, data: null, message: 'No configuration found.' });
         }
 
         return res.status(200).json({ success: true, data: result.rows[0] });
@@ -77,7 +78,7 @@ const getAllFeeConfigs = async (req, res) => {
     }
 };
 
-// 🔥 NEW: নির্দিষ্ট কনফিগারেশন ডিলিট করার ফাংশন
+// নির্দিষ্ট কনফিগারেশন ডিলিট করার ফাংশন
 const deleteFeeConfig = async (req, res) => {
     try {
         const { country, platform } = req.params;

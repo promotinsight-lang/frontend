@@ -14,12 +14,19 @@ const adminFeeConfigLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+// ==========================================
+// 🌍 Public Routes (যে কেউ, এমনকি লগিন ছাড়াও ডাটা দেখতে পারবে)
+// ==========================================
 // Public lookup for seller calculator and product listing previews.
 router.get('/', getFeeConfig);
+// 🔥 FIXED: Removed protect & authorize('admin') to allow public dropdowns in HomePage
+router.get('/all', getAllFeeConfigs); 
 
+// ==========================================
+// 🔒 Secured Admin Routes (শুধুমাত্র অ্যাডমিন সেভ ও ডিলিট করতে পারবে)
+// ==========================================
 // Admin-only fee configuration management.
 router.post('/', protect, authorize('admin'), adminFeeConfigLimiter, upsertFeeConfig);
-router.get('/all', protect, authorize('admin'), getAllFeeConfigs);
 router.delete('/:country/:platform', protect, authorize('admin'), adminFeeConfigLimiter, deleteFeeConfig);
 
 module.exports = router;

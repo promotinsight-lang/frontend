@@ -11,12 +11,16 @@ export default function AddProduct({ onProductAdded }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 Dynamic Fee States
-  const [platformChargePercent, setPlatformChargePercent] = useState(0.10); // Default 10%
-  const [activeConfig, setActiveConfig] = useState(null); // Full config state
-  const [isFeeLoading, setIsFeeLoading] = useState(false);
+  // 🔥 DYNAMIC DROPDOWN STATES
+  const [allConfigs, setAllConfigs] = useState([]);
+  const [availableCountries, setAvailableCountries] = useState([]);
+  const [availablePlatforms, setAvailablePlatforms] = useState([]);
 
-  // Dynamic Currency Map
+  // 🔥 Dynamic Fee States
+  const [platformChargePercent, setPlatformChargePercent] = useState(0.10); 
+  const [activeConfig, setActiveConfig] = useState(null); 
+  const [isFeeLoading, setIsFeeLoading] = useState(true);
+
   const currencySymbols = {
     'USA': '$', 'UK': '£', 'Canada': 'C$', 'Mexico': 'MX$',
     'Germany': '€', 'France': '€', 'Italy': '€', 'Spain': '€',
@@ -29,69 +33,90 @@ export default function AddProduct({ onProductAdded }) {
   );
   const currency = typedCountryKey ? currencySymbols[typedCountryKey] : '$';
 
-  // 🔥 Fetch Dynamic Fee from Backend
-  const fetchDynamicFee = async () => {
-    if (!formData.country.trim() || !formData.platform.trim()) return;
-    
-    setIsFeeLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/config/fees?country=${formData.country.trim()}&platform=${formData.platform.trim()}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      });
-      const data = await res.json();
-      
-      if (data.success && data.data) {
-        setPlatformChargePercent(parseFloat(data.data.platform_charge) / 100);
-        setActiveConfig(data.data);
-        
-        // Force the fixed reward if set by Admin
-        if (parseFloat(data.data.buyer_reward) > 0) {
-            setFormData(prev => ({ ...prev, reward: parseFloat(data.data.buyer_reward) }));
-        }
-      } else {
-        setPlatformChargePercent(0.10); // Fallback to 10% if not configured
-        setActiveConfig(null);
-      }
-    } catch (error) {
-      console.error("Failed to fetch dynamic fee:", error);
-      setPlatformChargePercent(0.10);
-      setActiveConfig(null);
-    } finally {
-      setIsFeeLoading(false);
-    }
-  };
-
-  // 🔥 Auto-fetch fees with 500ms debounce when country/platform changes
+  // 🔥 FETCH ALL CONFIGS ON MOUNT TO POPULATE DROPDOWNS
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (formData.country.trim() && formData.platform.trim()) {
-        fetchDynamicFee();
+    const initConfigs = async () => {
+      setIsFeeLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:5000/api/config/fees/all`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+          setAllConfigs(data.data);
+          
+          const uniqueCountries = [...new Set(data.data.map(item => item.country))];
+          setAvailableCountries(uniqueCountries);
+          
+          if (uniqueCountries.length > 0) {
+            const firstCountry = uniqueCountries[0];
+            const platformsForCountry = data.data.filter(c => c.country === firstCountry).map(c => c.platform);
+            setAvailablePlatforms(platformsForCountry);
+            
+            const firstPlatform = platformsForCountry[0] || '';
+            setFormData(prev => ({ ...prev, country: firstCountry, platform: firstPlatform }));
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load dynamic configs", error);
+      } finally {
+        setIsFeeLoading(false);
       }
-    }, 500); // 500ms debounce
+    };
+    initConfigs();
+  }, []);
 
-    return () => clearTimeout(timeoutId);
+  // 🔥 REAL-TIME DYNAMIC FEE FETCH WHEN COUNTRY/PLATFORM CHANGES
+  useEffect(() => {
+    const fetchDynamicFee = async () => {
+      if (!formData.country || !formData.platform) return;
+      
+      setIsFeeLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:5000/api/config/fees?country=${formData.country}&platform=${formData.platform}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+          setPlatformChargePercent(parseFloat(data.data.platform_charge) / 100);
+          setActiveConfig(data.data);
+          
+          if (parseFloat(data.data.buyer_reward) > 0) {
+              setFormData(prev => ({ ...prev, reward: parseFloat(data.data.buyer_reward) }));
+          }
+        } else {
+          setPlatformChargePercent(0.10); 
+          setActiveConfig(null);
+        }
+      } catch (error) {
+        setPlatformChargePercent(0.10);
+        setActiveConfig(null);
+      } finally {
+        setIsFeeLoading(false);
+      }
+    };
+    fetchDynamicFee();
   }, [formData.country, formData.platform]);
 
-  // 🔥 Commission & Total Deposit Calculation
-  const priceNum = parseFloat(formData.price) || 0;
-  const rewardNum = parseFloat(formData.reward) || 0;
-  const qtyNum = parseInt(formData.required_orders) || 1;
-  
-  const costPerOrder = priceNum + rewardNum;
-  const platformCommission = costPerOrder * platformChargePercent; 
-  const totalDeposit = (costPerOrder + platformCommission) * qtyNum;
+  // 🔥 Handle Dropdown Changes Dynamically
+  const handleCountryChange = (e) => {
+    const selectedCountry = e.target.value;
+    const platforms = allConfigs.filter(c => c.country === selectedCountry).map(c => c.platform);
+    
+    setAvailablePlatforms(platforms);
+    setFormData({ ...formData, country: selectedCountry, platform: platforms[0] || '' });
+  };
+
+  const handlePlatformChange = (e) => {
+    setFormData({ ...formData, platform: e.target.value });
+  };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
-    // Reset dynamic fee if country or platform is changed
-    if (name === 'country' || name === 'platform') {
-      setPlatformChargePercent(0.10); // Fallback to default
-      setActiveConfig(null);
-    }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleImageChange = (e) => {
@@ -102,28 +127,27 @@ export default function AddProduct({ onProductAdded }) {
     }
   };
 
+  // 🔥 FIXED COMMISSION & TOTAL DEPOSIT CALCULATION
+  const priceNum = parseFloat(formData.price) || 0;
+  const rewardNum = parseFloat(formData.reward) || 0;
+  const qtyNum = parseInt(formData.required_orders) || 1;
+  
+  const costPerOrder = priceNum + rewardNum;
+  const platformCommission = costPerOrder * platformChargePercent; 
+  
+  const refundFeePercent = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
+  const refundFeeAmount = costPerOrder * refundFeePercent;
+  
+  const totalDeposit = (costPerOrder + platformCommission + refundFeeAmount) * qtyNum;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile) {
-      alert("Please upload a product image.");
-      return;
-    }
-    
-    if (!formData.country.trim() || !formData.platform.trim()) {
-      alert("Country and Platform are required fields.");
-      return;
-    }
+    if (!imageFile) return alert("Please upload a product image.");
+    if (!formData.country.trim() || !formData.platform.trim()) return alert("Country and Platform are required fields.");
 
     setLoading(true);
-
     const submitData = new FormData();
-    Object.keys(formData).forEach(key => {
-      submitData.append(key, formData[key].trim());
-    });
-    
-    // 🔥 SECURITY FIX: Send calculated deposit to backend for verification
-    submitData.append('totalDeposit', totalDeposit.toFixed(2));
-    
+    Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
     submitData.append('image', imageFile);
 
     try {
@@ -131,35 +155,26 @@ export default function AddProduct({ onProductAdded }) {
       const res = await fetch('http://localhost:5000/api/products', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
-        body: submitData,
-        credentials: 'include'
+        body: submitData
       });
       
       const data = await res.json();
-      
       if (res.status === 429) {
           alert('Rate Limit Exceeded. Please try again later.');
-          setLoading(false);
-          return;
+          setLoading(false); return;
       }
-
       if (data.success) {
         alert(data.message || "Product published successfully!");
-        setFormData({
-          product_name: '', product_link: '', store_name: '', search_keyword: '', 
-          country: '', price: '', reward: '', required_orders: 1, 
-          instructions: '', platform: '', category: 'Need Review'
-        });
-        setImageFile(null);
-        setImagePreview(null);
-        setActiveConfig(null); // Reset fee config on successful submit
-        setPlatformChargePercent(0.10);
+        setFormData(prev => ({
+          ...prev, product_name: '', product_link: '', store_name: '', search_keyword: '', 
+          price: '', reward: '', required_orders: 1, instructions: '', category: 'Need Review'
+        }));
+        setImageFile(null); setImagePreview(null);
         if(onProductAdded) onProductAdded();
       } else {
         alert(data.message || "Failed to publish product.");
       }
     } catch (error) {
-      console.error("Add product error:", error);
       alert("Server connection error. Please try again.");
     } finally {
       setLoading(false);
@@ -208,31 +223,29 @@ export default function AddProduct({ onProductAdded }) {
               placeholder="https://amazon.com/dp/B08XYZ..." />
           </div>
 
-          {/* Target Country & Platform */}
+          {/* 🔥 DYNAMIC DROPDOWNS */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Target Country *</label>
-              <input 
-                required 
-                type="text" 
-                name="country" 
-                value={formData.country} 
-                onChange={handleChange} 
-                className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 focus:bg-white font-semibold"
-                placeholder="e.g. USA, UK, Bangladesh..." 
-              />
+              <select name="country" required value={formData.country} onChange={handleCountryChange} 
+                className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 font-semibold cursor-pointer">
+                {availableCountries.length > 0 ? (
+                  availableCountries.map(c => <option key={c} value={c}>{c}</option>)
+                ) : (
+                  <option value="">No Data</option>
+                )}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Platform *</label>
-              <input 
-                required 
-                type="text" 
-                name="platform" 
-                value={formData.platform} 
-                onChange={handleChange} 
-                className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 focus:bg-white font-semibold"
-                placeholder="e.g. Amazon, Daraz..." 
-              />
+              <select name="platform" required value={formData.platform} onChange={handlePlatformChange} 
+                className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 font-semibold cursor-pointer">
+                {availablePlatforms.length > 0 ? (
+                  availablePlatforms.map(p => <option key={p} value={p}>{p}</option>)
+                ) : (
+                  <option value="">No Data</option>
+                )}
+              </select>
             </div>
           </div>
 
@@ -317,8 +330,7 @@ export default function AddProduct({ onProductAdded }) {
           {isFeeLoading && (
              <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10 flex items-center justify-center">
                 <span className="text-blue-700 font-bold text-sm flex items-center gap-2">
-                  <RefreshCw className="animate-spin" size={18} /> 
-                  Fetching Active Tariffs...
+                  <RefreshCw className="animate-spin" size={18} /> Fetching Active Tariffs...
                 </span>
              </div>
           )}
@@ -363,13 +375,23 @@ export default function AddProduct({ onProductAdded }) {
                     </span>
                     <span className="font-bold text-red-500">+{currency}{platformCommission.toFixed(2)}</span>
                   </div>
+
+                  {/* 🔥 NEW: Refund Fee/Cashback Fee */}
+                  {activeConfig && parseFloat(activeConfig.buyer_refund_fee) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-gray-500 flex items-center gap-1">
+                        Refund Fee ({parseFloat(activeConfig.buyer_refund_fee).toFixed(1)}%) 
+                      </span>
+                      <span className="font-bold text-red-500">+{currency}{refundFeeAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
                     <span className="font-semibold text-gray-500">Target Quantity</span>
                     <span className="font-bold text-gray-800">x {qtyNum}</span>
                   </div>
                   
-                  <div className="border-t border-gray-100 pt-3 mt-3 flex justify-between items-center">
+                  <div className="border-t border-gray-200 pt-3 mt-2 flex justify-between items-center">
                     <span className="font-black text-gray-800 text-base">Total Required Deposit</span>
                     <span className="font-black text-2xl text-[#0066ff]">{currency}{totalDeposit.toFixed(2)}</span>
                   </div>
@@ -382,26 +404,15 @@ export default function AddProduct({ onProductAdded }) {
           </p>
         </div>
 
-        {/* Submit Button */}
         <button 
           type="submit" 
           disabled={loading || isFeeLoading} 
-          className="md:col-span-2 bg-[#0066ff] text-white p-4 rounded-xl hover:bg-blue-700 transition-all font-black text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2"
+          className="mt-6 w-full bg-[#0066ff] text-white p-4 rounded-xl hover:bg-blue-700 transition-all font-black text-lg disabled:opacity-50 shadow-lg flex items-center justify-center gap-2 md:col-span-2"
         >
-          {loading ? (
-            <><RefreshCw className="animate-spin" size={20} /> Publishing...</>
-          ) : (
-            'Confirm & Publish Campaign'
-          )}
+          {loading ? <><RefreshCw className="animate-spin" size={20} /> Publishing...</> : 'Confirm & Publish Campaign'}
         </button>
 
       </form>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .animate-fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      `}} />
     </div>
   );
 }
-export default AddProduct;

@@ -28,7 +28,6 @@ export default function App() {
     return (token && storedUser) ? JSON.parse(storedUser) : null;
   });
 
-  
   // 🔥 Secure Session Validation on App Load (HttpOnly Cookie Fallback)
   useEffect(() => {
     const verifySession = async () => {
@@ -70,7 +69,7 @@ export default function App() {
       <div className="min-h-screen bg-slate-950">
         
         <Routes>
-          {/* অ্যাডমিন লগইন করা থাকলে হোমপেজের বদলে সরাসরি ড্যাশবোর্ডে যাবে */}
+          {/* Admin login kora thakle homepage-er bodle shorasori dashboard-e jabe */}
           <Route 
             path="/" 
             element={user?.role === 'admin' ? <Navigate to="/dashboard" /> : <HomePage />} 
