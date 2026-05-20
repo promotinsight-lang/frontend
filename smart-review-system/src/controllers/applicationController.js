@@ -31,6 +31,49 @@ const getIpLocation = async (ip) => {
   }
 };
 
+const updateApplicationStatus = async (req, res, options) => {
+  const client = await pool.connect();
+  try {
+    const applicationId = req.params.id;
+    const { allowedStatuses, nextStatus, successMessage, invalidMessage } = options;
+
+    await client.query('BEGIN');
+
+    const appResult = await client.query(
+      "SELECT * FROM applications WHERE id = $1 FOR UPDATE",
+      [applicationId]
+    );
+
+    if (appResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: "Application not found" });
+    }
+
+    const application = appResult.rows[0];
+    if (!allowedStatuses.includes(application.status)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: invalidMessage || `Application must be in ${allowedStatuses.join(', ')} status.`
+      });
+    }
+
+    const result = await client.query(
+      "UPDATE applications SET status = $1 WHERE id = $2 RETURNING *",
+      [nextStatus, applicationId]
+    );
+
+    await client.query('COMMIT');
+    return res.status(200).json({ success: true, message: successMessage, application: result.rows[0], data: result.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error("APPLICATION STATUS UPDATE ERROR:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  } finally {
+    client.release();
+  }
+};
+
 // =======================
 // ✅ Apply to Product (Buyer)
 // =======================
@@ -64,14 +107,44 @@ const applyToProduct = async (req, res) => {
       return res.status(403).json({ message: "Your account is currently frozen. You cannot apply for new products at this moment." });
     }
 
-    if (!product_id) {
+    const productId = parseInt(product_id, 10);
+    if (!Number.isInteger(productId) || productId <= 0) {
       await client.query('ROLLBACK');
       return res.status(400).json({ message: "product_id is required" });
     }
 
+    const productResult = await client.query(
+      "SELECT id, status, required_orders FROM products WHERE id = $1 FOR UPDATE",
+      [productId]
+    );
+
+    if (productResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const product = productResult.rows[0];
+    if (product.status !== 'approved') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: "This product is not available for new applications" });
+    }
+
+    const applicationCount = await client.query(
+      "SELECT COUNT(*)::int AS count FROM applications WHERE product_id = $1 AND status != 'rejected'",
+      [productId]
+    );
+
+    const requiredOrders = parseInt(product.required_orders, 10) || 0;
+    const currentApplications = parseInt(applicationCount.rows[0].count, 10) || 0;
+
+    if (requiredOrders > 0 && currentApplications >= requiredOrders) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: "This product is sold out" });
+    }
+
     const existing = await client.query(
       "SELECT id FROM applications WHERE user_id = $1 AND product_id = $2",
-      [user_id, product_id]
+      [user_id, productId]
     );
 
     if (existing.rows.length > 0) {
@@ -81,7 +154,7 @@ const applyToProduct = async (req, res) => {
 
     const result = await client.query(
       `INSERT INTO applications (user_id, product_id, status, ip_address, ip_location) VALUES ($1, $2, 'pending', $3, $4) RETURNING *`,
-      [user_id, product_id, ipAddress, ipLocation]
+      [user_id, productId, ipAddress, ipLocation]
     );
 
     await client.query('COMMIT');
@@ -99,36 +172,24 @@ const applyToProduct = async (req, res) => {
 // ✅ Admin Approve Application
 // =======================
 const approveApplication = async (req, res) => {
-  try {
-    const applicationId = req.params.id;
-    const result = await pool.query(
-      `UPDATE applications SET status = 'approved' WHERE id = $1 RETURNING *`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) return res.status(404).json({ message: "Application not found" });
-    res.json({ message: "Application approved successfully", application: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return updateApplicationStatus(req, res, {
+    allowedStatuses: ['pending'],
+    nextStatus: 'approved',
+    successMessage: "Application approved successfully",
+    invalidMessage: "Only pending applications can be approved."
+  });
 };
 
 // =======================
 // ❌ Admin Reject Application
 // =======================
 const rejectApplication = async (req, res) => {
-  try {
-    const applicationId = req.params.id;
-    const result = await pool.query(
-      `UPDATE applications SET status = 'rejected' WHERE id = $1 RETURNING *`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) return res.status(404).json({ message: "Application not found" });
-    res.json({ message: "Application rejected successfully", application: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return updateApplicationStatus(req, res, {
+    allowedStatuses: ['pending'],
+    nextStatus: 'rejected',
+    successMessage: "Application rejected successfully",
+    invalidMessage: "Only pending applications can be rejected from this action."
+  });
 };
 
 // =======================
@@ -155,6 +216,20 @@ const deleteApplicationAdmin = async (req, res) => {
 const getApplicationsByProduct = async (req, res) => {
   try {
     const productId = req.params.id;
+    const userRole = req.user.role;
+    const userId = req.user.id;
+
+    if (userRole === 'seller') {
+      const productCheck = await pool.query(
+        "SELECT id FROM products WHERE id = $1 AND seller_id = $2",
+        [productId, userId]
+      );
+
+      if (productCheck.rows.length === 0) {
+        return res.status(403).json({ success: false, message: "Unauthorized. This product does not belong to you." });
+      }
+    }
+
     const result = await pool.query(
       `SELECT a.id, a.status, a.order_number, a.screenshot_url, a.order_comment, 
               a.review_screenshot_url, a.review_link, a.refund_screenshot_url, a.refund_comment, a.created_at, a.ip_address, a.ip_location,
@@ -207,9 +282,16 @@ const submitOrder = async (req, res) => {
     if (appCheck.rows[0].status !== 'approved') return res.status(400).json({ message: "You can only submit an order for 'approved' applications" });
 
     const result = await pool.query(
-      `UPDATE applications SET order_number = $1, screenshot_url = $2, order_comment = $3, status = 'order_submitted' WHERE id = $4 RETURNING *`,
-      [escapeHTML(order_number.trim()), screenshot_url ? escapeHTML(screenshot_url.trim()) : null, order_comment ? escapeHTML(order_comment.trim()) : null, applicationId]
+      `UPDATE applications 
+       SET order_number = $1, screenshot_url = $2, order_comment = $3, status = 'order_submitted' 
+       WHERE id = $4 AND user_id = $5 AND status = 'approved'
+       RETURNING *`,
+      [escapeHTML(order_number.trim()), screenshot_url ? escapeHTML(screenshot_url.trim()) : null, order_comment ? escapeHTML(order_comment.trim()) : null, applicationId, userId]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Application status changed. Please refresh and try again." });
+    }
 
     res.status(200).json({ success: true, message: "Order submitted successfully with screenshot", data: result.rows[0] });
   } catch (error) {
@@ -221,54 +303,36 @@ const submitOrder = async (req, res) => {
 // ➡️ Forward Order to Seller (Admin)
 // ==========================================
 const forwardOrderToSeller = async (req, res) => {
-  try {
-    const applicationId = req.params.id;
-    const result = await pool.query(
-      `UPDATE applications SET status = 'forwarded_to_seller' WHERE id = $1 AND status IN ('order_submitted', 'review_submitted') RETURNING *`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or invalid status" });
-    res.status(200).json({ success: true, message: "Forwarded to seller for verification.", data: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return updateApplicationStatus(req, res, {
+    allowedStatuses: ['order_submitted', 'review_submitted'],
+    nextStatus: 'forwarded_to_seller',
+    successMessage: "Forwarded to seller for verification.",
+    invalidMessage: "Application must have a submitted order or review before forwarding."
+  });
 };
 
 // ==========================================
 // 👑 Approve Order (Admin)
 // ==========================================
 const approveOrder = async (req, res) => {
-  try {
-    const applicationId = req.params.id;
-    const result = await pool.query(
-      `UPDATE applications SET status = 'order_approved' WHERE id = $1 AND status = 'order_submitted' RETURNING *`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or order has not been submitted yet" });
-    res.status(200).json({ success: true, message: "Order approved successfully. Buyer can now submit a review.", data: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return updateApplicationStatus(req, res, {
+    allowedStatuses: ['order_submitted'],
+    nextStatus: 'order_approved',
+    successMessage: "Order approved successfully. Buyer can now submit a review.",
+    invalidMessage: "Application not found or order has not been submitted yet."
+  });
 };
 
 // ==========================================
 // ❌ Reject Order (Admin)
 // ==========================================
 const rejectOrder = async (req, res) => {
-  try {
-    const applicationId = req.params.id;
-    const result = await pool.query(
-      `UPDATE applications SET status = 'rejected' WHERE id = $1 AND status = 'order_submitted' RETURNING *`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or order has not been submitted yet" });
-    res.status(200).json({ success: true, message: "Order rejected successfully.", data: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return updateApplicationStatus(req, res, {
+    allowedStatuses: ['order_submitted'],
+    nextStatus: 'rejected',
+    successMessage: "Order rejected successfully.",
+    invalidMessage: "Application not found or order has not been submitted yet."
+  });
 };
 
 // ==========================================
@@ -289,13 +353,21 @@ const submitReview = async (req, res) => {
     if (appCheck.rows[0].status !== 'order_approved') return res.status(400).json({ message: "You can only submit a review after your order is approved by the admin" });
 
     const result = await pool.query(
-      `UPDATE applications SET review_screenshot_url = $1, review_link = $2, status = 'review_submitted' WHERE id = $3 RETURNING *`,
+      `UPDATE applications 
+       SET review_screenshot_url = $1, review_link = $2, status = 'review_submitted' 
+       WHERE id = $3 AND user_id = $4 AND status = 'order_approved'
+       RETURNING *`,
       [
         review_screenshot_url ? escapeHTML(review_screenshot_url.trim()) : null, 
         review_link ? escapeHTML(review_link.trim()) : null, 
-        applicationId
+        applicationId,
+        userId
       ]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Application status changed. Please refresh and try again." });
+    }
 
     res.status(200).json({ success: true, message: "Review submitted successfully", data: result.rows[0] });
   } catch (error) {
@@ -307,36 +379,24 @@ const submitReview = async (req, res) => {
 // 👑 Approve Review (Admin)
 // ==========================================
 const approveReview = async (req, res) => {
-  try {
-    const applicationId = req.params.id;
-    const result = await pool.query(
-      `UPDATE applications SET status = 'pending_refund' WHERE id = $1 AND status = 'review_submitted' RETURNING *`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or review has not been submitted yet" });
-    res.status(200).json({ success: true, message: "Review approved successfully. Status changed to pending_refund.", data: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return updateApplicationStatus(req, res, {
+    allowedStatuses: ['review_submitted'],
+    nextStatus: 'pending_refund',
+    successMessage: "Review approved successfully. Status changed to pending_refund.",
+    invalidMessage: "Application not found or review has not been submitted yet."
+  });
 };
 
 // ==========================================
 // ❌ Reject Review (Admin)
 // ==========================================
 const rejectReview = async (req, res) => {
-  try {
-    const applicationId = req.params.id;
-    const result = await pool.query(
-      `UPDATE applications SET status = 'rejected' WHERE id = $1 AND status = 'review_submitted' RETURNING *`,
-      [applicationId]
-    );
-
-    if (result.rows.length === 0) return res.status(400).json({ message: "Application not found or review has not been submitted yet" });
-    res.status(200).json({ success: true, message: "Review rejected successfully.", data: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+  return updateApplicationStatus(req, res, {
+    allowedStatuses: ['review_submitted'],
+    nextStatus: 'rejected',
+    successMessage: "Review rejected successfully.",
+    invalidMessage: "Application not found or review has not been submitted yet."
+  });
 };
 
 // ==========================================
@@ -416,6 +476,17 @@ const confirmRefund = async (req, res) => {
     if (app.status === 'completed') {
        await client.query('ROLLBACK');
        return res.status(400).json({ message: "Refund already processed for this application." });
+    }
+
+    const allowedRefundStatuses = app.category === 'Pre-Pay' ? ['pending', 'pending_refund'] : ['pending_refund'];
+    if (!allowedRefundStatuses.includes(app.status)) {
+       await client.query('ROLLBACK');
+       return res.status(400).json({
+         success: false,
+         message: app.category === 'Pre-Pay'
+           ? "Pre-Pay payment can only be confirmed from pending or pending_refund status."
+           : "Refund can only be confirmed after the application reaches pending_refund status."
+       });
     }
 
     const totalGrossAmount = parseFloat(app.price) + parseFloat(app.reward);

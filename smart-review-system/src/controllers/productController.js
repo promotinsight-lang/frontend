@@ -1,5 +1,46 @@
 const pool = require("../config/db");
 
+const parseAmount = (value) => {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : NaN;
+};
+
+const parseQuantity = (value) => {
+  const quantity = Number.parseInt(value, 10);
+  return Number.isInteger(quantity) ? quantity : NaN;
+};
+
+const fetchFeeConfig = async (client, country, platform) => {
+  const result = await client.query(
+    `SELECT country, platform, platform_charge, buyer_reward
+     FROM dynamic_fees_config
+     WHERE LOWER(country) = LOWER($1) AND LOWER(platform) = LOWER($2)`,
+    [country.trim(), platform.trim()]
+  );
+
+  return result.rows[0] || null;
+};
+
+const calculateCampaignDeposit = ({ price, reward, quantity, feeConfig, useConfiguredBuyerReward = false }) => {
+  const fixedBuyerReward = parseAmount(feeConfig.buyer_reward);
+  const resolvedReward = useConfiguredBuyerReward && fixedBuyerReward > 0 ? fixedBuyerReward : reward;
+  const platformChargePercent = parseAmount(feeConfig.platform_charge) / 100;
+
+  const costPerOrder = price + resolvedReward;
+  const commissionPerOrder = costPerOrder * platformChargePercent;
+  const requiredDepositPerOrder = costPerOrder + commissionPerOrder;
+  const totalRequiredDeposit = requiredDepositPerOrder * quantity;
+
+  return {
+    resolvedReward,
+    platformChargePercent,
+    costPerOrder,
+    commissionPerOrder,
+    requiredDepositPerOrder,
+    totalRequiredDeposit,
+  };
+};
+
 // =======================
 // ✅ CREATE PRODUCT - 🔥 SECURED & DYNAMIC FEE INTEGRATED
 // =======================
@@ -8,6 +49,12 @@ const createProduct = async (req, res) => {
   try {
     const sellerId = req.user.id;
     const { product_name, price, store_name, search_keyword, reward, product_link, country, required_orders, instructions, platform, category } = req.body;
+    const safeCountry = country ? country.trim() : '';
+    const safePlatform = platform ? platform.trim() : '';
+
+    if (!product_name || !store_name || !search_keyword || !product_link || !safeCountry || !safePlatform) {
+      return res.status(400).json({ success: false, message: "Product name, store, keyword, link, country, and platform are required" });
+    }
 
     let image_url = '';
     if (req.file) {
@@ -16,28 +63,33 @@ const createProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: "Product image file is required" });
     }
 
-    const priceVal = parseFloat(price) || 0;
-    const rewardVal = parseFloat(reward) || 0;
-    const qtyVal = parseInt(required_orders) || 1;
+    const priceVal = parseAmount(price);
+    const rewardVal = parseAmount(reward);
+    const qtyVal = parseQuantity(required_orders);
 
-    if (priceVal < 0 || rewardVal < 0 || qtyVal <= 0) {
+    if (!Number.isFinite(priceVal) || !Number.isFinite(rewardVal) || !Number.isFinite(qtyVal) || priceVal <= 0 || rewardVal < 0 || qtyVal <= 0) {
        return res.status(400).json({ success: false, message: "Invalid pricing or quantity values" });
     }
 
     await client.query('BEGIN');
 
     // 🔥 DYNAMIC FEE FETCH: Fetch platform charge for the selected country and platform
-    const feeResult = await client.query(
-      "SELECT platform_charge FROM dynamic_fees_config WHERE country = $1 AND platform = $2",
-      [country, platform]
-    );
-    const platformChargePercent = feeResult.rows.length > 0 ? (parseFloat(feeResult.rows[0].platform_charge) / 100) : 0.10;
+    const feeConfig = await fetchFeeConfig(client, safeCountry, safePlatform);
+    if (!feeConfig) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: "No active fee configuration found for this country and platform. Please contact admin."
+      });
+    }
 
-    const costPerOrder = priceVal + rewardVal;
-    const commissionPerOrder = costPerOrder * platformChargePercent; 
-    const requiredDepositPerProduct = costPerOrder + commissionPerOrder;
-    
-    const totalRequiredDeposit = requiredDepositPerProduct * qtyVal;
+    const { resolvedReward, totalRequiredDeposit } = calculateCampaignDeposit({
+      price: priceVal,
+      reward: rewardVal,
+      quantity: qtyVal,
+      feeConfig,
+      useConfiguredBuyerReward: true,
+    });
 
     // Row-level lock on user to check balance securely
     const userResult = await client.query("SELECT wallet_balance FROM users WHERE id = $1 FOR UPDATE", [sellerId]);
@@ -74,13 +126,13 @@ const createProduct = async (req, res) => {
         priceVal, 
         store_name.trim(), 
         search_keyword.trim(), 
-        rewardVal, 
+        resolvedReward, 
         product_link.trim(), 
-        country.trim(), 
+        safeCountry, 
         qtyVal, 
         instructions ? instructions.trim() : '', 
         sellerId, 
-        platform ? platform.trim() : 'Amazon', 
+        safePlatform, 
         category ? category.trim() : 'General'
       ]
     );
@@ -127,20 +179,26 @@ const cancelProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: "You can only cancel pending products." });
     }
 
-    const priceVal = parseFloat(product.price) || 0;
-    const rewardVal = parseFloat(product.reward) || 0;
-    const qtyVal = parseInt(product.required_orders) || 1;
+    const priceVal = parseAmount(product.price);
+    const rewardVal = parseAmount(product.reward);
+    const qtyVal = parseQuantity(product.required_orders);
     
     // 🔥 DYNAMIC FEE FETCH FOR ACCURATE REFUND
-    const feeResult = await client.query(
-      "SELECT platform_charge FROM dynamic_fees_config WHERE country = $1 AND platform = $2",
-      [product.country, product.platform]
-    );
-    const platformChargePercent = feeResult.rows.length > 0 ? (parseFloat(feeResult.rows[0].platform_charge) / 100) : 0.10;
+    const feeConfig = await fetchFeeConfig(client, product.country, product.platform);
+    if (!feeConfig) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: "Fee configuration for this product no longer exists. Admin must restore it before refund can be calculated."
+      });
+    }
 
-    const costPerOrder = priceVal + rewardVal;
-    const commissionPerOrder = costPerOrder * platformChargePercent;
-    const refundAmount = (costPerOrder + commissionPerOrder) * qtyVal;
+    const { totalRequiredDeposit: refundAmount } = calculateCampaignDeposit({
+      price: priceVal,
+      reward: rewardVal,
+      quantity: qtyVal,
+      feeConfig,
+    });
 
     // Refund wallet
     await client.query(
@@ -182,12 +240,26 @@ const editProduct = async (req, res) => {
     const productId = req.params.id;
     
     const { product_name, product_link, store_name, search_keyword, country, instructions, platform, category } = req.body;
+    const safeCountry = country ? country.trim() : '';
+    const safePlatform = platform ? platform.trim() : '';
 
-    const prodCheck = await pool.query("SELECT id, status FROM products WHERE id = $1 AND seller_id = $2", [productId, sellerId]);
+    if (!product_name || !product_link || !store_name || !search_keyword || !safeCountry || !safePlatform) {
+      return res.status(400).json({ success: false, message: "Product name, link, store, keyword, country, and platform are required" });
+    }
+
+    const prodCheck = await pool.query("SELECT id, status, country, platform FROM products WHERE id = $1 AND seller_id = $2", [productId, sellerId]);
     if (prodCheck.rows.length === 0) return res.status(404).json({ success: false, message: "Product not found or unauthorized" });
     
     if (prodCheck.rows[0].status !== 'pending') {
       return res.status(400).json({ success: false, message: "You can only edit products that are in pending status." });
+    }
+
+    const product = prodCheck.rows[0];
+    if (product.country.toLowerCase() !== safeCountry.toLowerCase() || product.platform.toLowerCase() !== safePlatform.toLowerCase()) {
+      return res.status(400).json({
+        success: false,
+        message: "Country and platform cannot be changed after wallet deposit is locked. Please cancel and relist the product."
+      });
     }
 
     const result = await pool.query(
@@ -199,9 +271,9 @@ const editProduct = async (req, res) => {
         product_link.trim(), 
         store_name.trim(), 
         search_keyword.trim(), 
-        country.trim(), 
+        safeCountry, 
         instructions ? instructions.trim() : '', 
-        platform ? platform.trim() : 'Amazon', 
+        safePlatform, 
         category ? category.trim() : 'General', 
         productId
       ]
@@ -332,19 +404,19 @@ const rejectProductAdmin = async (req, res) => {
         return res.status(400).json({ success: false, message: "Only pending or stopped products can be rejected and refunded." });
     }
     
-    const priceVal = parseFloat(product.price) || 0;
-    const rewardVal = parseFloat(product.reward) || 0;
-    const qtyVal = parseInt(product.required_orders) || 1;
+    const priceVal = parseAmount(product.price);
+    const rewardVal = parseAmount(product.reward);
+    const qtyVal = parseQuantity(product.required_orders);
     
     // 🔥 DYNAMIC FEE FETCH FOR ACCURATE ADMIN REFUND
-    const feeResult = await client.query(
-      "SELECT platform_charge FROM dynamic_fees_config WHERE country = $1 AND platform = $2",
-      [product.country, product.platform]
-    );
-    const platformChargePercent = feeResult.rows.length > 0 ? (parseFloat(feeResult.rows[0].platform_charge) / 100) : 0.10;
-
-    const costPerOrder = priceVal + rewardVal;
-    const commissionPerOrder = costPerOrder * platformChargePercent;
+    const feeConfig = await fetchFeeConfig(client, product.country, product.platform);
+    if (!feeConfig) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+            success: false,
+            message: "Fee configuration for this product no longer exists. Admin must restore it before refund can be calculated."
+        });
+    }
 
     // Smart Refund Logic: Check how many applications are already submitted
     const appCheck = await client.query("SELECT COUNT(*) FROM applications WHERE product_id = $1 AND status != 'rejected'", [productId]);
@@ -356,7 +428,12 @@ const rejectProductAdmin = async (req, res) => {
         remainingQty = Math.max(0, qtyVal - usedQty);
     }
     
-    const refundAmount = (costPerOrder + commissionPerOrder) * remainingQty;
+    const { totalRequiredDeposit: refundAmount } = calculateCampaignDeposit({
+        price: priceVal,
+        reward: rewardVal,
+        quantity: remainingQty,
+        feeConfig,
+    });
 
     // Refund the wallet ONLY if there is remaining money
     if (refundAmount > 0) {
