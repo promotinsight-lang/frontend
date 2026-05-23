@@ -135,10 +135,16 @@ export default function HomePage() {
     fetchCalcTarrifs();
   }, [calcData.country, calcData.platform]);
 
-  // CALCULATIONS
-  const unitCost = parseFloat(calcData.price || 0) + parseFloat(calcData.reward || 0);
-  const platformFee = unitCost * feeRate;
+  // CALCULATIONS (UPDATED LOGIC)
+  const priceNum = parseFloat(calcData.price || 0);
+  const rewardNum = parseFloat(calcData.reward || 0);
+  const unitCost = priceNum + rewardNum;
+  
+  // Platform Fee only on base price
+  const platformFee = priceNum * feeRate;
+  
   const refundFeeRate = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
+  // Refund Fee on Price + Reward
   const refundFeeAmount = unitCost * refundFeeRate;
   
   const totalPerUnit = unitCost + platformFee + refundFeeAmount;
@@ -290,7 +296,7 @@ export default function HomePage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium flex items-center gap-1">
-                  Platform Fee <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{(feeRate * 100).toFixed(1)}%</span>
+                  Platform Fee <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{(feeRate * 100).toFixed(1)}% of Price</span>
                 </span>
                 <span className="font-bold text-red-500">+{calcCurrency}{platformFee.toFixed(2)}</span>
               </div>
@@ -484,4 +490,4 @@ export default function HomePage() {
       `}} />
     </div>
   );
-}
+};

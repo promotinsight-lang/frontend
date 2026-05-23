@@ -1791,7 +1791,25 @@ export default function AdminDashboard() {
                    <img src={selectedProductDetails.image_url} alt="Product" className="w-full h-48 object-contain bg-white rounded-lg border shadow-sm p-2" />
                    <div className="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200">
                       <p className="text-xs text-gray-500 uppercase font-bold">Total Deposit Deducted</p>
-                      <p className="text-xl font-black text-yellow-700">${((parseFloat(selectedProductDetails.price) + parseFloat(selectedProductDetails.reward)) * selectedProductDetails.required_orders).toFixed(2)}</p>
+                      {(() => {
+                        const price = parseFloat(selectedProductDetails.price) || 0;
+                        const reward = parseFloat(selectedProductDetails.reward) || 0;
+                        const qty = parseInt(selectedProductDetails.required_orders) || 1;
+                        const costPerOrder = price + reward;
+                        
+                        // Fetch dynamic config if available
+                        const pConfig = allFeeConfigs.find(c => c.country?.toLowerCase() === selectedProductDetails.country?.toLowerCase() && c.platform?.toLowerCase() === selectedProductDetails.platform?.toLowerCase());
+                        
+                        // Fallback to 10% Platform Fee and 5% Refund Fee if dynamic config is missing (Matches Seller Ledger Logic)
+                        const platformChargePercent = pConfig ? (parseFloat(pConfig.platform_charge) / 100) : 0.10;
+                        const refundFeePercent = pConfig ? (parseFloat(pConfig.buyer_refund_fee) / 100) : 0.05;
+
+                        const commission = price * platformChargePercent;
+                        const refundFee = costPerOrder * refundFeePercent;
+                        const totalDeducted = (costPerOrder + commission + refundFee) * qty;
+
+                        return <p className="text-xl font-black text-yellow-700">${totalDeducted.toFixed(2)}</p>;
+                      })()}
                       <p className="text-xs text-gray-400 mt-1">Safely held by system</p>
                    </div>
                 </div>

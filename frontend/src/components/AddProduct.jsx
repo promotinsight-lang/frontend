@@ -127,15 +127,17 @@ export default function AddProduct({ onProductAdded }) {
     }
   };
 
-  // 🔥 FIXED COMMISSION & TOTAL DEPOSIT CALCULATION
+  // 🔥 UPDATED CALCULATION LOGIC
   const priceNum = parseFloat(formData.price) || 0;
   const rewardNum = parseFloat(formData.reward) || 0;
   const qtyNum = parseInt(formData.required_orders) || 1;
   
   const costPerOrder = priceNum + rewardNum;
-  const platformCommission = costPerOrder * platformChargePercent; 
+  // Platform charge now only applies to base price
+  const platformCommission = priceNum * platformChargePercent; 
   
   const refundFeePercent = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
+  // Refund fee applies to price + reward
   const refundFeeAmount = costPerOrder * refundFeePercent;
   
   const totalDeposit = (costPerOrder + platformCommission + refundFeeAmount) * qtyNum;
@@ -371,7 +373,7 @@ export default function AddProduct({ onProductAdded }) {
                   
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-500 flex items-center gap-1">
-                      Platform Tariff ({(platformChargePercent * 100).toFixed(1)}%) 
+                      Platform Tariff ({(platformChargePercent * 100).toFixed(1)}% of Price) 
                     </span>
                     <span className="font-bold text-red-500">+{currency}{platformCommission.toFixed(2)}</span>
                   </div>

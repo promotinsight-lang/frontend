@@ -786,7 +786,7 @@ export default function SellerDashboard() {
                 <p className="text-xs text-blue-700 leading-relaxed font-medium">
                   When you list a product, the system safely holds funds in escrow. The formula is: <br/>
                   <strong className="bg-white px-2 py-1 rounded inline-block mt-2 border border-blue-200 shadow-sm text-[#0066ff]">
-                    (Product Price + Buyer Reward + 10% Platform Fee) × Target Quantity
+                    (Product Price + Buyer Reward + Platform Fee [10% of Price] + Refund Fee [5% of Price+Reward]) × Target Quantity
                   </strong>
                 </p>
               </div>
@@ -801,8 +801,11 @@ export default function SellerDashboard() {
                      const qty = parseInt(p.required_orders) || 1;
                      
                      const costPerOrder = price + reward;
-                     const commission = costPerOrder * 0.10;
-                     const totalPerItem = costPerOrder + commission;
+                     // 🔥 Platform Fee only on base price
+                     const commission = price * 0.10;
+                     // 🔥 Refund Fee on (Price + Reward)
+                     const refundFee = costPerOrder * 0.05; 
+                     const totalPerItem = costPerOrder + commission + refundFee;
                      const totalDeducted = totalPerItem * qty;
 
                      return (
@@ -821,7 +824,7 @@ export default function SellerDashboard() {
                            </div>
                          </div>
                          
-                         <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm bg-white">
+                         <div className="p-4 grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm bg-white">
                             <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-center">
                               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1">Unit Price</p>
                               <p className="font-black text-gray-800">${price.toFixed(2)}</p>
@@ -833,7 +836,13 @@ export default function SellerDashboard() {
                             <div className="bg-orange-50 p-2.5 rounded-lg border border-orange-100 text-center relative group">
                               <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-1">Platform Fee</p>
                               <p className="font-black text-orange-700">+${commission.toFixed(2)}</p>
-                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">10% of (Price + Reward)</div>
+                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">10% of Price Only</div>
+                            </div>
+                            {/* 🔥 NEW REFUND FEE BOX */}
+                            <div className="bg-red-50 p-2.5 rounded-lg border border-red-100 text-center relative group">
+                              <p className="text-red-600 text-[10px] font-bold uppercase tracking-wider mb-1">Refund Fee</p>
+                              <p className="font-black text-red-700">+${refundFee.toFixed(2)}</p>
+                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">5% of (Price + Reward)</div>
                             </div>
                             <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-100 text-center">
                               <p className="text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-1">Target Qty</p>

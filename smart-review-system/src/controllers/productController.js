@@ -11,8 +11,9 @@ const parseQuantity = (value) => {
 };
 
 const fetchFeeConfig = async (client, country, platform) => {
+  // 🔥 UPDATED: Added buyer_refund_fee to the query
   const result = await client.query(
-    `SELECT country, platform, platform_charge, buyer_reward
+    `SELECT country, platform, platform_charge, buyer_reward, buyer_refund_fee
      FROM dynamic_fees_config
      WHERE LOWER(country) = LOWER($1) AND LOWER(platform) = LOWER($2)`,
     [country.trim(), platform.trim()]
@@ -25,17 +26,27 @@ const calculateCampaignDeposit = ({ price, reward, quantity, feeConfig, useConfi
   const fixedBuyerReward = parseAmount(feeConfig.buyer_reward);
   const resolvedReward = useConfiguredBuyerReward && fixedBuyerReward > 0 ? fixedBuyerReward : reward;
   const platformChargePercent = parseAmount(feeConfig.platform_charge) / 100;
+  const refundFeePercent = parseAmount(feeConfig.buyer_refund_fee || 0) / 100;
 
   const costPerOrder = price + resolvedReward;
-  const commissionPerOrder = costPerOrder * platformChargePercent;
-  const requiredDepositPerOrder = costPerOrder + commissionPerOrder;
+
+  // 🔥 NEW LOGIC 1: Platform charge applies ONLY on the base product price
+  const commissionPerOrder = price * platformChargePercent;
+
+  // 🔥 NEW LOGIC 2: Refund fee applies on (Product Price + Buyer Reward)
+  const refundFeePerOrder = costPerOrder * refundFeePercent;
+
+  // Total required deposit now properly accounts for base cost + platform commission + upfront refund fee
+  const requiredDepositPerOrder = costPerOrder + commissionPerOrder + refundFeePerOrder;
   const totalRequiredDeposit = requiredDepositPerOrder * quantity;
 
   return {
     resolvedReward,
     platformChargePercent,
+    refundFeePercent,
     costPerOrder,
     commissionPerOrder,
+    refundFeePerOrder,
     requiredDepositPerOrder,
     totalRequiredDeposit,
   };
