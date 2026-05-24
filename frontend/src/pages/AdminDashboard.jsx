@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   // 🔥 FETCH ALL SAVED CONFIGURATIONS
   const fetchAllFeeConfigs = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/config/fees/all`, { 
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { 
         headers: getAuthHeaders(), credentials: 'include' 
       });
       const data = await res.json();
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
     if (!country.trim() || !platform.trim()) return;
     setFeeLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/config/fees?country=${country}&platform=${platform}`, { 
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees?country=${country}&platform=${platform}`, { 
         headers: getAuthHeaders(), credentials: 'include' 
       });
       const data = await res.json();
@@ -169,20 +169,20 @@ export default function AdminDashboard() {
       alert("Please enter both country and platform names!");
       return;
     }
-    const success = await handleAction('http://localhost:5000/api/config/fees', 'POST', feeConfig);
+    const success = await handleAction('https://backend-6aiq.onrender.com/api/config/fees', 'POST', feeConfig);
     if (success) fetchAllFeeConfigs();
   };
 
   const handleDeleteFeeConfig = async (country, platform) => {
     if (window.confirm(`Are you sure you want to delete the fee configuration for ${country} - ${platform}?`)) {
-        const success = await handleAction(`http://localhost:5000/api/config/fees/${encodeURIComponent(country)}/${encodeURIComponent(platform)}`, 'DELETE');
+        const success = await handleAction(`https://backend-6aiq.onrender.com/api/config/fees/${encodeURIComponent(country)}/${encodeURIComponent(platform)}`, 'DELETE');
         if (success) fetchAllFeeConfigs();
     }
   };
 
   const fetchMonthlyReport = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/monthly-stats?month=${selectedMonth}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/admin/monthly-stats?month=${selectedMonth}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setMonthlyReport(data.data);
     } catch (err) { }
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/stats', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/stats', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setStats(data.data);
     } catch (err) {}
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
 
   const fetchDeposits = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/deposits', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/deposits', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setDeposits(data.data.filter(d => d.status === 'pending')); setHistoryDeposits(data.data); }
     } catch (err) {}
@@ -206,7 +206,7 @@ export default function AdminDashboard() {
 
   const fetchWithdrawals = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/withdrawals/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/withdrawals/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setWithdrawals(data.data.filter(w => w.status === 'pending')); setHistoryWithdrawals(data.data); }
     } catch (err) {}
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
 
   const fetchRefunds = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/products/refunds/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/products/refunds/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setHistoryRefunds(data.data); 
     } catch (err) {}
@@ -222,7 +222,7 @@ export default function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/products', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/products', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setAllProducts(data.data); setPendingProducts(data.data.filter(p => p.status === 'pending')); }
     } catch (err) {}
@@ -230,7 +230,7 @@ export default function AdminDashboard() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users/payment-settings', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/users/payment-settings', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setPaymentSettings(data.data);
     } catch (err) {}
@@ -238,7 +238,7 @@ export default function AdminDashboard() {
 
   const fetchApplications = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/applications/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setApplications(data.data);
     } catch (err) {}
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
 
   const fetchVerifications = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/verifications', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/verifications', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setVerifications(data.data.filter(v => v.verification_status === 'pending'));
     } catch (err) {}
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
 
   const fetchUsers = async (role) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/users/admin/role/${role}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/users/admin/role/${role}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setUsersList(data.data);
     } catch (err) {}
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
 
   const fetchAppeals = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/appeals', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/appeals', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAppeals(data.data);
     } catch (err) {}
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
 
   const fetchSupportTickets = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/support/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/support/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setSupportTickets(data.data);
     } catch (err) {}
@@ -278,7 +278,7 @@ export default function AdminDashboard() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/announcements/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/announcements/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAnnouncements(data.data);
     } catch (err) {}
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
 
   const fetchAdminBlogs = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/blogs/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch('https://backend-6aiq.onrender.com/api/blogs/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAdminBlogs(data.data);
     } catch (err) {}
@@ -294,7 +294,7 @@ export default function AdminDashboard() {
 
   const fetchAndShowUserProfile = async (userId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/users/admin/user/${userId}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/users/admin/user/${userId}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       
       if (data.success) {
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
         setProfileViewMode('details'); 
         
         try {
-          const appRes = await fetch('http://localhost:5000/api/applications/all', { headers: getAuthHeaders(), credentials: 'include' });
+          const appRes = await fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers: getAuthHeaders(), credentials: 'include' });
           const appData = await appRes.json();
           
           if (appData.success) {
@@ -314,7 +314,7 @@ export default function AdminDashboard() {
                  const failed = userApps.filter(a => a.status === 'rejected').length;
                  setUserAppStats({ listed: 0, active, success, failed });
              } else if (data.data.role === 'seller') {
-                 const prodRes = await fetch('http://localhost:5000/api/products', { headers: getAuthHeaders(), credentials: 'include' });
+                 const prodRes = await fetch('https://backend-6aiq.onrender.com/api/products', { headers: getAuthHeaders(), credentials: 'include' });
                  const prodData = await prodRes.json();
                  let sProducts = [];
                  if (prodData.success) sProducts = prodData.data.filter(p => p.seller_email === data.data.email);
@@ -364,8 +364,8 @@ export default function AdminDashboard() {
     } catch (err) { alert('Connection Error.'); return false; }
   };
 
-  const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`http://localhost:5000/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
-  const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`http://localhost:5000/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
+  const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
+  const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
   
   // 🔥 Firebase Handler for Withdrawal Proof
   const handleWithdrawalImageUpload = async (e) => {
@@ -388,25 +388,25 @@ export default function AdminDashboard() {
 
   const submitWithdrawalApproval = async (e) => {
     e.preventDefault();
-    if(await handleAction(`http://localhost:5000/api/withdrawals/${withdrawalToApprove.id}/approve`, 'PATCH', withdrawalProof)) {
+    if(await handleAction(`https://backend-6aiq.onrender.com/api/withdrawals/${withdrawalToApprove.id}/approve`, 'PATCH', withdrawalProof)) {
       setShowApproveWithdrawalModal(false); setWithdrawalToApprove(null); setWithdrawalProof({ transaction_id: '', screenshot_url: '' }); fetchWithdrawals();
     }
   };
 
-  const rejectWithdrawal = async (id) => { if(window.confirm('Reject Withdrawal and Refund Wallet?')) { if(await handleAction(`http://localhost:5000/api/withdrawals/${id}/reject`)) fetchWithdrawals(); } };
-  const approveProduct = async (id) => { if(window.confirm('Approve product?')) { if(await handleAction(`http://localhost:5000/api/products/${id}/approve`)) { fetchProducts(); setShowProductModal(false); } } };
-  const rejectProduct = async (id) => { if(window.confirm('Reject product and refund?')) { if(await handleAction(`http://localhost:5000/api/products/${id}/reject`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
-  const stopProductAction = async (id) => { if(window.confirm('Stop this product? It will appear as Sold Out.')) { if(await handleAction(`http://localhost:5000/api/products/${id}/stop`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
-  const resumeProductAction = async (id) => { if(window.confirm('Resume this product? It will be live and available again.')) { if(await handleAction(`http://localhost:5000/api/products/${id}/resume`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
-  const verifyUser = async (id, status) => { if(window.confirm(`Mark user as ${status}?`)) { if(await handleAction(`http://localhost:5000/api/admin/verify-user/${id}`, 'PATCH', { status })) fetchVerifications(); } };
+  const rejectWithdrawal = async (id) => { if(window.confirm('Reject Withdrawal and Refund Wallet?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/withdrawals/${id}/reject`)) fetchWithdrawals(); } };
+  const approveProduct = async (id) => { if(window.confirm('Approve product?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/approve`)) { fetchProducts(); setShowProductModal(false); } } };
+  const rejectProduct = async (id) => { if(window.confirm('Reject product and refund?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/reject`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
+  const stopProductAction = async (id) => { if(window.confirm('Stop this product? It will appear as Sold Out.')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/stop`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
+  const resumeProductAction = async (id) => { if(window.confirm('Resume this product? It will be live and available again.')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/resume`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
+  const verifyUser = async (id, status) => { if(window.confirm(`Mark user as ${status}?`)) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/verify-user/${id}`, 'PATCH', { status })) fetchVerifications(); } };
 
-  const approveAppeal = async (id) => { if(window.confirm('Approve this appeal and reactivate the account?')) { if(await handleAction(`http://localhost:5000/api/admin/appeals/${id}/approve`)) fetchAppeals(); } };
-  const rejectAppeal = async (id) => { if(window.confirm('Reject this appeal? The account will remain disabled.')) { if(await handleAction(`http://localhost:5000/api/admin/appeals/${id}/reject`)) fetchAppeals(); } };
+  const approveAppeal = async (id) => { if(window.confirm('Approve this appeal and reactivate the account?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/appeals/${id}/approve`)) fetchAppeals(); } };
+  const rejectAppeal = async (id) => { if(window.confirm('Reject this appeal? The account will remain disabled.')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/appeals/${id}/reject`)) fetchAppeals(); } };
 
   const handleDisputeFavorSeller = async (appealId, applicationId) => {
     if (!disputeComment) return alert("Please enter an Admin Comment explaining your decision.");
     if(window.confirm('Favor Seller? This will reject the buyer\'s order and refund the seller.')) { 
-      if(await handleAction(`http://localhost:5000/api/appeals/dispute/${appealId}/favor-seller`, 'PATCH', { application_id: applicationId, admin_comment: disputeComment })) {
+      if(await handleAction(`https://backend-6aiq.onrender.com/api/appeals/dispute/${appealId}/favor-seller`, 'PATCH', { application_id: applicationId, admin_comment: disputeComment })) {
         fetchAppeals(); setShowAppealModal(false); setDisputeComment('');
       }
     }
@@ -415,7 +415,7 @@ export default function AdminDashboard() {
   const handleDisputeFavorBuyer = async (appealId, applicationId) => {
     if (!disputeComment) return alert("Please enter an Admin Comment explaining your decision.");
     if(window.confirm('Favor Buyer? This will move the order to Pending Refund.')) { 
-      if(await handleAction(`http://localhost:5000/api/appeals/dispute/${appealId}/favor-buyer`, 'PATCH', { application_id: applicationId, admin_comment: disputeComment })) {
+      if(await handleAction(`https://backend-6aiq.onrender.com/api/appeals/dispute/${appealId}/favor-buyer`, 'PATCH', { application_id: applicationId, admin_comment: disputeComment })) {
         fetchAppeals(); setShowAppealModal(false); setDisputeComment('');
       }
     }
@@ -423,7 +423,7 @@ export default function AdminDashboard() {
 
   const actionApplication = async (appId, actionType) => {
     if(window.confirm(`Proceed to ${actionType.replace('-', ' ')}?`)) {
-      if(await handleAction(`http://localhost:5000/api/applications/${appId}/${actionType}`)) {
+      if(await handleAction(`https://backend-6aiq.onrender.com/api/applications/${appId}/${actionType}`)) {
          fetchApplications(); setShowAppDetailsModal(false);
       }
     }
@@ -431,7 +431,7 @@ export default function AdminDashboard() {
 
   const deleteApplication = async (appId) => {
     if(window.confirm('Are you sure you want to permanently clear this rejected application record?')) {
-      if(await handleAction(`http://localhost:5000/api/applications/${appId}/delete`, 'DELETE')) {
+      if(await handleAction(`https://backend-6aiq.onrender.com/api/applications/${appId}/delete`, 'DELETE')) {
          fetchApplications(); setShowAppDetailsModal(false);
       }
     }
@@ -458,7 +458,7 @@ export default function AdminDashboard() {
 
   const submitRefund = async (e) => {
     e.preventDefault();
-    if(await handleAction(`http://localhost:5000/api/applications/${refundAppId}/confirm-refund`, 'PATCH', {
+    if(await handleAction(`https://backend-6aiq.onrender.com/api/applications/${refundAppId}/confirm-refund`, 'PATCH', {
       refund_order_number: refundData.orderNumber, 
       refund_screenshot_url: refundData.screenshot_url || refundData.orderNumber, // Added Fallback Support
       refund_comment: refundData.comment
@@ -469,26 +469,26 @@ export default function AdminDashboard() {
 
   const toggleUserStatus = async (id, payload) => {
     if(window.confirm('Are you sure you want to change this user\'s status?')) {
-      if(await handleAction(`http://localhost:5000/api/users/admin/status/${id}`, 'PATCH', payload)) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
+      if(await handleAction(`https://backend-6aiq.onrender.com/api/users/admin/status/${id}`, 'PATCH', payload)) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
     }
   };
 
   const updateTrust = async (id, oldScore) => {
     const score = prompt("Enter new Trust Score (0.0 - 5.0):", oldScore || "5.0");
     if (score !== null && !isNaN(score)) {
-      if(await handleAction(`http://localhost:5000/api/users/${id}/trust-score`, 'PATCH', { trust_score: parseFloat(score) })) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
+      if(await handleAction(`https://backend-6aiq.onrender.com/api/users/${id}/trust-score`, 'PATCH', { trust_score: parseFloat(score) })) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
     }
   };
 
   const updateSetting = async (id, newDetails) => {
     if (!newDetails) return alert("Account details cannot be empty");
-    if (await handleAction(`http://localhost:5000/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) fetchSettings();
+    if (await handleAction(`https://backend-6aiq.onrender.com/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) fetchSettings();
   };
 
   const openTicketView = async (ticket) => {
     setSelectedTicket(ticket); setShowTicketViewModal(true); setRepliesLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/support/${ticket.id}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${ticket.id}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if(res.ok) { setTicketReplies(data.data.replies || []); setSelectedTicket(data.data.ticket); }
     } catch (err) {} finally { setRepliesLoading(false); }
@@ -499,7 +499,7 @@ export default function AdminDashboard() {
     if(!replyMessage.trim()) return;
     setIsSubmittingTicket(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/support/${selectedTicket.id}/reply`, { method: 'POST', headers: getAuthHeaders(), credentials: 'include', body: JSON.stringify({ message: replyMessage }) });
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${selectedTicket.id}/reply`, { method: 'POST', headers: getAuthHeaders(), credentials: 'include', body: JSON.stringify({ message: replyMessage }) });
       const data = await res.json();
       if(res.ok) { setTicketReplies([...ticketReplies, data.data]); setReplyMessage(''); fetchSupportTickets(); setSelectedTicket(prev => ({...prev, status: 'answered'})); }
     } catch (err) {} finally { setIsSubmittingTicket(false); }
@@ -508,21 +508,21 @@ export default function AdminDashboard() {
   const handleCloseTicket = async (ticketId) => {
     if(!window.confirm("Are you sure you want to close this ticket? It will be marked as resolved.")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/support/${ticketId}/close`, { method: 'PATCH', headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${ticketId}/close`, { method: 'PATCH', headers: getAuthHeaders(), credentials: 'include' });
       if(res.ok) { alert("Ticket closed successfully"); setShowTicketViewModal(false); fetchSupportTickets(); }
     } catch(err) {}
   };
 
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault(); setIsPublishing(true);
-    const success = await handleAction('http://localhost:5000/api/announcements', 'POST', newAnnouncement);
+    const success = await handleAction('https://backend-6aiq.onrender.com/api/announcements', 'POST', newAnnouncement);
     if (success) { setNewAnnouncement({ title: '', message: '' }); fetchAnnouncements(); }
     setIsPublishing(false);
   };
 
   const handleDeleteAnnouncement = async (id) => {
     if (window.confirm("Delete this announcement?")) {
-      const success = await handleAction(`http://localhost:5000/api/announcements/${id}`, 'DELETE');
+      const success = await handleAction(`https://backend-6aiq.onrender.com/api/announcements/${id}`, 'DELETE');
       if (success) fetchAnnouncements();
     }
   };
@@ -535,7 +535,7 @@ export default function AdminDashboard() {
     formData.append("title", newBlog.title); formData.append("content", newBlog.content); formData.append("is_published", newBlog.is_published);
     if (blogImage) formData.append("image", blogImage); // Blog Image handled via Backend Multer (no change required here)
     try {
-      const res = await fetch("http://localhost:5000/api/blogs", { method: "POST", headers: getAuthHeaders(), body: formData });
+      const res = await fetch("https://backend-6aiq.onrender.com/api/blogs", { method: "POST", headers: getAuthHeaders(), body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
         alert("Blog published successfully!"); setNewBlog({ title: '', content: '', is_published: true }); setBlogImage(null);
@@ -547,7 +547,7 @@ export default function AdminDashboard() {
 
   const handleDeleteBlog = async (id) => {
     if (window.confirm("Are you sure you want to delete this blog post?")) {
-      const success = await handleAction(`http://localhost:5000/api/blogs/${id}`, 'DELETE');
+      const success = await handleAction(`https://backend-6aiq.onrender.com/api/blogs/${id}`, 'DELETE');
       if (success) fetchAdminBlogs();
     }
   };

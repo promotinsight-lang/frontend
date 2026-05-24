@@ -27,7 +27,7 @@ const Verification = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/users/profile', {
+        const res = await fetch('https://backend-6aiq.onrender.com/api/users/profile', {
           headers: { 'Authorization': `Bearer ${token}` }, credentials: 'include'
         });
         if (res.status === 429) { console.warn('Rate limit on profile'); return; }
@@ -55,7 +55,7 @@ const Verification = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/users/verify', {
+      const res = await fetch('https://backend-6aiq.onrender.com/api/users/verify', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

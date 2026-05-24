@@ -75,7 +75,7 @@ const BuyerDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const profileRes = await fetch('http://localhost:5000/api/users/profile', {
+      const profileRes = await fetch('https://backend-6aiq.onrender.com/api/users/profile', {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
@@ -100,7 +100,7 @@ const BuyerDashboard = () => {
       }
 
       try {
-        const annRes = await fetch('http://localhost:5000/api/announcements', {
+        const annRes = await fetch('https://backend-6aiq.onrender.com/api/announcements', {
            headers: { 'Authorization': `Bearer ${token}` },
            credentials: 'include'
         });
@@ -108,7 +108,7 @@ const BuyerDashboard = () => {
         if (annRes.ok && annData.success) setAnnouncements(annData.data || []);
       } catch (e) { console.error("Announcement fetch error", e); }
 
-      const appRes = await fetch('http://localhost:5000/api/applications/my', {
+      const appRes = await fetch('https://backend-6aiq.onrender.com/api/applications/my', {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
@@ -116,7 +116,7 @@ const BuyerDashboard = () => {
       if (appRes.ok) setApplications(appData.data || []);
       
       if (activeTab === 'wallet') {
-         const wRes = await fetch('http://localhost:5000/api/withdrawals/my', {
+         const wRes = await fetch('https://backend-6aiq.onrender.com/api/withdrawals/my', {
             headers: { 'Authorization': `Bearer ${token}` },
             credentials: 'include'
          });
@@ -125,7 +125,7 @@ const BuyerDashboard = () => {
       }
 
       if (activeTab === 'support') {
-         const tRes = await fetch('http://localhost:5000/api/support/my', {
+         const tRes = await fetch('https://backend-6aiq.onrender.com/api/support/my', {
             headers: { 'Authorization': `Bearer ${token}` },
             credentials: 'include'
          });
@@ -179,7 +179,7 @@ const BuyerDashboard = () => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/applications/${actionAppId}/order`, {
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/applications/${actionAppId}/order`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
@@ -205,7 +205,7 @@ const BuyerDashboard = () => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/applications/${actionAppId}/review`, {
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/applications/${actionAppId}/review`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
@@ -231,7 +231,7 @@ const BuyerDashboard = () => {
      setIsSubmitting(true);
      try {
        const token = localStorage.getItem('token');
-       const res = await fetch(`http://localhost:5000/api/withdrawals`, {
+       const res = await fetch(`https://backend-6aiq.onrender.com/api/withdrawals`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
          credentials: 'include',
@@ -257,7 +257,7 @@ const BuyerDashboard = () => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/support/create`, {
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
@@ -284,7 +284,7 @@ const BuyerDashboard = () => {
     setRepliesLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/support/${ticket.id}`, {
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${ticket.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
@@ -306,7 +306,7 @@ const BuyerDashboard = () => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/support/${selectedTicket.id}/reply`, {
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${selectedTicket.id}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',

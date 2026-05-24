@@ -36,11 +36,11 @@ const Navbar = () => {
           // ==========================================
           if (user.role === 'admin') {
               const [resAppeals, resVer, resStats, resProd, resApps] = await Promise.all([
-                 fetch('http://localhost:5000/api/admin/appeals', { headers, credentials: 'include' }),
-                 fetch('http://localhost:5000/api/admin/verifications', { headers, credentials: 'include' }),
-                 fetch('http://localhost:5000/api/admin/stats', { headers, credentials: 'include' }),
-                 fetch('http://localhost:5000/api/products', { headers, credentials: 'include' }),
-                 fetch('http://localhost:5000/api/applications/all', { headers, credentials: 'include' }) 
+                 fetch('https://backend-6aiq.onrender.com/api/admin/appeals', { headers, credentials: 'include' }),
+                 fetch('https://backend-6aiq.onrender.com/api/admin/verifications', { headers, credentials: 'include' }),
+                 fetch('https://backend-6aiq.onrender.com/api/admin/stats', { headers, credentials: 'include' }),
+                 fetch('https://backend-6aiq.onrender.com/api/products', { headers, credentials: 'include' }),
+                 fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers, credentials: 'include' }) 
               ]);
 
               const dataAppeals = await resAppeals.json();
@@ -83,8 +83,8 @@ const Navbar = () => {
           // ==========================================
           else if (user.role === 'buyer') {
               const [appRes, prodRes] = await Promise.all([
-                 fetch('http://localhost:5000/api/applications/my', { headers, credentials: 'include' }),
-                 fetch('http://localhost:5000/api/products/public')
+                 fetch('https://backend-6aiq.onrender.com/api/applications/my', { headers, credentials: 'include' }),
+                 fetch('https://backend-6aiq.onrender.com/api/products/public')
               ]);
 
               if (prodRes.ok) {
@@ -126,7 +126,7 @@ const Navbar = () => {
           // 👨‍💼 SELLER NOTIFICATIONS
           // ==========================================
           else if (user.role === 'seller') {
-              const prodRes = await fetch('http://localhost:5000/api/products/my', { headers, credentials: 'include' });
+              const prodRes = await fetch('https://backend-6aiq.onrender.com/api/products/my', { headers, credentials: 'include' });
 
               if (prodRes.ok) {
                  const prodData = await prodRes.json();

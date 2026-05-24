@@ -11,7 +11,7 @@ export default function BlogDetails() {
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/blogs/public/${slug}`);
+        const res = await fetch(`https://backend-6aiq.onrender.com/api/blogs/public/${slug}`);
         const data = await res.json();
         if (res.ok && data.success) {
           setBlog(data.data);

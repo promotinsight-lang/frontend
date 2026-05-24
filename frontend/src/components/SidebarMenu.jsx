@@ -14,7 +14,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
     const handleLogout = async () => {
     try {
       // 🔥 Call backend to clear HttpOnly cookie securely
-      await fetch('http://localhost:5000/api/users/logout', { 
+      await fetch('https://backend-6aiq.onrender.com/api/users/logout', { 
         method: 'POST',
         credentials: 'include' 
       });

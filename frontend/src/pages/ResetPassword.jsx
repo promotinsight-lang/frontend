@@ -26,7 +26,7 @@ export default function ResetPassword() {
 
     try {
       // 🔥 Note: Updated to PATCH to match the secure backend route
-      const res = await fetch(`http://localhost:5000/api/users/reset-password/${id}/${token}`, {
+      const res = await fetch(`https://backend-6aiq.onrender.com/api/users/reset-password/${id}/${token}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword })

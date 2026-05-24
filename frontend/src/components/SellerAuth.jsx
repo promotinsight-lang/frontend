@@ -36,7 +36,7 @@ export default function SellerAuth({ onAuthSuccess }) {
   // FETCH CAPTCHA
   const fetchCaptcha = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users/captcha');
+      const res = await fetch('https://backend-6aiq.onrender.com/api/users/captcha');
       const data = await res.json();
       if (data.success) {
         setCaptchaData(data);
@@ -73,7 +73,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     setError('');
     setOtpLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/users/send-otp', {
+      const res = await fetch('https://backend-6aiq.onrender.com/api/users/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -114,7 +114,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       }
 
       // 4. ব্যাকএন্ডে API কল করে ইউজারকে সিস্টেমে লগিন/রেজিস্টার করানো
-      const res = await fetch('http://localhost:5000/api/users/social-login', {
+      const res = await fetch('https://backend-6aiq.onrender.com/api/users/social-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: userEmail, name: userName, auth_provider: providerName })
@@ -168,7 +168,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       : { fullName, email, password, role, whatsapp, country, profileLink, otp: otpCode };
 
     try {
-      const res = await fetch(`http://localhost:5000${endpoint}`, {
+      const res = await fetch(`https://backend-6aiq.onrender.com${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

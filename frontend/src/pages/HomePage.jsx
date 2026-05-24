@@ -74,7 +74,7 @@ export default function HomePage() {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-        const res = await fetch(`http://localhost:5000/api/config/fees/all`, { headers });
+        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers });
         const data = await res.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -111,7 +111,7 @@ export default function HomePage() {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-        const res = await fetch(`http://localhost:5000/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`, { headers });
+        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`, { headers });
         const data = await res.json();
         
         if (data.success && data.data) {

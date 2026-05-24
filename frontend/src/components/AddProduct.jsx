@@ -39,7 +39,7 @@ export default function AddProduct({ onProductAdded }) {
       setIsFeeLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5000/api/config/fees/all`, {
+        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -76,7 +76,7 @@ export default function AddProduct({ onProductAdded }) {
       setIsFeeLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5000/api/config/fees?country=${formData.country}&platform=${formData.platform}`, {
+        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees?country=${formData.country}&platform=${formData.platform}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -154,7 +154,7 @@ export default function AddProduct({ onProductAdded }) {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/products', {
+      const res = await fetch('https://backend-6aiq.onrender.com/api/products', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: submitData
