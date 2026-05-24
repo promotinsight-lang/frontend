@@ -7,6 +7,8 @@ import {
   Briefcase, LayoutDashboard
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+// 🔥 Firebase Storage Imports
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -37,9 +39,13 @@ export default function AdminDashboard() {
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
+  
+  // 🔥 Refund Modal States Updates
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundAppId, setRefundAppId] = useState(null);
-  const [refundData, setRefundData] = useState({ orderNumber: '', comment: '' });
+  const [refundData, setRefundData] = useState({ orderNumber: '', screenshot_url: '', comment: '' });
+  const [isUploadingRefundProof, setIsUploadingRefundProof] = useState(false);
+
   const [showAppDetailsModal, setShowAppDetailsModal] = useState(false);
   const [selectedAppDetails, setSelectedAppDetails] = useState(null);
 
@@ -54,9 +60,11 @@ export default function AdminDashboard() {
   const [selectedAppeal, setSelectedAppeal] = useState(null);
   const [disputeComment, setDisputeComment] = useState('');
 
+  // 🔥 Withdrawal Modal States Updates
   const [showApproveWithdrawalModal, setShowApproveWithdrawalModal] = useState(false);
   const [withdrawalToApprove, setWithdrawalToApprove] = useState(null);
   const [withdrawalProof, setWithdrawalProof] = useState({ transaction_id: '', screenshot_url: '' });
+  const [isUploadingWithdrawalProof, setIsUploadingWithdrawalProof] = useState(false);
 
   const [showTrxDetailsModal, setShowTrxDetailsModal] = useState(false);
   const [selectedTrx, setSelectedTrx] = useState(null);
@@ -359,6 +367,25 @@ export default function AdminDashboard() {
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`http://localhost:5000/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
   const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`http://localhost:5000/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
   
+  // 🔥 Firebase Handler for Withdrawal Proof
+  const handleWithdrawalImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploadingWithdrawalProof(true);
+    try {
+      const storage = getStorage();
+      const fileRef = ref(storage, `admin_proofs/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+      setWithdrawalProof(prev => ({ ...prev, screenshot_url: downloadURL }));
+    } catch (error) {
+      console.error("Firebase upload error:", error);
+      alert("Image upload failed! Check your Firebase configuration.");
+    } finally {
+      setIsUploadingWithdrawalProof(false);
+    }
+  };
+
   const submitWithdrawalApproval = async (e) => {
     e.preventDefault();
     if(await handleAction(`http://localhost:5000/api/withdrawals/${withdrawalToApprove.id}/approve`, 'PATCH', withdrawalProof)) {
@@ -410,12 +437,33 @@ export default function AdminDashboard() {
     }
   };
 
+  // 🔥 Firebase Handler for Refund Proof
+  const handleRefundImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploadingRefundProof(true);
+    try {
+      const storage = getStorage();
+      const fileRef = ref(storage, `admin_refunds/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+      setRefundData(prev => ({ ...prev, screenshot_url: downloadURL }));
+    } catch (error) {
+      console.error("Firebase upload error:", error);
+      alert("Image upload failed! Check your Firebase configuration.");
+    } finally {
+      setIsUploadingRefundProof(false);
+    }
+  };
+
   const submitRefund = async (e) => {
     e.preventDefault();
     if(await handleAction(`http://localhost:5000/api/applications/${refundAppId}/confirm-refund`, 'PATCH', {
-      refund_order_number: refundData.orderNumber, refund_screenshot_url: refundData.orderNumber, refund_comment: refundData.comment
+      refund_order_number: refundData.orderNumber, 
+      refund_screenshot_url: refundData.screenshot_url || refundData.orderNumber, // Added Fallback Support
+      refund_comment: refundData.comment
     })) {
-      setShowRefundModal(false); setShowAppDetailsModal(false); setRefundData({ orderNumber: '', comment: '' }); fetchApplications();
+      setShowRefundModal(false); setShowAppDetailsModal(false); setRefundData({ orderNumber: '', screenshot_url: '', comment: '' }); fetchApplications();
     }
   };
 
@@ -485,7 +533,7 @@ export default function AdminDashboard() {
     setIsPublishingBlog(true);
     const formData = new FormData();
     formData.append("title", newBlog.title); formData.append("content", newBlog.content); formData.append("is_published", newBlog.is_published);
-    if (blogImage) formData.append("image", blogImage);
+    if (blogImage) formData.append("image", blogImage); // Blog Image handled via Backend Multer (no change required here)
     try {
       const res = await fetch("http://localhost:5000/api/blogs", { method: "POST", headers: getAuthHeaders(), body: formData });
       const data = await res.json();
@@ -1512,7 +1560,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* APPROVE WITHDRAWAL MODAL */}
+        {/* 🔥 APPROVE WITHDRAWAL MODAL UPDATE: Firebase Image Upload */}
         {showApproveWithdrawalModal && withdrawalToApprove && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
             <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
@@ -1528,15 +1576,24 @@ export default function AdminDashboard() {
               <form onSubmit={submitWithdrawalApproval} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Transaction ID (Required)</label>
-                  <input required type="text" className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none" value={withdrawalProof.transaction_id} onChange={e => setWithdrawalProof({...withdrawalProof, transaction_id: e.target.value})} placeholder="e.g., TRX123456789" />
+                  <input required type="text" className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm" value={withdrawalProof.transaction_id} onChange={e => setWithdrawalProof({...withdrawalProof, transaction_id: e.target.value})} placeholder="e.g., TRX123456789" />
                 </div>
+                
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot URL (Required)</label>
-                  <input required type="url" className="w-full p-2 border rounded focus:ring-2 focus:ring-green-500 outline-none" value={withdrawalProof.screenshot_url} onChange={e => setWithdrawalProof({...withdrawalProof, screenshot_url: e.target.value})} placeholder="https://..." />
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional / Required)</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleWithdrawalImageUpload} 
+                    className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" 
+                  />
+                  {isUploadingWithdrawalProof && <p className="text-xs text-green-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
+                  {withdrawalProof.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
                 </div>
+
                 <div className="flex justify-end gap-3 pt-4 border-t">
                   <button type="button" onClick={() => { setShowApproveWithdrawalModal(false); setWithdrawalToApprove(null); }} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow-md">Mark Paid & Notify User</button>
+                  <button type="submit" disabled={isUploadingWithdrawalProof} className="px-4 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow-md disabled:opacity-50">Mark Paid & Notify User</button>
                 </div>
               </form>
             </div>
@@ -1961,10 +2018,10 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 🔥 DYNAMIC REFUND / PAYMENT MODAL */}
+        {/* 🔥 DYNAMIC REFUND / PAYMENT MODAL UPDATE: Firebase Image Upload */}
         {showRefundModal && selectedAppDetails && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
-            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md animate-fade-in-up">
               <h3 className="text-xl font-bold text-gray-800 mb-4">{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Pre-Pay (External)' : 'Confirm Refund Payment'}</h3>
               <div className={`border p-3 rounded-lg mb-4 ${selectedAppDetails.category === 'Pre-Pay' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
                  {selectedAppDetails.category === 'Pre-Pay' ? (
@@ -1975,16 +2032,29 @@ export default function AdminDashboard() {
               </div>
               <form onSubmit={submitRefund} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{selectedAppDetails.category === 'Pre-Pay' ? 'Transaction ID / Screenshot Link' : 'Admin Order Number'}</label>
-                  <input required type="text" className="w-full p-2 border rounded focus:ring-blue-500 outline-none" value={refundData.orderNumber} onChange={e => setRefundData({...refundData, orderNumber: e.target.value})} placeholder={selectedAppDetails.category === 'Pre-Pay' ? 'Enter Trx ID or Link...' : 'Enter Order Number...'} />
+                  <label className="block text-sm font-bold text-gray-700 mb-1">{selectedAppDetails.category === 'Pre-Pay' ? 'Transaction ID (Optional)' : 'Admin Order Number'}</label>
+                  <input type="text" className="w-full p-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={refundData.orderNumber} onChange={e => setRefundData({...refundData, orderNumber: e.target.value})} placeholder={selectedAppDetails.category === 'Pre-Pay' ? 'Enter Trx ID...' : 'Enter Order Number...'} />
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional / Required)</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleRefundImageUpload} 
+                    className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
+                  />
+                  {isUploadingRefundProof && <p className="text-xs text-blue-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
+                  {refundData.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
+                </div>
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Admin Comment (Optional)</label>
-                  <textarea className="w-full p-2 border rounded focus:ring-blue-500 outline-none" value={refundData.comment} onChange={e => setRefundData({...refundData, comment: e.target.value})} placeholder="Great job..." />
+                  <textarea className="w-full p-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none h-20" value={refundData.comment} onChange={e => setRefundData({...refundData, comment: e.target.value})} placeholder="Great job..." />
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <button type="button" onClick={() => setShowRefundModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded font-semibold">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded font-bold hover:bg-orange-600 shadow-md">{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Payment' : 'Send Refund'}</button>
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button type="button" onClick={() => setShowRefundModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
+                  <button type="submit" disabled={isUploadingRefundProof} className="px-4 py-2 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 shadow-md disabled:opacity-50">{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Payment' : 'Send Refund'}</button>
                 </div>
               </form>
             </div>
