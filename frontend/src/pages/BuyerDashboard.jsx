@@ -6,6 +6,8 @@ import {
   XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon,
   Headset, PlusCircle, MessageCircle, Send, Megaphone
 } from 'lucide-react'; 
+// 🔥 Firebase Storage Imports
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const BuyerDashboard = () => {
   const location = useLocation();
@@ -13,7 +15,7 @@ const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState('active'); 
   const [applications, setApplications] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]); 
-  const [announcements, setAnnouncements] = useState([]); // 🔥 New state for announcements
+  const [announcements, setAnnouncements] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [isAccountDisabled, setIsAccountDisabled] = useState(false); 
   
@@ -22,6 +24,9 @@ const BuyerDashboard = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [actionAppId, setActionAppId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // 🔥 Firebase Uploading State
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Withdrawal Details Modal State
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
@@ -94,7 +99,6 @@ const BuyerDashboard = () => {
         }
       }
 
-      // 🔥 Fetch Announcements (Moved here so it's always fetched)
       try {
         const annRes = await fetch('http://localhost:5000/api/announcements', {
            headers: { 'Authorization': `Bearer ${token}` },
@@ -104,7 +108,6 @@ const BuyerDashboard = () => {
         if (annRes.ok && annData.success) setAnnouncements(annData.data || []);
       } catch (e) { console.error("Announcement fetch error", e); }
 
-      // Fetch Applications
       const appRes = await fetch('http://localhost:5000/api/applications/my', {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
@@ -112,7 +115,6 @@ const BuyerDashboard = () => {
       const appData = await appRes.json();
       if (appRes.ok) setApplications(appData.data || []);
       
-      // Fetch Withdrawals
       if (activeTab === 'wallet') {
          const wRes = await fetch('http://localhost:5000/api/withdrawals/my', {
             headers: { 'Authorization': `Bearer ${token}` },
@@ -122,7 +124,6 @@ const BuyerDashboard = () => {
          if (wRes.ok) setWithdrawals(wData.data || []);
       }
 
-      // Fetch Support Tickets
       if (activeTab === 'support') {
          const tRes = await fetch('http://localhost:5000/api/support/my', {
             headers: { 'Authorization': `Bearer ${token}` },
@@ -146,6 +147,32 @@ const BuyerDashboard = () => {
   const activeApps = applications.filter(app => !['completed', 'rejected'].includes(app.application_status));
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
+
+  // 🔥 Firebase Image Upload Handler
+  const handleImageUpload = async (e, formType) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    try {
+      const storage = getStorage();
+      const fileRef = ref(storage, `buyer_screenshots/${Date.now()}_${file.name}`);
+      
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+
+      if (formType === 'order') {
+        setOrderForm(prev => ({ ...prev, screenshot_url: downloadURL }));
+      } else if (formType === 'review') {
+        setReviewForm(prev => ({ ...prev, review_screenshot_url: downloadURL }));
+      }
+    } catch (error) {
+      console.error("Firebase upload error:", error);
+      alert("Image upload failed! Make sure your Firebase is configured correctly.");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const submitOrder = async (e) => {
     e.preventDefault();
@@ -225,7 +252,6 @@ const BuyerDashboard = () => {
      }
   };
 
-  // ================= SUPPORT SYSTEM LOGIC =================
   const handleCreateTicket = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -265,7 +291,7 @@ const BuyerDashboard = () => {
       const data = await res.json();
       if(res.ok) {
         setTicketReplies(data.data.replies || []);
-        setSelectedTicket(data.data.ticket); // Update ticket status if changed
+        setSelectedTicket(data.data.ticket); 
       }
     } catch (err) {
       console.error(err);
@@ -290,7 +316,7 @@ const BuyerDashboard = () => {
       if(res.ok) {
         setTicketReplies([...ticketReplies, data.data]);
         setReplyMessage('');
-        fetchData(); // Refresh list to update status
+        fetchData(); 
       } else {
         alert('Failed to send reply');
       }
@@ -344,7 +370,6 @@ const BuyerDashboard = () => {
           {activeTab === 'wallet' ? 'My Wallet' : activeTab === 'support' ? 'Support Tickets' : activeTab === 'announcements' ? 'Announcements' : 'My Orders'}
         </h1>
         
-        {/* Hide these sub-tabs when in Wallet, Support, or Announcements tab */}
         {activeTab !== 'wallet' && activeTab !== 'support' && activeTab !== 'announcements' && (
           <>
             <div className="grid grid-cols-3 gap-3 mb-4">
@@ -393,7 +418,6 @@ const BuyerDashboard = () => {
         
         {loading && <div className="text-center py-10 text-gray-400 font-semibold animate-pulse">Loading data...</div>}
 
-        {/* 🔥 ================= ANNOUNCEMENTS TAB VIEW ================= 🔥 */}
         {!loading && activeTab === 'announcements' && (
           <div className="space-y-4 animate-fade-in-up">
             <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -408,7 +432,6 @@ const BuyerDashboard = () => {
             ) : (
               announcements.map(ann => (
                 <div key={ann.id} className="bg-white border border-blue-100 p-5 rounded-xl shadow-sm relative overflow-hidden transition-all hover:shadow-md">
-                  {/* Decorative Left Border */}
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0066ff]"></div>
                   
                   <h4 className="font-bold text-gray-800 text-lg mb-2 flex items-start gap-2">
@@ -431,7 +454,6 @@ const BuyerDashboard = () => {
           </div>
         )}
 
-        {/* ================= ACTIVE TAB ================= */}
         {!loading && activeTab === 'active' && (
           <div className="space-y-4">
             {activeApps.length === 0 ? (
@@ -443,7 +465,6 @@ const BuyerDashboard = () => {
               activeApps.map((app) => (
                 <div key={app.application_id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 relative">
                   
-                  {/* 🔥 Condition Badge */}
                   {app.category && (
                     <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase mb-2 inline-block shadow-sm">
                       Task: {app.category}
@@ -473,12 +494,10 @@ const BuyerDashboard = () => {
                       <button onClick={() => { setActionAppId(app.application_id); setShowOrderModal(true); }} className="flex-1 bg-[#0066ff] text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-blue-500/30">Submit Order</button>
                     )}
 
-                    {/* 🔥 CONDITION: Hide Submit Review if it's No Review */}
                     {app.application_status === 'order_approved' && app.category !== 'No Review' && (
                       <button onClick={() => { setActionAppId(app.application_id); setShowReviewModal(true); }} className="flex-1 bg-purple-600 text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-purple-500/30">Submit Review</button>
                     )}
 
-                    {/* 🔥 CONDITION: Show Processing for No Review after Order Submitted */}
                     {(app.application_status === 'pending' || app.application_status === 'order_submitted' || app.application_status === 'review_submitted' || app.application_status === 'pending_refund' || (app.application_status === 'order_approved' && app.category === 'No Review')) && (
                       <button disabled className="flex-1 bg-gray-100 text-gray-400 font-bold py-2 rounded-lg text-xs cursor-not-allowed flex items-center justify-center gap-1">
                         <Clock size={14}/> Processing
@@ -491,7 +510,6 @@ const BuyerDashboard = () => {
           </div>
         )}
 
-        {/* ================= COMPLETED TAB ================= */}
         {!loading && activeTab === 'completed' && (
           <div className="space-y-4">
             {completedApps.length === 0 ? (
@@ -518,7 +536,6 @@ const BuyerDashboard = () => {
           </div>
         )}
 
-        {/* ================= FAILED/REJECTED TAB ================= */}
         {!loading && activeTab === 'failed' && (
           <div className="space-y-4">
             {failedApps.length === 0 ? (
@@ -545,7 +562,6 @@ const BuyerDashboard = () => {
           </div>
         )}
 
-        {/* ================= WALLET & WITHDRAW TAB ================= */}
         {!loading && activeTab === 'wallet' && (
           <div className="space-y-6">
              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -612,7 +628,6 @@ const BuyerDashboard = () => {
           </div>
         )}
 
-        {/* ================= SUPPORT TAB ================= */}
         {!loading && activeTab === 'support' && (
           <div className="space-y-6 animate-fade-in">
              <button 
@@ -713,35 +728,66 @@ const BuyerDashboard = () => {
         </div>
       )}
 
-      {/* 🛒 Submit Order Modal */}
+      {/* 🛒 Submit Order Modal 🔥 UPDATE: Firebase Image Upload */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Submit Order ID</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Submit Order Details</h3>
             <form onSubmit={submitOrder} className="space-y-4">
-              <div><input required type="text" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_number} onChange={e => setOrderForm({...orderForm, order_number: e.target.value})} placeholder="Amazon Order Number" /></div>
-              <div><input type="url" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.screenshot_url} onChange={e => setOrderForm({...orderForm, screenshot_url: e.target.value})} placeholder="Screenshot Link (Optional)" /></div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Amazon Order Number</label>
+                <input required type="text" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_number} onChange={e => setOrderForm({...orderForm, order_number: e.target.value})} placeholder="e.g. 114-1234567-8901234" />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Screenshot (Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleImageUpload(e, 'order')} 
+                  className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
+                />
+                {isUploadingImage && <p className="text-xs text-blue-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
+                {orderForm.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
+              </div>
+
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm">Cancel</button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-[#0066ff] text-white rounded-xl font-bold text-sm disabled:opacity-50">Submit</button>
+                <button type="submit" disabled={isSubmitting || isUploadingImage} className="flex-1 py-3 bg-[#0066ff] text-white rounded-xl font-bold text-sm disabled:opacity-50 transition-opacity">Submit</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ⭐ Submit Review Modal */}
+      {/* ⭐ Submit Review Modal 🔥 UPDATE: Firebase Image Upload */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Submit Review Link</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Submit Live Review</h3>
             <form onSubmit={submitReview} className="space-y-4">
-              <div><input type="url" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-purple-500 outline-none" value={reviewForm.review_link} onChange={e => setReviewForm({...reviewForm, review_link: e.target.value})} placeholder="Review Link" /></div>
-              <div><input type="url" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-purple-500 outline-none" value={reviewForm.review_screenshot_url} onChange={e => setReviewForm({...reviewForm, review_screenshot_url: e.target.value})} placeholder="Screenshot Link" /></div>
-              <p className="text-xs text-gray-400 text-center">Provide at least one link.</p>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Review URL/Link</label>
+                <input type="url" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-purple-500 outline-none" value={reviewForm.review_link} onChange={e => setReviewForm({...reviewForm, review_link: e.target.value})} placeholder="https://amazon.com/..." />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Review Screenshot</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleImageUpload(e, 'review')} 
+                  className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-purple-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer" 
+                />
+                {isUploadingImage && <p className="text-xs text-purple-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
+                {reviewForm.review_screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
+              </div>
+              
+              <p className="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold pt-2">Please provide at least one proof.</p>
+              
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setShowReviewModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm">Cancel</button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-purple-600 text-white rounded-xl font-bold text-sm disabled:opacity-50">Submit</button>
+                <button type="submit" disabled={isSubmitting || isUploadingImage} className="flex-1 py-3 bg-purple-600 text-white rounded-xl font-bold text-sm disabled:opacity-50 transition-opacity">Submit</button>
               </div>
             </form>
           </div>
@@ -765,7 +811,6 @@ const BuyerDashboard = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Message</label>
-                {/* 🔥 Character Limit Added */}
                 <textarea required maxLength="500" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none h-32 resize-none" value={ticketForm.message} onChange={e => setTicketForm({...ticketForm, message: e.target.value})} placeholder="Describe your issue in detail..."></textarea>
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-[10px] text-gray-400">Please provide clear details.</p>
@@ -774,8 +819,8 @@ const BuyerDashboard = () => {
                   </p>
                 </div>
               </div>
-              <button type="submit" disabled={isSubmittingTicket} className="w-full py-3.5 bg-[#0066ff] text-white rounded-xl font-bold text-sm shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2">
-                {isSubmittingTicket ? 'Submitting...' : 'Submit Ticket'}
+              <button type="submit" disabled={isSubmitting} className="w-full py-3.5 bg-[#0066ff] text-white rounded-xl font-bold text-sm shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2">
+                {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
               </button>
             </form>
           </div>
@@ -787,7 +832,6 @@ const BuyerDashboard = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up">
             
-            {/* Header */}
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                <div>
                   <h3 className="font-bold text-gray-800 text-sm line-clamp-1 pr-2">{selectedTicket.subject}</h3>
@@ -802,10 +846,7 @@ const BuyerDashboard = () => {
                <button onClick={() => setShowTicketViewModal(false)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm rounded-full p-1 border border-gray-200 shrink-0"><X size={20} /></button>
             </div>
 
-            {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white relative">
-               
-               {/* Main Ticket Message (User) */}
                <div className="flex flex-col items-end">
                   <div className="max-w-[85%] bg-[#0066ff] text-white p-3 rounded-2xl rounded-tr-sm shadow-sm text-sm break-words">
                      {selectedTicket.message}
@@ -833,7 +874,6 @@ const BuyerDashboard = () => {
                )}
             </div>
 
-            {/* Reply Input Area */}
             <div className="p-3 border-t border-gray-100 bg-gray-50">
                {selectedTicket.status === 'closed' ? (
                   <div className="text-center py-2 text-sm font-bold text-gray-500 bg-gray-200 rounded-xl border border-gray-300">
@@ -866,7 +906,6 @@ const BuyerDashboard = () => {
         </div>
       )}
 
-      {/* ℹ️ Dynamic Product Details Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative animate-slide-up sm:animate-none">
@@ -875,7 +914,6 @@ const BuyerDashboard = () => {
             
             <div className="p-6">
               
-              {/* 🔥 NEW: Task Condition Badge in Modal */}
               {selectedItem.data.category && (
                 <div className="mb-3 bg-yellow-100 border border-yellow-300 p-2 rounded-lg text-center shadow-sm">
                   <span className="text-[10px] text-yellow-700 uppercase font-bold tracking-wider block mb-0.5">Task Condition</span>
@@ -932,7 +970,6 @@ const BuyerDashboard = () => {
                 </div>
               )}
 
-              {/* Your Submissions */}
               {(selectedItem.data.order_number || selectedItem.data.review_link) && (
                 <div className="mt-6 border-t border-gray-100 pt-4">
                   <h4 className="font-bold text-gray-700 text-sm mb-3">Your Submissions</h4>
@@ -945,7 +982,6 @@ const BuyerDashboard = () => {
                 </div>
               )}
 
-              {/* 🔥 NEW: Display Admin Comment for Rejected Orders */}
               {selectedItem.data.application_status === 'rejected' && selectedItem.data.refund_comment && (
                 <div className="mt-6 border border-red-200 bg-red-50 p-4 rounded-xl shadow-sm">
                   <h4 className="font-bold text-red-800 text-sm mb-2 flex items-center gap-1">
@@ -963,14 +999,12 @@ const BuyerDashboard = () => {
                 </div>
               )}
 
-              {/* Refund Confirmation Details (Only for Completed) */}
               {selectedItem.data.application_status === 'completed' && (
                 <div className="mt-6 border border-green-200 bg-green-50 p-4 rounded-xl shadow-sm">
                   <h4 className="font-bold text-green-800 text-sm mb-2 flex items-center gap-1">
                     <CheckCircle size={16} /> Refund Processed
                   </h4>
                   
-                  {/* Pre-Pay Vs Normal Refund Text */}
                   {selectedItem.data.category === 'Pre-Pay' ? (
                      <p className="text-xs text-green-700 font-medium leading-relaxed mb-3">
                        Your funds (Product Price + Reward) have been successfully sent to your external payment account by the Admin. <strong className="text-green-800">Note: This amount is NOT added to your system wallet.</strong>
@@ -981,7 +1015,6 @@ const BuyerDashboard = () => {
                      </p>
                   )}
                   
-                  {/* Admin Order Number (using refund_order_number or fallback to refund_screenshot_url) */}
                   {(selectedItem.data.refund_order_number || selectedItem.data.refund_screenshot_url) && (
                     <div className="mb-2">
                       <p className="text-[10px] text-green-600 uppercase font-bold">Admin Order Number / Screenshot</p>
@@ -991,7 +1024,6 @@ const BuyerDashboard = () => {
                     </div>
                   )}
 
-                  {/* Admin Comment */}
                   {selectedItem.data.refund_comment && (
                     <div className="mt-2">
                       <p className="text-[10px] text-green-600 uppercase font-bold">Admin Comment</p>
