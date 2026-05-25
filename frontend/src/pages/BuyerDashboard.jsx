@@ -6,8 +6,6 @@ import {
   XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon,
   Headset, PlusCircle, MessageCircle, Send, Megaphone
 } from 'lucide-react'; 
-// 🔥 Firebase Storage Imports
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const BuyerDashboard = () => {
   const location = useLocation();
@@ -148,18 +146,27 @@ const BuyerDashboard = () => {
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
 
-  // 🔥 Firebase Image Upload Handler
+  // 🔥 Cloudinary Image Upload Handler
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsUploadingImage(true);
     try {
-      const storage = getStorage();
-      const fileRef = ref(storage, `buyer_screenshots/${Date.now()}_${file.name}`);
-      
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
+      const cloudData = new FormData();
+      cloudData.append("file", file);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST",
+        body: cloudData,
+      });
+
+      const cloudJson = await res.json();
+      if (!cloudJson.secure_url) throw new Error("Upload failed");
+
+      const downloadURL = cloudJson.secure_url;
 
       if (formType === 'order') {
         setOrderForm(prev => ({ ...prev, screenshot_url: downloadURL }));
@@ -167,8 +174,8 @@ const BuyerDashboard = () => {
         setReviewForm(prev => ({ ...prev, review_screenshot_url: downloadURL }));
       }
     } catch (error) {
-      console.error("Firebase upload error:", error);
-      alert("Image upload failed! Make sure your Firebase is configured correctly.");
+      console.error("Cloudinary upload error:", error);
+      alert("Image upload failed! Please try again.");
     } finally {
       setIsUploadingImage(false);
     }

@@ -142,17 +142,35 @@ export default function AddProduct({ onProductAdded }) {
   
   const totalDeposit = (costPerOrder + platformCommission + refundFeeAmount) * qtyNum;
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     if (!imageFile) return alert("Please upload a product image.");
     if (!formData.country.trim() || !formData.platform.trim()) return alert("Country and Platform are required fields.");
 
     setLoading(true);
-    const submitData = new FormData();
-    Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
-    submitData.append('image', imageFile);
-
+    
     try {
+      // ১. Cloudinary-তে ছবি আপলোড করা হচ্ছে
+      const cloudData = new FormData();
+      cloudData.append("file", imageFile);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const cloudRes = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST",
+        body: cloudData,
+      });
+      const cloudJson = await cloudRes.json();
+      
+      if (!cloudJson.secure_url) {
+        throw new Error("Cloudinary image upload failed");
+      }
+
+      // ২. সফলভাবে আপলোড হলে ব্যাকএন্ডে ডাটা পাঠানো (ছবির লিংকলহ)
+      const submitData = new FormData();
+      Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
+      submitData.append('image_url', cloudJson.secure_url); // সরাসরি ক্লাউড লিংক পাঠিয়ে দিচ্ছি
+
       const token = localStorage.getItem('token');
       const res = await fetch('https://backend-6aiq.onrender.com/api/products', {
         method: 'POST',
@@ -177,7 +195,8 @@ export default function AddProduct({ onProductAdded }) {
         alert(data.message || "Failed to publish product.");
       }
     } catch (error) {
-      alert("Server connection error. Please try again.");
+      console.error(error);
+      alert("Image upload or Server connection error. Please try again.");
     } finally {
       setLoading(false);
     }

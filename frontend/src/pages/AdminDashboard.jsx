@@ -7,8 +7,6 @@ import {
   Briefcase, LayoutDashboard
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
-// 🔥 Firebase Storage Imports
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -367,20 +365,28 @@ export default function AdminDashboard() {
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
   const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
   
-  // 🔥 Firebase Handler for Withdrawal Proof
+// 🔥 Cloudinary Handler for Withdrawal Proof
   const handleWithdrawalImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setIsUploadingWithdrawalProof(true);
     try {
-      const storage = getStorage();
-      const fileRef = ref(storage, `admin_proofs/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-      setWithdrawalProof(prev => ({ ...prev, screenshot_url: downloadURL }));
+      const cloudData = new FormData();
+      cloudData.append("file", file);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST",
+        body: cloudData,
+      });
+      const cloudJson = await res.json();
+      if (!cloudJson.secure_url) throw new Error("Upload failed");
+
+      setWithdrawalProof(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
     } catch (error) {
-      console.error("Firebase upload error:", error);
-      alert("Image upload failed! Check your Firebase configuration.");
+      console.error("Cloudinary upload error:", error);
+      alert("Image upload failed! Please try again.");
     } finally {
       setIsUploadingWithdrawalProof(false);
     }
@@ -437,20 +443,28 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🔥 Firebase Handler for Refund Proof
+  // 🔥 Cloudinary Handler for Refund Proof
   const handleRefundImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setIsUploadingRefundProof(true);
     try {
-      const storage = getStorage();
-      const fileRef = ref(storage, `admin_refunds/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-      setRefundData(prev => ({ ...prev, screenshot_url: downloadURL }));
+      const cloudData = new FormData();
+      cloudData.append("file", file);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST",
+        body: cloudData,
+      });
+      const cloudJson = await res.json();
+      if (!cloudJson.secure_url) throw new Error("Upload failed");
+
+      setRefundData(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
     } catch (error) {
-      console.error("Firebase upload error:", error);
-      alert("Image upload failed! Check your Firebase configuration.");
+      console.error("Cloudinary upload error:", error);
+      alert("Image upload failed! Please try again.");
     } finally {
       setIsUploadingRefundProof(false);
     }
