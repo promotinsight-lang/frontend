@@ -168,8 +168,15 @@ export default function AddProduct({ onProductAdded }) {
 
       // ২. সফলভাবে আপলোড হলে ব্যাকএন্ডে ডাটা পাঠানো (ছবির লিংকলহ)
       const submitData = new FormData();
-      Object.keys(formData).forEach(key => submitData.append(key, formData[key]));
-      submitData.append('image_url', cloudJson.secure_url); // সরাসরি ক্লাউড লিংক পাঠিয়ে দিচ্ছি
+      Object.keys(formData).forEach(key => {
+        // যদি product_link হয় এবং তাতে http না থাকে, তবে https:// বসিয়ে দাও
+        if (key === 'product_link' && formData[key] && !formData[key].startsWith('http')) {
+          submitData.append(key, `https://${formData[key]}`);
+        } else {
+          submitData.append(key, formData[key]);
+        }
+      });
+      submitData.append('image_url', cloudJson.secure_url);
 
       const token = localStorage.getItem('token');
       const res = await fetch('https://backend-6aiq.onrender.com/api/products', {

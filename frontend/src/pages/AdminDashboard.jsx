@@ -1911,7 +1911,7 @@ export default function AdminDashboard() {
                     <p className="text-sm"><span className="font-semibold text-gray-500 mr-2">Available Qty:</span> <b className="text-[#0066ff] text-lg">{Math.max(0, selectedProductDetails.required_orders - (selectedProductDetails.application_count || 0))}</b></p>
                   </div>
                   
-                  <div className="mt-2"><span className="font-semibold text-gray-500 block mb-1">Product Link:</span><a href={selectedProductDetails.product_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all bg-gray-50 p-2 block rounded border">{selectedProductDetails.product_link}</a></div>
+                  <div className="mt-2"><span className="font-semibold text-gray-500 block mb-1">Product Link:</span><a href={selectedProductDetails.product_link?.startsWith('http') ? selectedProductDetails.product_link : `https://${selectedProductDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all bg-gray-50 p-2 block rounded border">{selectedProductDetails.product_link}</a></div>
                   <div className="mt-2"><span className="font-semibold text-gray-500 block mb-1">Seller Instructions:</span><p className="bg-gray-100 p-3 rounded text-gray-800 whitespace-pre-wrap border">{selectedProductDetails.instructions}</p></div>
                 </div>
               </div>
@@ -1962,7 +1962,7 @@ export default function AdminDashboard() {
                         {selectedAppDetails.store_name && <p><span className="font-semibold text-gray-500 w-16 inline-block">Store:</span> <span className="font-bold">{selectedAppDetails.store_name}</span></p>}
                         {selectedAppDetails.platform && <p><span className="font-semibold text-gray-500 w-16 inline-block">Platform:</span> <span className="font-bold">{selectedAppDetails.platform} {selectedAppDetails.country && `(${selectedAppDetails.country})`}</span></p>}
                         {selectedAppDetails.search_keyword && <p><span className="font-semibold text-gray-500 w-16 inline-block">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono font-bold">{selectedAppDetails.search_keyword}</span></p>}
-                        {selectedAppDetails.product_link && <p className="flex items-start gap-1"><span className="font-semibold text-gray-500 w-16 shrink-0 inline-block">Link:</span> <a href={selectedAppDetails.product_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">Click Here ↗</a></p>}
+                        {selectedAppDetails.product_link && <p className="flex items-start gap-1"><span className="font-semibold text-gray-500 w-16 shrink-0 inline-block">Link:</span> <a href={selectedAppDetails.product_link?.startsWith('http') ? selectedAppDetails.product_link : `https://${selectedAppDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">Click Here ↗</a></p>}
                      </div>
                      {selectedAppDetails.instructions && (
                         <div className="mt-3 bg-white p-2.5 rounded-lg border border-gray-200 text-xs">
