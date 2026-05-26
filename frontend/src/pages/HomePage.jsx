@@ -211,7 +211,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 🔥 SMART CALCULATOR */}
+     {/* 🔥 SMART CALCULATOR */}
+      {user?.role !== 'buyer' && (
       <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
           
@@ -335,7 +336,6 @@ export default function HomePage() {
                  </div>
               </div>
             )}
-            
             {!activeConfig && !isCalcLoading && (
                <p className="text-[10px] text-gray-400 mt-4 font-medium flex items-start gap-1">
                  <Info size={12} className="shrink-0 mt-0.5" /> This is an estimate based on system default values.
@@ -344,8 +344,10 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* LIVE ACTIVITY FEED */}
+            
       <section className="py-10 bg-white border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
           <div className="flex items-center gap-2 text-[#0066ff] font-black uppercase tracking-widest text-sm shrink-0">
