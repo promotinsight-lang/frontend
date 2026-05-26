@@ -361,7 +361,7 @@ export default function HomePage() {
               Get 100% Cashback + <span className="text-yellow-300">Extra Rewards</span>
             </h2>
             <p className="text-emerald-100 text-sm md:text-base font-medium mb-8 max-w-md">
-              You are ready to start earning! Browse our marketplace, claim a product, leave an honest <Feedback></Feedback>, and get your money back straight to your wallet.
+              You are ready to start earning! Browse our marketplace, claim a product, leave an honest Feedback, and get your money back straight to your wallet.
             </p>
             <div className="flex gap-4">
               <Link to="/marketplace" className="bg-white text-emerald-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2">
@@ -520,7 +520,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="text-center text-xs font-medium">
-          © {new Date().getFullYear()} <PromotInsight></PromotInsight>. Built by <WitchBella></WitchBella>. All Rights Reserved.
+          © {new Date().getFullYear()} PromotInsight. Built by WitchBella. All Rights Reserved.
         </div>
       </footer>
 
