@@ -10,11 +10,11 @@ export default function Terms() {
           <h1 className="text-4xl font-black text-gray-900 mb-8">Terms of Use</h1>
           
           <div className="space-y-6 text-gray-600 leading-relaxed">
-            <p>Welcome to MarketInsight. By accessing and using our platform, you agree to comply with and be bound by the following Terms of Use. Please read them carefully.</p>
+            <p>Welcome to PromotInsight. By accessing and using our platform, you agree to comply with and be bound by the following Terms of Use. Please read them carefully.</p>
 
             <section>
               <h2 className="text-xl font-bold text-gray-800 mb-3">1. Platform Overview</h2>
-              <p>MarketInsight acts as a bridge between buyers and sellers to facilitate product reviews, cashback tasks, and e-commerce growth. We ensure a secure escrow system for transaction safety.</p>
+              <p>PromotInsight acts as a bridge between buyers and sellers to facilitate product reviews, cashback tasks, and e-commerce growth. We ensure a secure escrow system for transaction safety.</p>
             </section>
 
             <section>
@@ -32,7 +32,7 @@ export default function Terms() {
               <ul className="list-disc pl-6 space-y-2">
                 <li>Sellers must deposit funds upfront into the system wallet before listing a product.</li>
                 <li>You are responsible for providing clear, accurate product keywords and review instructions.</li>
-                <li>Disputes against buyers must be raised fairly and are subject to final manual review by MarketInsight's admin mediation team.</li>
+                <li>Disputes against buyers must be raised fairly and are subject to final manual review by PromotInsight's admin mediation team.</li>
               </ul>
             </section>
 

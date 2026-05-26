@@ -30,7 +30,7 @@ export default function Blogs() {
       
       <div className="bg-[#0066ff] pt-12 pb-20 px-4 text-white">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">MarketInsight <span className="text-yellow-300">Blog</span></h1>
+          <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">PromotInsight <span className="text-yellow-300">Blog</span></h1>
           <p className="text-blue-100 text-lg max-w-2xl mx-auto">Discover the latest updates, tips for sellers, and guides on how to maximize your cashback as a buyer.</p>
         </div>
       </div>

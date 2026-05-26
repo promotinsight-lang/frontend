@@ -201,7 +201,7 @@ export default function SellerAuth({ onAuthSuccess }) {
         {/* HEADER */}
         <div className="bg-[#0066ff] p-8 text-center text-white relative">
            <h2 className="text-3xl font-black mb-1">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-           <p className="text-blue-100 text-sm">MarketInsight Global Platform</p>
+           <p className="text-blue-100 text-sm">PromotInsight Global Platform</p>
         </div>
 
         {/* TOGGLE */}

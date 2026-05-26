@@ -10,7 +10,7 @@ export default function Privacy() {
           <h1 className="text-4xl font-black text-gray-900 mb-8">Privacy Policy</h1>
           
           <div className="space-y-6 text-gray-600 leading-relaxed">
-            <p>At MarketInsight, your privacy and data security are our top priorities. This Privacy Policy explains how we collect, use, and protect your information when you interact with our platform.</p>
+            <p>At PromotInsight, your privacy and data security are our top priorities. This Privacy Policy explains how we collect, use, and protect your information when you interact with our platform.</p>
 
             <section>
               <h2 className="text-xl font-bold text-gray-800 mb-3">1. Information We Collect</h2>
