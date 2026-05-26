@@ -21,6 +21,9 @@ export default function AddProduct({ onProductAdded }) {
   const [activeConfig, setActiveConfig] = useState(null); 
   const [isFeeLoading, setIsFeeLoading] = useState(true);
 
+  // 🔥 Logged in user er data
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
   const currencySymbols = {
     'USA': '$', 'UK': '£', 'Canada': 'C$', 'Mexico': 'MX$',
     'Germany': '€', 'France': '€', 'Italy': '€', 'Spain': '€',
@@ -133,11 +136,9 @@ export default function AddProduct({ onProductAdded }) {
   const qtyNum = parseInt(formData.required_orders) || 1;
   
   const costPerOrder = priceNum + rewardNum;
-  // Platform charge now only applies to base price
   const platformCommission = priceNum * platformChargePercent; 
   
   const refundFeePercent = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
-  // Refund fee applies to price + reward
   const refundFeeAmount = costPerOrder * refundFeePercent;
   
   const totalDeposit = (costPerOrder + platformCommission + refundFeeAmount) * qtyNum;
@@ -150,7 +151,6 @@ export default function AddProduct({ onProductAdded }) {
     setLoading(true);
     
     try {
-      // ১. Cloudinary-তে ছবি আপলোড করা হচ্ছে
       const cloudData = new FormData();
       cloudData.append("file", imageFile);
       cloudData.append("upload_preset", "promot_insight_preset");
@@ -166,10 +166,8 @@ export default function AddProduct({ onProductAdded }) {
         throw new Error("Cloudinary image upload failed");
       }
 
-      // ২. সফলভাবে আপলোড হলে ব্যাকএন্ডে ডাটা পাঠানো (ছবির লিংকলহ)
       const submitData = new FormData();
       Object.keys(formData).forEach(key => {
-        // যদি product_link হয় এবং তাতে http না থাকে, তবে https:// বসিয়ে দাও
         if (key === 'product_link' && formData[key] && !formData[key].startsWith('http')) {
           submitData.append(key, `https://${formData[key]}`);
         } else {
@@ -352,7 +350,8 @@ export default function AddProduct({ onProductAdded }) {
           </div>
         </div>
 
-        {/* Full Width: Dynamic Fee Breakdown & Summary */}
+        {/* Full Width: Dynamic Fee Breakdown & Summary (Only for Seller) */}
+        {user.role === 'seller' && (
         <div className="md:col-span-2 mt-2 bg-yellow-50/80 p-5 rounded-2xl flex flex-col border border-yellow-200 shadow-sm relative overflow-hidden">
           
           {isFeeLoading && (
@@ -404,7 +403,6 @@ export default function AddProduct({ onProductAdded }) {
                     <span className="font-bold text-red-500">+{currency}{platformCommission.toFixed(2)}</span>
                   </div>
 
-                  {/* 🔥 NEW: Refund Fee/Cashback Fee */}
                   {activeConfig && parseFloat(activeConfig.buyer_refund_fee) > 0 && (
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-gray-500 flex items-center gap-1">
@@ -431,6 +429,7 @@ export default function AddProduct({ onProductAdded }) {
             <Info size={14} className="shrink-0 mt-0.5"/> This amount will be temporarily locked from your wallet. Unused funds are automatically refunded if orders are cancelled.
           </p>
         </div>
+        )}
 
         <button 
           type="submit" 
