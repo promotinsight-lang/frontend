@@ -224,7 +224,7 @@ const Navbar = () => {
               )}
               <Link to="/" className="flex items-center gap-1 hover:opacity-80 transition-opacity">
                 <span className="text-xl font-black tracking-tight text-gray-900">
-                  Market<span className="text-[#10b981]">Insight</span>
+                  Promot<span className="text-[#10b981]">Insight</span>
                 </span>
               </Link>
             </div>
