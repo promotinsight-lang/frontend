@@ -211,7 +211,7 @@ export default function HomePage() {
         </div>
       </section>
 
-     {/* 🔥 SMART CALCULATOR */}
+      {/* 🔥 SMART CALCULATOR (For Sellers and Guests) */}
       {user?.role !== 'buyer' && (
       <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
@@ -336,6 +336,7 @@ export default function HomePage() {
                  </div>
               </div>
             )}
+            
             {!activeConfig && !isCalcLoading && (
                <p className="text-[10px] text-gray-400 mt-4 font-medium flex items-start gap-1">
                  <Info size={12} className="shrink-0 mt-0.5" /> This is an estimate based on system default values.
@@ -346,8 +347,47 @@ export default function HomePage() {
       </section>
       )}
 
+      {/* 🔥 BUYER EXCLUSIVE BANNER (Shows only to Buyers instead of Calculator) */}
+      {user?.role === 'buyer' && (
+      <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
+        <div className="bg-gradient-to-r from-[#10b981] to-emerald-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row items-center animate-fade-in-up border border-emerald-500">
+          
+          <div className="w-full md:w-3/5 p-8 lg:p-12 text-white">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full mb-4 border border-white/30 backdrop-blur-sm">
+              <Star size={16} className="text-yellow-300 fill-current"/>
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-50">Buyer Exclusive</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
+              Get 100% Cashback + <span className="text-yellow-300">Extra Rewards</span>
+            </h2>
+            <p className="text-emerald-100 text-sm md:text-base font-medium mb-8 max-w-md">
+              You are ready to start earning! Browse our marketplace, claim a product, leave an honest review, and get your money back straight to your wallet.
+            </p>
+            <div className="flex gap-4">
+              <Link to="/marketplace" className="bg-white text-emerald-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2">
+                <ShoppingCart size={18}/> Claim Products Now
+              </Link>
+            </div>
+          </div>
+
+          <div className="w-full md:w-2/5 bg-white/10 p-8 lg:p-10 flex flex-col justify-center items-center backdrop-blur-md border-l border-white/10 h-full">
+             <div className="bg-white p-6 rounded-2xl shadow-xl text-center transform hover:scale-105 transition-transform w-full max-w-sm">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                   <Wallet size={32}/>
+                </div>
+                <p className="text-gray-500 font-bold text-sm uppercase mb-1">Potential Monthly Earnings</p>
+                <h3 className="text-4xl font-black text-gray-900">$350+</h3>
+                <p className="text-xs text-gray-400 mt-3 font-medium border-t border-gray-100 pt-3">
+                  Based on completing 5 active tasks per week
+                </p>
+             </div>
+          </div>
+
+        </div>
+      </section>
+      )}
+
       {/* LIVE ACTIVITY FEED */}
-            
       <section className="py-10 bg-white border-y border-gray-100">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
           <div className="flex items-center gap-2 text-[#0066ff] font-black uppercase tracking-widest text-sm shrink-0">
@@ -492,4 +532,4 @@ export default function HomePage() {
       `}} />
     </div>
   );
-};
+};import React from 'react';
