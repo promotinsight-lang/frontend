@@ -532,4 +532,4 @@ export default function HomePage() {
       `}} />
     </div>
   );
-};import React from 'react';
+};
