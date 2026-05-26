@@ -168,8 +168,8 @@ export default function HomePage() {
   };
 
   const faqs = [
-    { q: "How does the 100% cashback work?", a: "Once you purchase the assigned product and leave an honest review as instructed, you submit your order and review screenshots. After the seller verifies it, the product price + reward is credited to your wallet." },
-    { q: "Is this platform safe for sellers?", a: "Absolutely. We secure your deposit in escrow. Funds are only released to the buyer after you approve their verified review. If a buyer fails, your funds are refunded." },
+    { q: "How does the 100% cashback work?", a: "Once you purchase the assigned product and leave an honest Feedback as instructed, you submit your order and Feedback screenshots. After the seller verifies it, the product price + reward is credited to your wallet." },
+    { q: "Is this platform safe for sellers?", a: "Absolutely. We secure your deposit in escrow. Funds are only released to the buyer after you approve their verified Feedback. If a buyer fails, your funds are refunded." },
     { q: "How can I withdraw my earnings?", a: "You can withdraw your wallet balance at any time using PayPal, Payoneer, Binance Pay, or local bank transfers depending on your country." }
   ];
 
@@ -361,7 +361,7 @@ export default function HomePage() {
               Get 100% Cashback + <span className="text-yellow-300">Extra Rewards</span>
             </h2>
             <p className="text-emerald-100 text-sm md:text-base font-medium mb-8 max-w-md">
-              You are ready to start earning! Browse our marketplace, claim a product, leave an honest review, and get your money back straight to your wallet.
+              You are ready to start earning! Browse our marketplace, claim a product, leave an honest <Feedback></Feedback>, and get your money back straight to your wallet.
             </p>
             <div className="flex gap-4">
               <Link to="/marketplace" className="bg-white text-emerald-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2">
@@ -520,7 +520,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="text-center text-xs font-medium">
-          © {new Date().getFullYear()} Smart Feedback System. Built by Jaman. All Rights Reserved.
+          © {new Date().getFullYear()} <PromotInsight></PromotInsight>. Built by <WitchBella></WitchBella>. All Rights Reserved.
         </div>
       </footer>
 
