@@ -351,7 +351,9 @@ export default function AddProduct({ onProductAdded }) {
         </div>
 
         {/* Full Width: Dynamic Fee Breakdown & Summary (Only for Seller) */}
+        
         {user.role === 'seller' && (
+        
         <div className="md:col-span-2 mt-2 bg-yellow-50/80 p-5 rounded-2xl flex flex-col border border-yellow-200 shadow-sm relative overflow-hidden">
           
           {isFeeLoading && (
