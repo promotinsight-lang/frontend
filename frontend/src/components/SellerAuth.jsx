@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, ShoppingBag, FileText, X, RefreshCcw } from 'lucide-react'; 
 
-// 🔥 Firebase Imports (আপনার firebase.js ফাইলের লোকেশন অনুযায়ী পাথ ঠিক করে নিবেন, যদি একই ফোল্ডারে না থাকে)
+// 🔥 Firebase Imports (apnar firebase.js filer location onujayi path thik kore niben)
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, yahooProvider } from '../firebase'; 
 
@@ -22,6 +22,9 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  // 🔥 NEW: Referral Code State
+  const [referredByCode, setReferredByCode] = useState('');
+
   // STATES FOR CAPTCHA AND OTP
   const [captchaData, setCaptchaData] = useState(null);
   const [captchaInput, setCaptchaInput] = useState('');
@@ -32,6 +35,20 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [otpCountdown, setOtpCountdown] = useState(0);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 🔥 URL theke Referral Code dhora abong LocalStorage e save kora
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      setReferredByCode(ref);
+      localStorage.setItem('referral_code', ref);
+    } else {
+      const storedRef = localStorage.getItem('referral_code');
+      if (storedRef) setReferredByCode(storedRef);
+    }
+  }, [location.search]);
 
   // FETCH CAPTCHA
   const fetchCaptcha = async () => {
@@ -94,18 +111,14 @@ export default function SellerAuth({ onAuthSuccess }) {
     }
   };
 
-  // 🔥 ASOL SOCIAL LOGIN HANDLER (Firebase Integrated)
+  // 🔥 ASOL SOCIAL LOGIN HANDLER (Firebase Integrated with Referral Code)
   const handleSocialLogin = async (providerName) => {
     setSocialLoading(true);
     setError('');
     try {
-      // 1. সিলেক্ট করুন কোন প্রোভাইডার দিয়ে লগিন হবে
       const provider = providerName === 'google' ? googleProvider : yahooProvider;
-      
-      // 2. ফায়ারবেস পপআপ ওপেন করা
       const result = await signInWithPopup(auth, provider);
       
-      // 3. ফায়ারবেস থেকে ইউজারের তথ্য নেওয়া
       const userEmail = result.user.email;
       const userName = result.user.displayName || `${providerName} User`;
 
@@ -113,11 +126,10 @@ export default function SellerAuth({ onAuthSuccess }) {
         throw new Error("Email not found from social account.");
       }
 
-      // 4. ব্যাকএন্ডে API কল করে ইউজারকে সিস্টেমে লগিন/রেজিস্টার করানো
       const res = await fetch('https://backend-6aiq.onrender.com/api/users/social-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, name: userName, auth_provider: providerName })
+        body: JSON.stringify({ email: userEmail, name: userName, auth_provider: providerName, referred_by_code: referredByCode })
       });
       
       const data = await res.json();
@@ -125,6 +137,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (referredByCode) localStorage.removeItem('referral_code'); // Clean up
         
         onAuthSuccess(data.user);
         navigate('/dashboard'); 
@@ -133,7 +146,6 @@ export default function SellerAuth({ onAuthSuccess }) {
       }
     } catch (err) {
       console.error("Firebase Auth Error:", err);
-      // ইউজার যদি নিজেই পপআপ কেটে দেয়, তাহলে এরর দেখানোর দরকার নেই
       if (err.code !== 'auth/popup-closed-by-user') {
         setError("Social login connection error. Please try again.");
       }
@@ -142,7 +154,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     }
   };
 
-  // STANDARD EMAIL SUBMIT
+  // STANDARD EMAIL SUBMIT (With Referral Code)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -165,7 +177,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     
     const payload = isLogin 
       ? { email, password, captchaId: captchaData?.captchaId, captchaInput } 
-      : { fullName, email, password, role, whatsapp, country, profileLink, otp: otpCode };
+      : { fullName, email, password, role, whatsapp, country, profileLink, otp: otpCode, referred_by_code: referredByCode };
 
     try {
       const res = await fetch(`https://backend-6aiq.onrender.com${endpoint}`, {
@@ -179,6 +191,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (!isLogin && referredByCode) localStorage.removeItem('referral_code'); // Clean up
         
         onAuthSuccess(data.user);
         navigate('/dashboard'); 
@@ -316,6 +329,19 @@ export default function SellerAuth({ onAuthSuccess }) {
             <label className="block text-xs font-bold text-gray-600 mb-1">Password</label>
             <input required type="password" minLength="8" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
+
+          {!isLogin && (
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Referral Code (Optional)</label>
+              <input 
+                type="text" 
+                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm uppercase" 
+                value={referredByCode} 
+                onChange={(e) => setReferredByCode(e.target.value)} 
+                placeholder="e.g. JAMXYZ" 
+              />
+            </div>
+          )}
 
           {isLogin && (
             <div>

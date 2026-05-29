@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import { 
   ShoppingBag, CheckCircle, Clock, ChevronRight, X, ShieldAlert, 
   XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon,
-  Headset, PlusCircle, MessageCircle, Send, Megaphone
+  Headset, PlusCircle, MessageCircle, Send, Megaphone, Users // 🔥 ADDED Users icon
 } from 'lucide-react'; 
 
 const BuyerDashboard = () => {
@@ -86,7 +86,8 @@ const BuyerDashboard = () => {
             ...lsUser, 
             wallet_balance: profileData.user.wallet_balance, 
             is_active: profileData.user.is_active, 
-            is_frozen: profileData.user.is_frozen 
+            is_frozen: profileData.user.is_frozen,
+            referral_code: profileData.user.referral_code // 🔥 NEW: Referral Code Saved
           }));
           
           if (profileData.user.is_active === false) {
@@ -373,11 +374,16 @@ const BuyerDashboard = () => {
       <Navbar />
 
       <div className="bg-white px-4 py-6 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
+        {/* 🔥 NEW: Tab title logic updated */}
         <h1 className="text-2xl font-black text-gray-800 mb-4">
-          {activeTab === 'wallet' ? 'My Wallet' : activeTab === 'support' ? 'Support Tickets' : activeTab === 'announcements' ? 'Announcements' : 'My Orders'}
+          {activeTab === 'wallet' ? 'My Wallet' 
+            : activeTab === 'support' ? 'Support Tickets' 
+            : activeTab === 'announcements' ? 'Announcements' 
+            : activeTab === 'referral' ? 'Refer & Earn'
+            : 'My Orders'}
         </h1>
         
-        {activeTab !== 'wallet' && activeTab !== 'support' && activeTab !== 'announcements' && (
+        {activeTab !== 'wallet' && activeTab !== 'support' && activeTab !== 'announcements' && activeTab !== 'referral' && (
           <>
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
@@ -424,6 +430,40 @@ const BuyerDashboard = () => {
       <div className="max-w-2xl mx-auto w-full px-4 mt-6">
         
         {loading && <div className="text-center py-10 text-gray-400 font-semibold animate-pulse">Loading data...</div>}
+
+        {/* 🔥 NEW: REFERRAL TAB */}
+        {!loading && activeTab === 'referral' && (
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 text-center animate-fade-in-up">
+            <div className="w-20 h-20 bg-blue-50 text-[#0066ff] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users size={40} />
+            </div>
+            <h2 className="text-2xl font-black text-gray-800 mb-2">Invite Friends & Earn $10!</h2>
+            <p className="text-gray-500 text-sm mb-8 max-w-md mx-auto leading-relaxed">
+              Share your referral link. When your friend signs up and completes 5 orders (and you also have 5 completed orders), you get a <strong className="text-green-600">$10 bonus</strong> instantly in your wallet!
+            </p>
+            
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 max-w-md mx-auto">
+              <p className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-wider">Your Unique Referral Link</p>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={`${window.location.origin}/register?ref=${JSON.parse(localStorage.getItem('user') || '{}').referral_code || 'Loading...'}`} 
+                  className="flex-1 p-3 text-sm font-mono border border-gray-300 rounded-xl bg-white outline-none text-gray-700" 
+                />
+                <button 
+                  onClick={() => { 
+                    navigator.clipboard.writeText(`${window.location.origin}/register?ref=${JSON.parse(localStorage.getItem('user') || '{}').referral_code}`); 
+                    alert("Referral Link Copied!"); 
+                  }} 
+                  className="bg-[#0066ff] hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold transition-colors shadow-md"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {!loading && activeTab === 'announcements' && (
           <div className="space-y-4 animate-fade-in-up">
