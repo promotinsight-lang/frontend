@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard,
-  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart
+  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift // 🔥 NEW: Gift icon added
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
@@ -56,9 +56,12 @@ export default function HomePage() {
     }
 
     setTimeout(() => {
+      // 🔥 UPDATE: Added Referral Notifications to Live Feed
       setLiveFeed([
         { id: "lf-1", text: "A buyer from USA just received $15 cashback!", time: "2 mins ago" },
+        { id: "lf-ref1", text: "🔥 User JAM*** invited a friend and earned $10 bonus!", time: "4 mins ago" },
         { id: "lf-2", text: "New Amazon product listed with 100% refund.", time: "5 mins ago" },
+        { id: "lf-ref2", text: "🎉 A buyer just got paid a $10 referral reward!", time: "9 mins ago" },
         { id: "lf-3", text: "Seller 'TechStore' deposited $500.", time: "12 mins ago" }
       ]);
       setFeedLoading(false);
@@ -187,9 +190,18 @@ export default function HomePage() {
       <section className="relative bg-gradient-to-br from-[#0066ff] to-indigo-900 pt-24 pb-32 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <span className="inline-block py-1.5 px-4 rounded-full bg-white/20 text-blue-100 font-bold text-sm tracking-widest uppercase mb-6 border border-white/20 backdrop-blur-sm">
-            #1 Global E-Commerce Product Testing Platform
-          </span>
+          
+          {/* 🔥 NEW: Referral Promo Badge in Hero Section */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-5 py-2 rounded-full font-black text-xs md:text-sm tracking-wide mb-6 shadow-lg shadow-yellow-500/30 animate-bounce">
+             <Gift size={18} className="text-yellow-900" /> Invite Friends & Earn $10 Cash Bonus!
+          </div>
+          
+          <div className="block mb-4">
+            <span className="inline-block py-1.5 px-4 rounded-full bg-white/20 text-blue-100 font-bold text-sm tracking-widest uppercase border border-white/20 backdrop-blur-sm">
+              #1 Global E-Commerce Product Testing Platform
+            </span>
+          </div>
+
           <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-tight drop-shadow-lg">
             Boost Your Sales.<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
@@ -370,17 +382,29 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="w-full md:w-2/5 bg-white/10 p-8 lg:p-10 flex flex-col justify-center items-center backdrop-blur-md border-l border-white/10 h-full">
-             <div className="bg-white p-6 rounded-2xl shadow-xl text-center transform hover:scale-105 transition-transform w-full max-w-sm">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                   <Wallet size={32}/>
+          <div className="w-full md:w-2/5 bg-white/10 p-8 lg:p-10 flex flex-col justify-center items-center gap-4 backdrop-blur-md border-l border-white/10 h-full">
+             
+             {/* Earning Potential Card */}
+             <div className="bg-white p-5 rounded-2xl shadow-xl text-center transform hover:scale-105 transition-transform w-full max-w-sm">
+                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                   <Wallet size={24}/>
                 </div>
-                <p className="text-gray-500 font-bold text-sm uppercase mb-1">Potential Monthly Earnings</p>
-                <h3 className="text-4xl font-black text-gray-900">$350+</h3>
-                <p className="text-xs text-gray-400 mt-3 font-medium border-t border-gray-100 pt-3">
-                  Based on completing 5 active tasks per week
-                </p>
+                <p className="text-gray-500 font-bold text-xs uppercase mb-1">Potential Monthly Earnings</p>
+                <h3 className="text-3xl font-black text-gray-900">$350+</h3>
              </div>
+
+             {/* 🔥 NEW: Referral Card for Buyers */}
+             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-5 rounded-2xl shadow-xl border border-yellow-200 text-center transform hover:scale-105 transition-transform w-full max-w-sm">
+                <div className="w-12 h-12 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                   <Gift size={24}/>
+                </div>
+                <p className="text-yellow-800 font-bold text-xs uppercase mb-1">Refer & Earn</p>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">Get $10 Bonus</h3>
+                <Link to="/dashboard?tab=referral" className="inline-block bg-gray-900 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors shadow-sm mt-1">
+                   Get Your Link
+                </Link>
+             </div>
+
           </div>
 
         </div>
@@ -532,4 +556,4 @@ export default function HomePage() {
       `}} />
     </div>
   );
-};
+}
