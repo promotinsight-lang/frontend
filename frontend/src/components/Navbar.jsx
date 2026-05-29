@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Home, Bell, X, ShoppingBag, FileText } from 'lucide-react'; // 🔥 NEW: FileText icon added for Blog
+import { Menu, Home, Bell, X, ShoppingBag, FileText } from 'lucide-react'; 
 import SidebarMenu from './SidebarMenu';
 
 const Navbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  // 🔥 Notification States
   const [showNotif, setShowNotif] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
 
-  // 🔥 Read Notifications State (Tied to Specific User ID)
+  // 🔥 Read Notifications State
   const [readNotifs, setReadNotifs] = useState(() => {
     if (!user || !user.id) return [];
     const saved = localStorage.getItem(`readNotifs_${user.id}`);
     return saved ? JSON.parse(saved) : [];
   });
 
-  // 🔥 Fetch Notifications Dynamically for Admin, Buyer & Seller
+  // 🔥 Derived Unread Count
+  const unreadCount = notifications.filter(n => !readNotifs.includes(n.id)).length;
+
   useEffect(() => {
     const fetchNotifications = async () => {
        if (!user) return;
@@ -31,16 +30,13 @@ const Navbar = () => {
           const credentials = 'include';
           let notifs = [];
 
-          // ==========================================
-          // 🛡️ ADMIN NOTIFICATIONS
-          // ==========================================
           if (user.role === 'admin') {
               const [resAppeals, resVer, resStats, resProd, resApps] = await Promise.all([
-                 fetch('https://backend-6aiq.onrender.com/api/admin/appeals', { headers, credentials: 'include' }),
-                 fetch('https://backend-6aiq.onrender.com/api/admin/verifications', { headers, credentials: 'include' }),
-                 fetch('https://backend-6aiq.onrender.com/api/admin/stats', { headers, credentials: 'include' }),
-                 fetch('https://backend-6aiq.onrender.com/api/products', { headers, credentials: 'include' }),
-                 fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers, credentials: 'include' }) 
+                 fetch('https://backend-6aiq.onrender.com/api/admin/appeals', { headers, credentials }),
+                 fetch('https://backend-6aiq.onrender.com/api/admin/verifications', { headers, credentials }),
+                 fetch('https://backend-6aiq.onrender.com/api/admin/stats', { headers, credentials }),
+                 fetch('https://backend-6aiq.onrender.com/api/products', { headers, credentials }),
+                 fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers, credentials }) 
               ]);
 
               const dataAppeals = await resAppeals.json();
@@ -67,7 +63,6 @@ const Navbar = () => {
                  const c = dataProd.data.filter(p => p.status === 'pending').length;
                  if (c > 0) notifs.push({ id: `admin_prod_${c}`, text: `${c} Products Awaiting Approval`, subtext: "Review seller products", link: '/dashboard?tab=products' });
               }
-              
               if (dataApps.success) {
                  const newApplies = dataApps.data.filter(a => a.status === 'pending').length;
                  const newOrders = dataApps.data.filter(a => a.status === 'order_submitted').length;
@@ -78,12 +73,9 @@ const Navbar = () => {
                  if (newReviews > 0) notifs.push({ id: `admin_rev_${newReviews}`, text: `${newReviews} New Reviews Submitted`, subtext: "Check published review links", link: '/dashboard?tab=applications' });
               }
           } 
-          // ==========================================
-          // 🛒 BUYER NOTIFICATIONS
-          // ==========================================
           else if (user.role === 'buyer') {
               const [appRes, prodRes] = await Promise.all([
-                 fetch('https://backend-6aiq.onrender.com/api/applications/my', { headers, credentials: 'include' }),
+                 fetch('https://backend-6aiq.onrender.com/api/applications/my', { headers, credentials }),
                  fetch('https://backend-6aiq.onrender.com/api/products/public')
               ]);
 
@@ -104,7 +96,6 @@ const Navbar = () => {
                          const status = app.application_status;
                          const pName = app.product_name ? app.product_name.substring(0, 22) + '...' : 'Product';
                          const appIdParams = `&appId=${app.application_id || app.id}`;
-                         
                          const notifId = `buyer_app_${app.application_id || app.id}_${status}`;
 
                          if (status === 'approved') {
@@ -122,42 +113,25 @@ const Navbar = () => {
                  }
               }
           }
-          // ==========================================
-          // 👨‍💼 SELLER NOTIFICATIONS
-          // ==========================================
           else if (user.role === 'seller') {
-              const prodRes = await fetch('https://backend-6aiq.onrender.com/api/products/my', { headers, credentials: 'include' });
+              const prodRes = await fetch('https://backend-6aiq.onrender.com/api/products/my', { headers, credentials });
 
               if (prodRes.ok) {
                  const prodData = await prodRes.json();
                  if (prodData.success) {
                     prodData.data.forEach(p => {
                         if (p.status === 'rejected') {
-                            notifs.push({ 
-                                id: `seller_rej_${p.id}`, 
-                                text: `❌ Product Rejected & Refunded`, 
-                                subtext: `Deposit for "${p.product_name || p.store_name}" added back to your wallet.`, 
-                                link: '/dashboard?tab=overview' 
-                            });
+                            notifs.push({ id: `seller_rej_${p.id}`, text: `❌ Product Rejected & Refunded`, subtext: `Deposit for "${p.product_name || p.store_name}" added back to your wallet.`, link: '/dashboard?tab=overview' });
                         } else if (p.status === 'approved') {
-                            notifs.push({ 
-                                id: `seller_app_${p.id}`, 
-                                text: `✅ Product Approved!`, 
-                                subtext: p.product_name || p.store_name, 
-                                link: '/dashboard?tab=tracking' 
-                            });
+                            notifs.push({ id: `seller_app_${p.id}`, text: `✅ Product Approved!`, subtext: p.product_name || p.store_name, link: '/dashboard?tab=tracking' });
                         }
                     });
                  }
               }
           }
 
-          const unreadNotifs = notifs.filter(n => !readNotifs.includes(n.id)).slice(0, 15);
-          
-          setNotifications(unreadNotifs); 
-          if (!showNotif) {
-             setUnreadCount(unreadNotifs.length);
-          }
+          // 🔥 সব নোটিফিকেশন স্টেট-এ সেভ করা হচ্ছে
+          setNotifications(notifs.slice(0, 15)); 
        } catch (e) {
           console.error("Failed to load notifications", e);
        }
@@ -166,45 +140,49 @@ const Navbar = () => {
     fetchNotifications();
     const intervalId = setInterval(fetchNotifications, 30000);
     return () => clearInterval(intervalId);
-  }, [user?.role, showNotif, readNotifs]);
+  }, [user?.role, showNotif]); // readNotifs ডিপেন্ডেন্সি থেকে সরানো হলো
 
   const toggleNotifications = () => {
     setShowNotif(!showNotif);
-    if (!showNotif) {
-      setUnreadCount(0);
-    }
   };
 
+  // 🔥 শুধু রিড হিসেবে মার্ক করার লজিক (লিস্ট থেকে রিমুভ হবে না)
   const markAsRead = (notifId, e = null) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    if (readNotifs.includes(notifId)) return; 
+    
     const updatedReadNotifs = [...readNotifs, notifId];
     setReadNotifs(updatedReadNotifs);
     
     if (user && user.id) {
         localStorage.setItem(`readNotifs_${user.id}`, JSON.stringify(updatedReadNotifs));
     }
-    setNotifications(prev => prev.filter(n => n.id !== notifId));
   };
 
   const clearAllNotifications = (e) => {
     e.preventDefault();
     e.stopPropagation();
     const allCurrentIds = notifications.map(n => n.id);
-    const updatedReadNotifs = [...readNotifs, ...allCurrentIds];
+    const updatedReadNotifs = Array.from(new Set([...readNotifs, ...allCurrentIds]));
+    
     setReadNotifs(updatedReadNotifs);
     if (user && user.id) {
         localStorage.setItem(`readNotifs_${user.id}`, JSON.stringify(updatedReadNotifs));
     }
-    setNotifications([]);
-    setUnreadCount(0);
   };
 
   const handleNotificationClick = (notifId) => {
     markAsRead(notifId);
     setShowNotif(false);
+  };
+
+  // 🔥 X বাটনে ক্লিক করলে লিস্ট থেকে পার্মানেন্টলি ডিলিট হবে
+  const removeNotificationCompletely = (notifId, e) => {
+    markAsRead(notifId, e);
+    setNotifications(prev => prev.filter(n => n.id !== notifId));
   };
 
   return (
@@ -230,45 +208,24 @@ const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-               {/* 🏠 Home Link */}
-               <Link 
-                 to="/" 
-                 className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" 
-                 title="Home"
-               >
+               <Link to="/" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title="Home">
                  <Home size={22} />
                </Link>
 
-               {/* 📄 Blog Link (New) */}
-               <Link 
-                 to="/blogs" 
-                 className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" 
-                 title="Blogs"
-               >
+               <Link to="/blogs" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title="Blogs">
                  <FileText size={22} />
                </Link>
 
-               {/* 🔥 Conditional Rendering: Logged in vs Guest */}
                {user ? (
                  <>
-                   {/* 🛒 Marketplace Link (Only for Logged in Buyers/Sellers) */}
                    {user.role !== 'admin' && (
-                     <Link 
-                       to="/marketplace" 
-                       className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" 
-                       title="Marketplace"
-                     >
+                     <Link to="/marketplace" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title="Marketplace">
                        <ShoppingBag size={22} />
                      </Link>
                    )}
 
-                   {/* 🔔 Notification Bell */}
                    <div className="relative">
-                     <div 
-                       className="cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all flex items-center" 
-                       onClick={toggleNotifications}
-                       title="Notifications"
-                     >
+                     <div className="cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all flex items-center" onClick={toggleNotifications} title="Notifications">
                        <Bell size={22} />
                        {unreadCount > 0 && (
                          <span className="absolute top-1.5 right-1.5 bg-[#10b981] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm animate-pulse">
@@ -283,8 +240,8 @@ const Navbar = () => {
                          <div className="bg-gray-50/50 border-b border-gray-100 px-4 py-4 flex justify-between items-center">
                            <h3 className="text-gray-900 font-black text-sm">Notifications</h3>
                            <div className="flex items-center gap-3">
-                             <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{notifications.length} New</span>
-                             {notifications.length > 0 && (
+                             <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{unreadCount} New</span>
+                             {unreadCount > 0 && (
                                <button onClick={clearAllNotifications} className="text-[10px] text-red-500 hover:text-red-700 font-bold hover:underline transition-colors">
                                  Clear All
                                </button>
@@ -301,26 +258,32 @@ const Navbar = () => {
                                 <p className="text-gray-400 text-xs font-medium">No new notifications.</p>
                               </div>
                             ) : (
-                              notifications.map((n, idx) => (
-                                <div key={idx} className="relative group block border-b border-gray-50 hover:bg-emerald-50/30 transition-colors">
-                                  <Link 
-                                    to={n.link} 
-                                    onClick={() => handleNotificationClick(n.id)} 
-                                    className="block px-4 py-4 pr-12"
-                                  >
-                                    <p className="text-sm text-gray-800 font-bold leading-tight mb-1">{n.text}</p>
-                                    <p className="text-[11px] text-gray-500 line-clamp-1">{n.subtext || 'Click to view details'}</p>
-                                  </Link>
-                                  
-                                  <button 
-                                    onClick={(e) => markAsRead(n.id, e)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1.5 hover:bg-white rounded-full"
-                                    title="Dismiss notification"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                </div>
-                              ))
+                              notifications.map((n, idx) => {
+                                // 🔥 UPDATE: চেক করা হচ্ছে এটি পড়া হয়েছে কিনা
+                                const isRead = readNotifs.includes(n.id);
+                                
+                                return (
+                                  <div key={idx} className={`relative group block border-b border-gray-50 transition-colors ${isRead ? 'bg-white opacity-70' : 'bg-emerald-50/20'}`}>
+                                    <Link 
+                                      to={n.link} 
+                                      onClick={() => handleNotificationClick(n.id)} 
+                                      className="block px-4 py-4 pr-12"
+                                    >
+                                      {/* 🔥 UPDATE: পড়া হলে নরমাল লেখা, না পড়া হলে বোল্ড (Bold) লেখা */}
+                                      <p className={`text-sm text-gray-800 leading-tight mb-1 ${isRead ? 'font-medium' : 'font-black'}`}>{n.text}</p>
+                                      <p className={`text-[11px] ${isRead ? 'text-gray-400' : 'text-gray-600 font-medium'} line-clamp-1`}>{n.subtext || 'Click to view details'}</p>
+                                    </Link>
+                                    
+                                    <button 
+                                      onClick={(e) => removeNotificationCompletely(n.id, e)}
+                                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-1.5 hover:bg-white rounded-full"
+                                      title="Dismiss notification"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                );
+                              })
                             )}
                          </div>
                        </div>
@@ -328,20 +291,9 @@ const Navbar = () => {
                    </div>
                  </>
                ) : (
-                 /* 👤 Guests: Show Login & Register Buttons */
                  <div className="flex items-center gap-2 sm:gap-3 ml-2">
-                   <Link 
-                     to="/login" 
-                     className="text-sm font-bold text-gray-600 hover:text-[#10b981] transition-colors"
-                   >
-                     Log In
-                   </Link>
-                   <Link 
-                     to="/register" 
-                     className="bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-sm transition-all"
-                   >
-                     Sign Up
-                   </Link>
+                   <Link to="/login" className="text-sm font-bold text-gray-600 hover:text-[#10b981] transition-colors">Log In</Link>
+                   <Link to="/register" className="bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-sm transition-all">Sign Up</Link>
                  </div>
                )}
             </div>
