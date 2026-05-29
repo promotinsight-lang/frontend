@@ -528,7 +528,7 @@ export default function HomePage() {
       <footer className="bg-gray-900 text-gray-400 py-12 mt-auto">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-b border-gray-800 pb-8 mb-8">
           <div>
-             <div className="text-white font-black text-2xl tracking-tight mb-2">SmartFeedback.</div>
+             <div className="text-white font-black text-2xl tracking-tight mb-2">PromotInsight.</div>
              <p className="text-sm">Connecting global sellers with real buyers for authentic e-commerce growth.</p>
           </div>
           <div className="flex justify-center gap-6 text-sm font-bold">
