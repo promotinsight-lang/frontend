@@ -544,8 +544,8 @@ export default function HomePage() {
           </div>
         </div>
         <div className="text-center text-xs font-medium">
-          © {new Date().getFullYear()} PromotInsight. Built by WitchBella. All Rights Reserved.
-        </div>
+  © 2025-{new Date().getFullYear()} PromotInsight. Built by WitchBella. All Rights Reserved.
+</div>
       </footer>
 
       <style dangerouslySetInnerHTML={{__html: `
