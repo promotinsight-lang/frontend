@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
+import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw, Wallet } from 'lucide-react';
 
 export default function AddProduct({ onProductAdded }) {
   const [formData, setFormData] = useState({
@@ -21,7 +21,8 @@ export default function AddProduct({ onProductAdded }) {
   const [isFeeLoading, setIsFeeLoading] = useState(true);
 
   // 🔥 Logged in user er data
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : {};
 
   const currencySymbols = {
     'USA': '$', 'UK': '£', 'Canada': 'C$', 'Mexico': 'MX$',
@@ -42,7 +43,7 @@ export default function AddProduct({ onProductAdded }) {
       try {
         const token = localStorage.getItem('token');
         const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         const data = await res.json();
         
@@ -79,7 +80,7 @@ export default function AddProduct({ onProductAdded }) {
       try {
         const token = localStorage.getItem('token');
         const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees?country=${formData.country}&platform=${formData.platform}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         const data = await res.json();
         
@@ -440,7 +441,6 @@ export default function AddProduct({ onProductAdded }) {
                     <span className="font-bold text-gray-800">x {qtyNum}</span>
                   </div>
                   
-                  {/* 🔥 NEW: LOCAL CURRENCY VS USD DEDUCTION DISPLAY */}
                   <div className="border-t border-gray-100 pt-3 mt-2 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-gray-600">Total in Local Currency</span>
