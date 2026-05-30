@@ -85,9 +85,9 @@ export default function AdminDashboard() {
   const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
 
-  // 🔥 DYNAMIC FEE CONFIGURATION STATES (MANUAL INPUT)
+  // 🔥 DYNAMIC FEE CONFIGURATION STATES (UPDATED FOR JSON TIERS)
   const [feeConfig, setFeeConfig] = useState({
-    country: '', platform: '', platform_charge: '', buyer_reward: '', 
+    country: '', platform: '', platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', 
     buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: ''
   });
   const [allFeeConfigs, setAllFeeConfigs] = useState([]);
@@ -128,14 +128,26 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (data.success && data.data) {
+        
+        // Ensure platform_charge is parsed correctly as an array for the UI
+        let parsedTiers = [{ min: '', max: '', fee: '' }];
+        if (Array.isArray(data.data.platform_charge) && data.data.platform_charge.length > 0) {
+          parsedTiers = data.data.platform_charge;
+        } else if (typeof data.data.platform_charge === 'string') {
+          try {
+            const parsed = JSON.parse(data.data.platform_charge);
+            if (Array.isArray(parsed)) parsedTiers = parsed;
+          } catch(e) { }
+        }
+
         setFeeConfig({
-          country: data.data.country, platform: data.data.platform, platform_charge: data.data.platform_charge,
+          country: data.data.country, platform: data.data.platform, platform_charge: parsedTiers,
           buyer_reward: data.data.buyer_reward, buyer_refund_fee: data.data.buyer_refund_fee,
           seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee
         });
       } else {
         setFeeConfig(prev => ({
-          ...prev, platform_charge: '', buyer_reward: '', buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: ''
+          ...prev, platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: ''
         }));
       }
     } catch (err) { console.error(err); } 
@@ -146,6 +158,29 @@ export default function AdminDashboard() {
     setFeeConfig(prev => ({ ...prev, [field]: value }));
   };
 
+  // 🔥 DYNAMIC TIER HANDLERS
+  const handleAddTier = () => {
+    setFeeConfig(prev => ({
+      ...prev,
+      platform_charge: [...prev.platform_charge, { min: '', max: '', fee: '' }]
+    }));
+  };
+
+  const handleRemoveTier = (index) => {
+    setFeeConfig(prev => {
+      const newTiers = prev.platform_charge.filter((_, i) => i !== index);
+      return { ...prev, platform_charge: newTiers };
+    });
+  };
+
+  const handleTierChange = (index, field, value) => {
+    setFeeConfig(prev => {
+      const newTiers = [...prev.platform_charge];
+      newTiers[index][field] = value === '' ? '' : Number(value);
+      return { ...prev, platform_charge: newTiers };
+    });
+  };
+
   const handleFeeBlur = () => {
     if (feeConfig.country && feeConfig.platform) {
       fetchFeeConfig(feeConfig.country, feeConfig.platform);
@@ -153,8 +188,18 @@ export default function AdminDashboard() {
   };
 
   const handleEditFeeClick = (config) => {
+    let parsedTiers = [{ min: '', max: '', fee: '' }];
+    if (Array.isArray(config.platform_charge) && config.platform_charge.length > 0) {
+      parsedTiers = config.platform_charge;
+    } else if (typeof config.platform_charge === 'string') {
+      try {
+        const parsed = JSON.parse(config.platform_charge);
+        if (Array.isArray(parsed)) parsedTiers = parsed;
+      } catch(e) { }
+    }
+
     setFeeConfig({
-      country: config.country, platform: config.platform, platform_charge: config.platform_charge,
+      country: config.country, platform: config.platform, platform_charge: parsedTiers,
       buyer_reward: config.buyer_reward, buyer_refund_fee: config.buyer_refund_fee,
       seller_deposit_fee: config.seller_deposit_fee, seller_withdrawal_fee: config.seller_withdrawal_fee
     });
@@ -167,7 +212,23 @@ export default function AdminDashboard() {
       alert("Please enter both country and platform names!");
       return;
     }
-    const success = await handleAction('https://backend-6aiq.onrender.com/api/config/fees', 'POST', feeConfig);
+    
+    // Validate Tiers before saving
+    const hasInvalidTiers = feeConfig.platform_charge.some(t => t.min === '' || t.max === '' || t.fee === '');
+    if (hasInvalidTiers) {
+      alert("Please fill in all tier values (Min, Max, Fee) correctly.");
+      return;
+    }
+
+    const payload = {
+      ...feeConfig,
+      platform_charge: JSON.stringify(feeConfig.platform_charge) // Convert array to string if backend expects text/json
+    };
+
+    // If backend expects direct array, send feeConfig directly:
+    // const success = await handleAction('https://backend-6aiq.onrender.com/api/config/fees', 'POST', feeConfig);
+    
+    const success = await handleAction('https://backend-6aiq.onrender.com/api/config/fees', 'POST', payload);
     if (success) fetchAllFeeConfigs();
   };
 
@@ -1316,32 +1377,69 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 relative">
                   {feeLoading && (
                     <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center text-sm font-bold text-[#0066ff]">
                       Fetching active configurations...
                     </div>
                   )}
                   
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Platform Charge (%)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.platform_charge} onChange={(e) => setFeeConfig({...feeConfig, platform_charge: e.target.value})} />
+                  {/* Dynamic Tier Container */}
+                  <div className="col-span-full mb-2 bg-gray-50 border p-4 rounded-xl">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-800">Dynamic Tier-Based Platform Charge</label>
+                        <p className="text-[10px] text-gray-500">Set fixed fees based on the product price range.</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={handleAddTier} 
+                        className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors"
+                      >
+                        + Add Tier
+                      </button>
+                    </div>
+                    
+                    {feeConfig.platform_charge.map((tier, index) => (
+                      <div key={index} className="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex-1">
+                          <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price ($)</label>
+                          <input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price ($)</label>
+                          <input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee ($)</label>
+                          <input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" />
+                        </div>
+                        {feeConfig.platform_charge.length > 1 && (
+                          <div className="pb-1">
+                            <button type="button" onClick={() => handleRemoveTier(index)} className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors" title="Remove Tier">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
+
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Buyer Reward (Fixed Amt)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_reward} onChange={(e) => setFeeConfig({...feeConfig, buyer_reward: e.target.value})} />
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_reward} onChange={(e) => handleFeeSelectorChange('buyer_reward', e.target.value)} />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Refund Fee (%)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_refund_fee} onChange={(e) => setFeeConfig({...feeConfig, buyer_refund_fee: e.target.value})} />
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_refund_fee} onChange={(e) => handleFeeSelectorChange('buyer_refund_fee', e.target.value)} />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Seller Deposit Fee (%)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_deposit_fee} onChange={(e) => setFeeConfig({...feeConfig, seller_deposit_fee: e.target.value})} />
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_deposit_fee} onChange={(e) => handleFeeSelectorChange('seller_deposit_fee', e.target.value)} />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Seller Withdraw Fee (%)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_withdrawal_fee} onChange={(e) => setFeeConfig({...feeConfig, seller_withdrawal_fee: e.target.value})} />
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_withdrawal_fee} onChange={(e) => handleFeeSelectorChange('seller_withdrawal_fee', e.target.value)} />
                   </div>
                 </div>
 
@@ -1363,32 +1461,50 @@ export default function AdminDashboard() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-100 text-gray-600">
                     <tr>
-                      <th className="p-3">Country</th><th className="p-3">Platform</th><th className="p-3 text-center">Charge (%)</th>
+                      <th className="p-3">Country</th><th className="p-3">Platform</th><th className="p-3 text-center">Tiers Config.</th>
                       <th className="p-3 text-center">Reward (Fixed)</th><th className="p-3 text-center">Refund Fee (%)</th>
                       <th className="p-3 text-center">Dep. Fee (%)</th><th className="p-3 text-center">W.Draw Fee (%)</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {allFeeConfigs.map(conf => (
-                      <tr key={`${conf.country}-${conf.platform}`} className="border-b hover:bg-gray-50 transition-colors">
-                        <td className="p-3 font-bold text-gray-800 capitalize">{conf.country}</td>
-                        <td className="p-3 font-bold text-indigo-700 capitalize">{conf.platform}</td>
-                        <td className="p-3 text-center font-semibold">{conf.platform_charge}%</td>
-                        <td className="p-3 text-center font-semibold text-green-600">${conf.buyer_reward}</td>
-                        <td className="p-3 text-center font-semibold text-red-500">{conf.buyer_refund_fee}%</td>
-                        <td className="p-3 text-center font-semibold">{conf.seller_deposit_fee}%</td>
-                        <td className="p-3 text-center font-semibold">{conf.seller_withdrawal_fee}%</td>
-                        <td className="p-3 text-right flex items-center justify-end gap-1">
-                          <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] hover:bg-blue-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Edit">
-                            <Edit size={16}/>
-                          </button>
-                          <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Delete">
-                            <Trash2 size={16}/>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {allFeeConfigs.map(conf => {
+                      let tierCount = 0;
+                      if (Array.isArray(conf.platform_charge)) {
+                        tierCount = conf.platform_charge.length;
+                      } else {
+                        try {
+                          const parsed = JSON.parse(conf.platform_charge);
+                          if(Array.isArray(parsed)) tierCount = parsed.length;
+                        } catch(e) {}
+                      }
+
+                      return (
+                        <tr key={`${conf.country}-${conf.platform}`} className="border-b hover:bg-gray-50 transition-colors">
+                          <td className="p-3 font-bold text-gray-800 capitalize">{conf.country}</td>
+                          <td className="p-3 font-bold text-indigo-700 capitalize">{conf.platform}</td>
+                          <td className="p-3 text-center font-semibold">
+                            {tierCount > 0 ? (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">{tierCount} Tiers</span>
+                            ) : (
+                              <span className="text-gray-500">{conf.platform_charge}%</span> // Fallback for old percentage strings
+                            )}
+                          </td>
+                          <td className="p-3 text-center font-semibold text-green-600">${conf.buyer_reward}</td>
+                          <td className="p-3 text-center font-semibold text-red-500">{conf.buyer_refund_fee}%</td>
+                          <td className="p-3 text-center font-semibold">{conf.seller_deposit_fee}%</td>
+                          <td className="p-3 text-center font-semibold">{conf.seller_withdrawal_fee}%</td>
+                          <td className="p-3 text-right flex items-center justify-end gap-1">
+                            <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] hover:bg-blue-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Edit">
+                              <Edit size={16}/>
+                            </button>
+                            <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Delete">
+                              <Trash2 size={16}/>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {allFeeConfigs.length === 0 && <tr><td colSpan="8" className="p-6 text-center text-gray-500">No custom fees configured yet.</td></tr>}
                   </tbody>
                 </table>
@@ -1868,14 +1984,20 @@ export default function AdminDashboard() {
                         const qty = parseInt(selectedProductDetails.required_orders) || 1;
                         const costPerOrder = price + reward;
                         
-                        // Fetch dynamic config if available
                         const pConfig = allFeeConfigs.find(c => c.country?.toLowerCase() === selectedProductDetails.country?.toLowerCase() && c.platform?.toLowerCase() === selectedProductDetails.platform?.toLowerCase());
                         
-                        // Fallback to 10% Platform Fee and 5% Refund Fee if dynamic config is missing (Matches Seller Ledger Logic)
-                        const platformChargePercent = pConfig ? (parseFloat(pConfig.platform_charge) / 100) : 0.10;
+                        // 🔥 Updated to calculate Commission using JSON Dynamic Tiers
+                        let commission = 0;
+                        if (pConfig && Array.isArray(pConfig.platform_charge)) {
+                          const matchedTier = pConfig.platform_charge.find(t => price >= Number(t.min) && price <= Number(t.max));
+                          commission = matchedTier ? Number(matchedTier.fee) : 0;
+                        } else if (pConfig && !isNaN(pConfig.platform_charge)) {
+                          commission = price * (parseFloat(pConfig.platform_charge) / 100);
+                        } else {
+                          commission = price * 0.10; // Fallback 10%
+                        }
+                        
                         const refundFeePercent = pConfig ? (parseFloat(pConfig.buyer_refund_fee) / 100) : 0.05;
-
-                        const commission = price * platformChargePercent;
                         const refundFee = costPerOrder * refundFeePercent;
                         const totalDeducted = (costPerOrder + commission + refundFee) * qty;
 

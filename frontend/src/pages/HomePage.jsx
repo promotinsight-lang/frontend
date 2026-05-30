@@ -32,7 +32,6 @@ export default function HomePage() {
     qty: 10
   });
   
-  const [feeRate, setFeeRate] = useState(0.10); 
   const [activeConfig, setActiveConfig] = useState(null); 
   const [isCalcLoading, setIsCalcLoading] = useState(false);
 
@@ -115,18 +114,25 @@ export default function HomePage() {
         const data = await res.json();
         
         if (data.success && data.data) {
-          setFeeRate(parseFloat(data.data.platform_charge) / 100);
+          
+          // 🔥 Parse JSON Tiers for dynamic platform charge logic
+          let parsedTiers = [];
+          if (Array.isArray(data.data.platform_charge)) {
+            parsedTiers = data.data.platform_charge;
+          } else if (typeof data.data.platform_charge === 'string') {
+            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch(e) {}
+          }
+          data.data.parsed_platform_charge = parsedTiers;
+          
           setActiveConfig(data.data);
           
           if (parseFloat(data.data.buyer_reward) > 0) {
               setCalcData(prev => ({ ...prev, reward: parseFloat(data.data.buyer_reward) }));
           }
         } else {
-          setFeeRate(0.10); 
           setActiveConfig(null);
         }
       } catch (error) {
-        setFeeRate(0.10);
         setActiveConfig(null);
       } finally {
         setIsCalcLoading(false);
@@ -139,7 +145,20 @@ export default function HomePage() {
   const rewardNum = parseFloat(calcData.reward || 0);
   const unitCost = priceNum + rewardNum;
   
-  const platformFee = priceNum * feeRate;
+  // 🔥 DYNAMIC TIER LOGIC FOR PLATFORM FEE
+  let platformFee = 0;
+  if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
+    // Find the correct tier based on product price
+    const matchedTier = activeConfig.parsed_platform_charge.find(
+      t => priceNum >= Number(t.min) && priceNum <= Number(t.max)
+    );
+    platformFee = matchedTier ? Number(matchedTier.fee) : 0; 
+  } else if (activeConfig && !isNaN(activeConfig.platform_charge)) {
+    // Fallback if it's still using the old percentage format
+    platformFee = priceNum * (parseFloat(activeConfig.platform_charge) / 100);
+  } else {
+    platformFee = priceNum * 0.10; // Default 10% fallback
+  }
   
   const refundFeeRate = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
   const refundFeeAmount = unitCost * refundFeeRate;
@@ -339,7 +358,12 @@ export default function HomePage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium flex items-center gap-1">
-                  Platform Fee <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{(feeRate * 100).toFixed(1)}% of Price</span>
+                  Platform Fee 
+                  {activeConfig?.parsed_platform_charge?.length > 0 ? (
+                     <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">Fixed Tier</span>
+                  ) : (
+                     <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{activeConfig ? activeConfig.platform_charge : '10'}% of Price</span>
+                  )}
                 </span>
                 <span className="font-bold text-red-500">+{calcCurrency}{platformFee.toFixed(2)}</span>
               </div>
@@ -370,7 +394,7 @@ export default function HomePage() {
                     <Info size={12}/> Active Tariffs ({calcData.country} - {calcData.platform})
                  </h4>
                  <div className="grid grid-cols-2 gap-y-2 text-xs font-medium text-blue-900">
-                    <p>Platform: <b className="text-blue-700">{activeConfig.platform_charge}%</b></p>
+                    <p>Platform: <b className="text-blue-700">{activeConfig.parsed_platform_charge?.length > 0 ? 'Tiered Fee' : `${activeConfig.platform_charge}%`}</b></p>
                     <p>Reward: <b className="text-blue-700">{parseFloat(activeConfig.buyer_reward) > 0 ? `${calcCurrency}${activeConfig.buyer_reward}` : 'Custom'}</b></p>
                     <p>Refund: <b className="text-red-500">{activeConfig.buyer_refund_fee}%</b></p>
                     <p>Deposit: <b className="text-blue-700">{activeConfig.seller_deposit_fee}%</b></p>
