@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard,
-  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift // 🔥 NEW: Gift icon added
+  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift 
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
@@ -56,7 +56,6 @@ export default function HomePage() {
     }
 
     setTimeout(() => {
-      // 🔥 UPDATE: Added Referral Notifications to Live Feed
       setLiveFeed([
         { id: "lf-1", text: "A buyer from USA just received $15 cashback!", time: "2 mins ago" },
         { id: "lf-ref1", text: "🔥 User JAM*** invited a friend and earned $10 bonus!", time: "4 mins ago" },
@@ -69,7 +68,6 @@ export default function HomePage() {
 
   }, []);
 
-  // 🔥 FETCH ALL CONFIGS ON MOUNT TO POPULATE DROPDOWNS
   useEffect(() => {
     const initConfigs = async () => {
       setIsCalcLoading(true);
@@ -104,7 +102,6 @@ export default function HomePage() {
     initConfigs();
   }, []);
 
-  // 🔥 REAL-TIME DYNAMIC FEE FETCH WHEN COUNTRY/PLATFORM CHANGES
   useEffect(() => {
     const fetchCalcTarrifs = async () => {
       if (!calcData.country || !calcData.platform) return;
@@ -138,22 +135,18 @@ export default function HomePage() {
     fetchCalcTarrifs();
   }, [calcData.country, calcData.platform]);
 
-  // CALCULATIONS (UPDATED LOGIC)
   const priceNum = parseFloat(calcData.price || 0);
   const rewardNum = parseFloat(calcData.reward || 0);
   const unitCost = priceNum + rewardNum;
   
-  // Platform Fee only on base price
   const platformFee = priceNum * feeRate;
   
   const refundFeeRate = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
-  // Refund Fee on Price + Reward
   const refundFeeAmount = unitCost * refundFeeRate;
   
   const totalPerUnit = unitCost + platformFee + refundFeeAmount;
   const grandTotalDeposit = totalPerUnit * parseInt(calcData.qty || 1);
 
-  // 🔥 Handle Dropdown Changes Dynamically
   const handleCountryChange = (e) => {
     const selectedCountry = e.target.value;
     const platforms = allConfigs.filter(c => c.country === selectedCountry).map(c => c.platform);
@@ -186,15 +179,21 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* HERO SECTION */}
+      {/* 🔥 ROLE-BASED DYNAMIC HERO SECTION */}
       <section className="relative bg-gradient-to-br from-[#0066ff] to-indigo-900 pt-24 pb-32 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
         <div className="max-w-7xl mx-auto text-center relative z-10">
           
-          {/* 🔥 NEW: Referral Promo Badge in Hero Section */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-5 py-2 rounded-full font-black text-xs md:text-sm tracking-wide mb-6 shadow-lg shadow-yellow-500/30 animate-bounce">
-             <Gift size={18} className="text-yellow-900" /> Invite Friends & Earn $10 Cash Bonus!
-          </div>
+          {/* 1. Dynamic Promo Badge */}
+          {user?.role === 'seller' ? (
+            <div className="inline-flex items-center gap-2 bg-emerald-500 text-white px-5 py-2 rounded-full font-black text-xs md:text-sm tracking-wide mb-6 shadow-lg shadow-emerald-500/30">
+               <ShieldCheck size={18} /> 100% Secure Escrow & Real Verified Buyers!
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-5 py-2 rounded-full font-black text-xs md:text-sm tracking-wide mb-6 shadow-lg shadow-yellow-500/30 animate-bounce">
+               <Gift size={18} className="text-yellow-900" /> Invite Friends & Earn $10 Cash Bonus!
+            </div>
+          )}
           
           <div className="block mb-4">
             <span className="inline-block py-1.5 px-4 rounded-full bg-white/20 text-blue-100 font-bold text-sm tracking-widest uppercase border border-white/20 backdrop-blur-sm">
@@ -202,28 +201,60 @@ export default function HomePage() {
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-tight drop-shadow-lg">
-            Boost Your Sales.<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
-              Get Rewarded.
-            </span>
-          </h1>
-          <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-2xl mx-auto font-medium opacity-90">
-            Sellers rank their products higher with authentic feedback. Buyers get 100% cashback plus extra rewards for sharing their honest experience.
-          </p>
+          {/* 2. Dynamic Heading & Paragraph */}
+          {user?.role === 'seller' ? (
+            <>
+              <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-tight drop-shadow-lg">
+                Dominate Search Rankings.<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200">
+                  Grow Your Brand.
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-2xl mx-auto font-medium opacity-90">
+                Launch campaigns with zero risk. Our strict KYC-verified buyer network ensures 100% authentic, high-quality reviews that skyrocket your organic sales.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-tight drop-shadow-lg">
+                Boost Your Sales.<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
+                  Get Rewarded.
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-2xl mx-auto font-medium opacity-90">
+                Sellers rank their products higher with authentic feedback. Buyers get 100% cashback plus extra rewards for sharing their honest experience.
+              </p>
+            </>
+          )}
           
+          {/* 3. Dynamic CTA Buttons */}
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to={user ? "/dashboard" : "/register"} className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-black text-lg hover:bg-yellow-300 transition-all shadow-xl hover:shadow-yellow-400/50 flex items-center justify-center gap-2 hover:-translate-y-1">
-              Start Earning Now <ArrowRight size={20}/>
-            </Link>
-            <Link to="/marketplace" className="bg-white/10 text-white border border-white/30 px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/20 transition-all backdrop-blur-sm flex items-center justify-center gap-2 hover:-translate-y-1">
-              <ShoppingCart size={20}/> Browse Products
-            </Link>
+            {user?.role === 'seller' ? (
+              <>
+                <Link to="/dashboard?tab=add" className="bg-emerald-500 text-white px-8 py-4 rounded-xl font-black text-lg hover:bg-emerald-400 transition-all shadow-xl hover:shadow-emerald-500/50 flex items-center justify-center gap-2 hover:-translate-y-1">
+                  <Briefcase size={20}/> Launch Campaign
+                </Link>
+                <Link to="/dashboard?tab=overview" className="bg-white/10 text-white border border-white/30 px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/20 transition-all backdrop-blur-sm flex items-center justify-center gap-2 hover:-translate-y-1">
+                  <LayoutDashboard size={20}/> Seller Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to={user ? "/dashboard" : "/register"} className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl font-black text-lg hover:bg-yellow-300 transition-all shadow-xl hover:shadow-yellow-400/50 flex items-center justify-center gap-2 hover:-translate-y-1">
+                  Start Earning Now <ArrowRight size={20}/>
+                </Link>
+                <Link to="/marketplace" className="bg-white/10 text-white border border-white/30 px-8 py-4 rounded-xl font-bold text-lg hover:bg-white/20 transition-all backdrop-blur-sm flex items-center justify-center gap-2 hover:-translate-y-1">
+                  <ShoppingCart size={20}/> Browse Products
+                </Link>
+              </>
+            )}
           </div>
+
         </div>
       </section>
 
-      {/* 🔥 SMART CALCULATOR (For Sellers and Guests) */}
+      {/* SMART CALCULATOR (For Sellers and Guests) */}
       {user?.role !== 'buyer' && (
       <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
@@ -235,7 +266,6 @@ export default function HomePage() {
             </div>
             <p className="text-sm text-gray-500 mb-8 font-medium">Estimate your campaign budget in real-time. Tariffs are dynamically fetched based on the target country and platform.</p>
             
-            {/* 🔥 DYNAMIC DROPDOWNS */}
             <div className="grid grid-cols-2 gap-4 mb-5">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Target Country</label>
@@ -359,7 +389,7 @@ export default function HomePage() {
       </section>
       )}
 
-      {/* 🔥 BUYER EXCLUSIVE BANNER (Shows only to Buyers instead of Calculator) */}
+      {/* BUYER EXCLUSIVE BANNER (Shows only to Buyers instead of Calculator) */}
       {user?.role === 'buyer' && (
       <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
         <div className="bg-gradient-to-r from-[#10b981] to-emerald-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row items-center animate-fade-in-up border border-emerald-500">
@@ -384,7 +414,6 @@ export default function HomePage() {
 
           <div className="w-full md:w-2/5 bg-white/10 p-8 lg:p-10 flex flex-col justify-center items-center gap-4 backdrop-blur-md border-l border-white/10 h-full">
              
-             {/* Earning Potential Card */}
              <div className="bg-white p-5 rounded-2xl shadow-xl text-center transform hover:scale-105 transition-transform w-full max-w-sm">
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
                    <Wallet size={24}/>
@@ -393,7 +422,6 @@ export default function HomePage() {
                 <h3 className="text-3xl font-black text-gray-900">$350+</h3>
              </div>
 
-             {/* 🔥 NEW: Referral Card for Buyers */}
              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-5 rounded-2xl shadow-xl border border-yellow-200 text-center transform hover:scale-105 transition-transform w-full max-w-sm">
                 <div className="w-12 h-12 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
                    <Gift size={24}/>
@@ -544,8 +572,8 @@ export default function HomePage() {
           </div>
         </div>
         <div className="text-center text-xs font-medium">
-  © 2025-{new Date().getFullYear()} PromotInsight. Built by WitchBella. All Rights Reserved.
-</div>
+          © 2025-{new Date().getFullYear()} PromotInsight. Built by WitchBella. All Rights Reserved.
+        </div>
       </footer>
 
       <style dangerouslySetInnerHTML={{__html: `
