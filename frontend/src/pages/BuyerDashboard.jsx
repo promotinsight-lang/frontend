@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import { 
   ShoppingBag, CheckCircle, Clock, ChevronRight, X, ShieldAlert, 
   XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon,
-  Headset, PlusCircle, MessageCircle, Send, Megaphone, Users // 🔥 ADDED Users icon
+  Headset, PlusCircle, MessageCircle, Send, Megaphone, Users 
 } from 'lucide-react'; 
 
 const BuyerDashboard = () => {
@@ -23,10 +23,8 @@ const BuyerDashboard = () => {
   const [actionAppId, setActionAppId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // 🔥 Firebase Uploading State
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  // Withdrawal Details Modal State
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
 
@@ -35,7 +33,6 @@ const BuyerDashboard = () => {
   
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', payment_method: 'PayPal', account_details: '' });
 
-  // ================= SUPPORT TICKET STATES =================
   const [supportTickets, setSupportTickets] = useState([]);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
   const [ticketForm, setTicketForm] = useState({ subject: '', message: '' });
@@ -87,7 +84,7 @@ const BuyerDashboard = () => {
             wallet_balance: profileData.user.wallet_balance, 
             is_active: profileData.user.is_active, 
             is_frozen: profileData.user.is_frozen,
-            referral_code: profileData.user.referral_code // 🔥 NEW: Referral Code Saved
+            referral_code: profileData.user.referral_code 
           }));
           
           if (profileData.user.is_active === false) {
@@ -147,7 +144,6 @@ const BuyerDashboard = () => {
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
 
-  // 🔥 Cloudinary Image Upload Handler
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -236,6 +232,16 @@ const BuyerDashboard = () => {
 
   const submitWithdrawal = async (e) => {
      e.preventDefault();
+     
+     // 🔥 NEW: Check Balance before submitting
+     const currentBalance = Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0);
+     const requestedAmount = Number(withdrawForm.amount);
+
+     if (requestedAmount > currentBalance) {
+         alert("Insufficient wallet balance! You cannot withdraw more than you have.");
+         return; 
+     }
+
      setIsSubmitting(true);
      try {
        const token = localStorage.getItem('token');
@@ -374,7 +380,6 @@ const BuyerDashboard = () => {
       <Navbar />
 
       <div className="bg-white px-4 py-6 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
-        {/* 🔥 NEW: Tab title logic updated */}
         <h1 className="text-2xl font-black text-gray-800 mb-4">
           {activeTab === 'wallet' ? 'My Wallet' 
             : activeTab === 'support' ? 'Support Tickets' 
@@ -431,7 +436,6 @@ const BuyerDashboard = () => {
         
         {loading && <div className="text-center py-10 text-gray-400 font-semibold animate-pulse">Loading data...</div>}
 
-        {/* 🔥 NEW: REFERRAL TAB */}
         {!loading && activeTab === 'referral' && (
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 text-center animate-fade-in-up">
             <div className="w-20 h-20 bg-blue-50 text-[#0066ff] rounded-full flex items-center justify-center mx-auto mb-4">
@@ -622,7 +626,18 @@ const BuyerDashboard = () => {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
                      <label className="block text-xs font-bold text-gray-600 mb-1">Amount ($)</label>
-                     <input required type="number" step="0.01" min="1" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.amount} onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} placeholder="e.g. 50.00" />
+                     {/* 🔥 NEW: Added max limit here */}
+                     <input 
+                       required 
+                       type="number" 
+                       step="0.01" 
+                       min="1" 
+                       max={Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0)} 
+                       className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" 
+                       value={withdrawForm.amount} 
+                       onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} 
+                       placeholder="e.g. 50.00" 
+                     />
                    </div>
                    <div>
                      <label className="block text-xs font-bold text-gray-600 mb-1">Payment Method</label>
