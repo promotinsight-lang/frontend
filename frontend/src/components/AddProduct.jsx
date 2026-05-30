@@ -17,7 +17,6 @@ export default function AddProduct({ onProductAdded }) {
   const [availablePlatforms, setAvailablePlatforms] = useState([]);
 
   // 🔥 Dynamic Fee States
-  const [platformChargePercent, setPlatformChargePercent] = useState(0.10); 
   const [activeConfig, setActiveConfig] = useState(null); 
   const [isFeeLoading, setIsFeeLoading] = useState(true);
 
@@ -85,18 +84,24 @@ export default function AddProduct({ onProductAdded }) {
         const data = await res.json();
         
         if (data.success && data.data) {
-          setPlatformChargePercent(parseFloat(data.data.platform_charge) / 100);
+          // JSON Tier Parsing
+          let parsedTiers = [];
+          if (Array.isArray(data.data.platform_charge)) {
+            parsedTiers = data.data.platform_charge;
+          } else if (typeof data.data.platform_charge === 'string') {
+            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch(e) {}
+          }
+          data.data.parsed_platform_charge = parsedTiers;
+          
           setActiveConfig(data.data);
           
           if (parseFloat(data.data.buyer_reward) > 0) {
               setFormData(prev => ({ ...prev, reward: parseFloat(data.data.buyer_reward) }));
           }
         } else {
-          setPlatformChargePercent(0.10); 
           setActiveConfig(null);
         }
       } catch (error) {
-        setPlatformChargePercent(0.10);
         setActiveConfig(null);
       } finally {
         setIsFeeLoading(false);
@@ -130,13 +135,23 @@ export default function AddProduct({ onProductAdded }) {
     }
   };
 
-  // 🔥 UPDATED CALCULATION LOGIC
+  // 🔥 UPDATED CALCULATION LOGIC (WITH JSON TIERS)
   const priceNum = parseFloat(formData.price) || 0;
   const rewardNum = parseFloat(formData.reward) || 0;
   const qtyNum = parseInt(formData.required_orders) || 1;
   
   const costPerOrder = priceNum + rewardNum;
-  const platformCommission = priceNum * platformChargePercent; 
+  
+  // Tier based fixed fee calculation
+  let platformCommission = 0;
+  if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
+      const matchedTier = activeConfig.parsed_platform_charge.find(t => priceNum >= Number(t.min) && priceNum <= Number(t.max));
+      platformCommission = matchedTier ? Number(matchedTier.fee) : 0;
+  } else if (activeConfig && !isNaN(activeConfig.platform_charge)) {
+      platformCommission = priceNum * (parseFloat(activeConfig.platform_charge) / 100);
+  } else {
+      platformCommission = priceNum * 0.10; // 10% fallback
+  }
   
   const refundFeePercent = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
   const refundFeeAmount = costPerOrder * refundFeePercent;
@@ -147,6 +162,11 @@ export default function AddProduct({ onProductAdded }) {
     e.preventDefault();
     if (!imageFile) return alert("Please upload a product image.");
     if (!formData.country.trim() || !formData.platform.trim()) return alert("Country and Platform are required fields.");
+
+    // Prevent submission if price doesn't match any tier
+    if (activeConfig?.parsed_platform_charge?.length > 0 && platformCommission === 0) {
+       return alert(`The product price (${currency}${priceNum}) does not match any valid fee tier for ${formData.platform}. Please adjust the price.`);
+    }
 
     setLoading(true);
     
@@ -350,10 +370,8 @@ export default function AddProduct({ onProductAdded }) {
           </div>
         </div>
 
-        {/* Full Width: Dynamic Fee Breakdown & Summary (Only for Seller) */}
-        
+        {/* Full Width: Dynamic Fee Breakdown & Summary */}
         {user.role === 'seller' && (
-        
         <div className="md:col-span-2 mt-2 bg-yellow-50/80 p-5 rounded-2xl flex flex-col border border-yellow-200 shadow-sm relative overflow-hidden">
           
           {isFeeLoading && (
@@ -381,7 +399,10 @@ export default function AddProduct({ onProductAdded }) {
                <div className="bg-white p-3 rounded-xl border border-yellow-200 w-full md:w-1/3">
                   <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">Active Tariffs Overview</h4>
                   <ul className="text-xs text-gray-700 space-y-1.5 font-medium">
-                     <li className="flex justify-between"><span>Platform Charge:</span> <b>{activeConfig.platform_charge}%</b></li>
+                     <li className="flex justify-between">
+                       <span>Platform Charge:</span> 
+                       <b className="text-[#0066ff]">{activeConfig.parsed_platform_charge?.length > 0 ? 'Tiered Fee' : `${activeConfig.platform_charge}%`}</b>
+                     </li>
                      <li className="flex justify-between"><span>Buyer Reward:</span> <b>{parseFloat(activeConfig.buyer_reward) > 0 ? `${currency}${activeConfig.buyer_reward}` : 'Custom'}</b></li>
                      <li className="flex justify-between"><span>Refund Fee:</span> <b className="text-red-500">{activeConfig.buyer_refund_fee}%</b></li>
                      <li className="flex justify-between"><span>Deposit Fee:</span> <b>{activeConfig.seller_deposit_fee}%</b></li>
@@ -400,7 +421,7 @@ export default function AddProduct({ onProductAdded }) {
                   
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-500 flex items-center gap-1">
-                      Platform Tariff ({(platformChargePercent * 100).toFixed(1)}% of Price) 
+                      Platform Tariff {activeConfig?.parsed_platform_charge?.length > 0 ? '(Fixed Tier)' : ''}
                     </span>
                     <span className="font-bold text-red-500">+{currency}{platformCommission.toFixed(2)}</span>
                   </div>

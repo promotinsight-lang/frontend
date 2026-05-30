@@ -103,7 +103,8 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
           )}
         </div>
 
-        {user?.role !== 'admin' && user?.role !== 'seller' && (
+        {/* 🔥 UPDATE: Removed user?.role !== 'seller' restriction so seller also sees balance here */}
+        {user?.role !== 'admin' && (
           <div className="bg-gray-50/80 p-5 flex flex-col items-center justify-center border-b border-gray-100">
             <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
               Available Balance

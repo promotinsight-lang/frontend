@@ -8,16 +8,12 @@ import {
   Headset, MessageCircle, Send, History
 } from 'lucide-react';
 
-// ================= SECURITY HELPER =================
-// Intercepts fetch calls to include credentials for HttpOnly cookies 
-// and elegantly handles 429 Rate Limit responses to prevent UI crashes.
 const secureFetch = async (url, options = {}) => {
   options.credentials = 'include';
   try {
     const res = await fetch(url, options);
     if (res.status === 429) {
       alert("Rate Limit Exceeded: Too many requests. Please slow down and try again later.");
-      // Return a dummy rejected response to gracefully handle in UI
       return { ok: false, status: 429, json: async () => ({ success: false, message: "Too many requests. Please slow down." }) };
     }
     return res;
@@ -26,7 +22,6 @@ const secureFetch = async (url, options = {}) => {
     throw error;
   }
 };
-// ===================================================
 
 export default function SellerDashboard() {
   const location = useLocation();
@@ -35,7 +30,6 @@ export default function SellerDashboard() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Modal States
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState([]); 
   const [depositData, setDepositData] = useState({ amount: '', payment_method: 'PayPal', transaction_id: '' });
@@ -54,32 +48,25 @@ export default function SellerDashboard() {
   const [editFormData, setEditFormData] = useState({});
   const [isEditing, setIsEditing] = useState(false);
 
-  // Seller Appeal Modal States
   const [showSellerAppealModal, setShowSellerAppealModal] = useState(false);
   const [appealData, setAppealData] = useState({ application_id: '', reason: '' });
   const [isAppealing, setIsAppealing] = useState(false);
-
-  // Appeals Data
   const [myAppeals, setMyAppeals] = useState([]);
 
-  // Full Image Lightbox States
   const [showFullImageModal, setShowFullImageModal] = useState(false);
   const [fullImageUrl, setFullImageUrl] = useState('');
 
-  // Transaction History States
   const [withdrawals, setWithdrawals] = useState([]);
   const [deposits, setDeposits] = useState([]);
-  const [refunds, setRefunds] = useState([]); // 🔥 ADDED REFUNDS STATE
+  const [refunds, setRefunds] = useState([]); 
   const [fundHistoryTab, setFundHistoryTab] = useState('withdrawals');
   
   const [showTrxDetailsModal, setShowTrxDetailsModal] = useState(false);
   const [selectedTrx, setSelectedTrx] = useState(null);
   const [trxType, setTrxType] = useState('');
 
-  // Ledger / Deduction History Modal
   const [showLedgerModal, setShowLedgerModal] = useState(false);
 
-  // ================= SUPPORT TICKET STATES =================
   const [supportTickets, setSupportTickets] = useState([]);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
   const [ticketForm, setTicketForm] = useState({ subject: '', message: '' });
@@ -124,32 +111,31 @@ export default function SellerDashboard() {
         const wRes = await secureFetch('https://backend-6aiq.onrender.com/api/withdrawals/my', { headers: authHeaders });
         const wData = await wRes.json();
         if (wData.success) setWithdrawals(wData.data);
-      } catch(e) { console.error("Withdrawal fetch error:", e); }
+      } catch(e) {}
 
       try {
         const dRes = await secureFetch('https://backend-6aiq.onrender.com/api/users/deposits', { headers: authHeaders });
         const dData = await dRes.json();
         if (dData.success) setDeposits(dData.data);
-      } catch(e) { console.error("Deposit fetch error:", e); }
+      } catch(e) {}
 
-      // 🔥 FETCH MY REFUNDS (Logged Deleted Products)
       try {
         const rRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/refunds/my', { headers: authHeaders });
         const rData = await rRes.json();
         if (rData.success) setRefunds(rData.data);
-      } catch(e) { console.error("Refunds fetch error:", e); }
+      } catch(e) {}
 
       try {
         const aRes = await secureFetch('https://backend-6aiq.onrender.com/api/appeals/my', { headers: authHeaders });
         const aData = await aRes.json();
         if (aData.success) setMyAppeals(aData.data);
-      } catch(e) { console.error("Appeals fetch error:", e); }
+      } catch(e) {}
 
       try {
         const tRes = await secureFetch('https://backend-6aiq.onrender.com/api/support/my', { headers: authHeaders });
         const tData = await tRes.json();
         if (tData.success) setSupportTickets(tData.data);
-      } catch(e) { console.error("Support tickets fetch error:", e); }
+      } catch(e) {}
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -312,7 +298,6 @@ export default function SellerDashboard() {
     finally { setIsEditing(false); }
   };
 
-  // ================= SUPPORT SYSTEM LOGIC =================
   const handleCreateTicket = async (e) => {
     e.preventDefault();
     setIsSubmittingTicket(true);
@@ -350,7 +335,7 @@ export default function SellerDashboard() {
       const data = await res.json();
       if(res.ok) {
         setTicketReplies(data.data.replies || []);
-        setSelectedTicket(data.data.ticket); // Update ticket status if changed
+        setSelectedTicket(data.data.ticket);
       }
     } catch (err) {
       console.error(err);
@@ -374,7 +359,7 @@ export default function SellerDashboard() {
       if(res.ok) {
         setTicketReplies([...ticketReplies, data.data]);
         setReplyMessage('');
-        fetchDashboardData(); // Refresh list to update status
+        fetchDashboardData();
       } else {
         alert('Failed to send reply');
       }
@@ -609,7 +594,7 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* 🔥 NEW REFUNDS TAB FOR SELLER */}
+        {/* REFUNDS TAB FOR SELLER */}
         {activeTab === 'refunds' && (
           <div className="space-y-6 animate-fade-in-up">
             <div className="flex justify-between items-center mb-4">
@@ -719,7 +704,7 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* ================= SUPPORT TAB ================= */}
+        {/* SUPPORT TAB */}
         {!loading && activeTab === 'support' && (
           <div className="space-y-6 animate-fade-in">
              <button 
@@ -769,7 +754,7 @@ export default function SellerDashboard() {
 
       </div>
 
-      {/* LEDGER MODAL */}
+      {/* 🔥 LEDGER MODAL - UPDATED WITH DYNAMIC DB FEE 🔥 */}
       {showLedgerModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -786,7 +771,7 @@ export default function SellerDashboard() {
                 <p className="text-xs text-blue-700 leading-relaxed font-medium">
                   When you list a product, the system safely holds funds in escrow. The formula is: <br/>
                   <strong className="bg-white px-2 py-1 rounded inline-block mt-2 border border-blue-200 shadow-sm text-[#0066ff]">
-                    (Product Price + Buyer Reward + Platform Fee [10% of Price] + Refund Fee [5% of Price+Reward]) × Target Quantity
+                    (Product Price + Buyer Reward + Platform Tariff + Refund Fee) × Target Quantity
                   </strong>
                 </p>
               </div>
@@ -799,14 +784,14 @@ export default function SellerDashboard() {
                      const price = parseFloat(p.price) || 0;
                      const reward = parseFloat(p.reward) || 0;
                      const qty = parseInt(p.required_orders) || 1;
-                     
                      const costPerOrder = price + reward;
-                     // 🔥 Platform Fee only on base price
-                     const commission = price * 0.10;
-                     // 🔥 Refund Fee on (Price + Reward)
-                     const refundFee = costPerOrder * 0.05; 
-                     const totalPerItem = costPerOrder + commission + refundFee;
-                     const totalDeducted = totalPerItem * qty;
+                     
+                     // Use the exact deducted values from the database
+                     const commission = parseFloat(p.platform_fee_charged) || 0;
+                     const totalDeducted = parseFloat(p.total_deposit) || 0;
+                     
+                     // Back-calculate the refund fee mathematically
+                     const refundFee = (totalDeducted / qty) - costPerOrder - commission;
 
                      return (
                        <div key={p.id} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
@@ -836,13 +821,12 @@ export default function SellerDashboard() {
                             <div className="bg-orange-50 p-2.5 rounded-lg border border-orange-100 text-center relative group">
                               <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-1">Platform Fee</p>
                               <p className="font-black text-orange-700">+${commission.toFixed(2)}</p>
-                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">10% of Price Only</div>
+                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">Fixed Tariff or %</div>
                             </div>
-                            {/* 🔥 NEW REFUND FEE BOX */}
                             <div className="bg-red-50 p-2.5 rounded-lg border border-red-100 text-center relative group">
                               <p className="text-red-600 text-[10px] font-bold uppercase tracking-wider mb-1">Refund Fee</p>
-                              <p className="font-black text-red-700">+${refundFee.toFixed(2)}</p>
-                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">5% of (Price + Reward)</div>
+                              <p className="font-black text-red-700">+${Math.max(0, refundFee).toFixed(2)}</p>
+                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">Fee on (Price + Reward)</div>
                             </div>
                             <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-100 text-center">
                               <p className="text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-1">Target Qty</p>
@@ -876,7 +860,6 @@ export default function SellerDashboard() {
               
               <div className="w-full md:w-1/3 bg-gray-50 p-4 rounded-xl border border-gray-200 self-start sticky top-0">
                 
-                {/* 🔥 NEW: TASK CONDITION BANNER */}
                 <div className="bg-[#fff9e6] border border-[#ffdf7e] rounded-lg p-2 mb-4 text-center shadow-sm">
                   <p className="text-[10px] text-[#b38600] font-black uppercase tracking-widest mb-0.5">Task Condition</p>
                   <p className="text-sm font-black text-gray-900">{selectedProduct.category || 'Need Review'}</p>
@@ -952,7 +935,6 @@ export default function SellerDashboard() {
                           </div>
                         </div>
 
-                        {/* 🔥 ACTION PANEL (Approve / Appeal) - Restricted to ONLY 'review_submitted' and 'forwarded_to_seller' statuses */}
                         {(review.status === 'review_submitted' || review.status === 'forwarded_to_seller') && !review.refund_comment && (
                           <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg flex flex-col md:flex-row justify-between items-center gap-3">
                             <div>
@@ -1163,7 +1145,6 @@ export default function SellerDashboard() {
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div><label className="text-sm font-semibold mb-1 block">Product Name</label><input type="text" required className="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={editFormData.product_name} onChange={e => setEditFormData({...editFormData, product_name: e.target.value})} /></div>
               
-              {/* STRICT URL VALIDATION IMPLEMENTED */}
               <div><label className="text-sm font-semibold mb-1 block">Product Link</label><input type="url" required pattern="https?://.+" title="Must be a valid HTTP/HTTPS URL" className="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={editFormData.product_link} onChange={e => setEditFormData({...editFormData, product_link: e.target.value})} /></div>
               
               <div className="grid grid-cols-2 gap-4">
@@ -1220,7 +1201,6 @@ export default function SellerDashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up">
             
-            {/* Header */}
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                <div>
                   <h3 className="font-bold text-gray-800 text-sm line-clamp-1 pr-2">{selectedTicket.subject}</h3>
@@ -1235,10 +1215,7 @@ export default function SellerDashboard() {
                <button onClick={() => setShowTicketViewModal(false)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm rounded-full p-1 border border-gray-200 shrink-0"><X size={20} /></button>
             </div>
 
-            {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white relative">
-               
-               {/* Main Ticket Message (User) */}
                <div className="flex flex-col items-end">
                   <div className="max-w-[85%] bg-[#0066ff] text-white p-3 rounded-2xl rounded-tr-sm shadow-sm text-sm break-words">
                      {selectedTicket.message}
@@ -1266,7 +1243,6 @@ export default function SellerDashboard() {
                )}
             </div>
 
-            {/* Reply Input Area */}
             <div className="p-3 border-t border-gray-100 bg-gray-50">
                {selectedTicket.status === 'closed' ? (
                   <div className="text-center py-2 text-sm font-bold text-gray-500 bg-gray-200 rounded-xl border border-gray-300">
