@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
   
-  // 🔥 Refund Modal States Updates
+  // Refund Modal States
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundAppId, setRefundAppId] = useState(null);
   const [refundData, setRefundData] = useState({ orderNumber: '', screenshot_url: '', comment: '' });
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
   const [selectedAppeal, setSelectedAppeal] = useState(null);
   const [disputeComment, setDisputeComment] = useState('');
 
-  // 🔥 Withdrawal Modal States Updates
+  // Withdrawal Modal States
   const [showApproveWithdrawalModal, setShowApproveWithdrawalModal] = useState(false);
   const [withdrawalToApprove, setWithdrawalToApprove] = useState(null);
   const [withdrawalProof, setWithdrawalProof] = useState({ transaction_id: '', screenshot_url: '' });
@@ -85,10 +85,10 @@ export default function AdminDashboard() {
   const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
 
-  // 🔥 DYNAMIC FEE CONFIGURATION STATES (UPDATED FOR JSON TIERS)
+  // 🔥 DYNAMIC FEE CONFIGURATION STATES
   const [feeConfig, setFeeConfig] = useState({
     country: '', platform: '', platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', 
-    buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: ''
+    buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: '', exchange_rate: 1
   });
   const [allFeeConfigs, setAllFeeConfigs] = useState([]);
   const [feeLoading, setFeeLoading] = useState(false);
@@ -129,7 +129,6 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (data.success && data.data) {
         
-        // Ensure platform_charge is parsed correctly as an array for the UI
         let parsedTiers = [{ min: '', max: '', fee: '' }];
         if (Array.isArray(data.data.platform_charge) && data.data.platform_charge.length > 0) {
           parsedTiers = data.data.platform_charge;
@@ -143,11 +142,12 @@ export default function AdminDashboard() {
         setFeeConfig({
           country: data.data.country, platform: data.data.platform, platform_charge: parsedTiers,
           buyer_reward: data.data.buyer_reward, buyer_refund_fee: data.data.buyer_refund_fee,
-          seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee
+          seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee,
+          exchange_rate: data.data.exchange_rate || 1
         });
       } else {
         setFeeConfig(prev => ({
-          ...prev, platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: ''
+          ...prev, platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: '', exchange_rate: 1
         }));
       }
     } catch (err) { console.error(err); } 
@@ -201,7 +201,8 @@ export default function AdminDashboard() {
     setFeeConfig({
       country: config.country, platform: config.platform, platform_charge: parsedTiers,
       buyer_reward: config.buyer_reward, buyer_refund_fee: config.buyer_refund_fee,
-      seller_deposit_fee: config.seller_deposit_fee, seller_withdrawal_fee: config.seller_withdrawal_fee
+      seller_deposit_fee: config.seller_deposit_fee, seller_withdrawal_fee: config.seller_withdrawal_fee,
+      exchange_rate: config.exchange_rate || 1
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -213,7 +214,6 @@ export default function AdminDashboard() {
       return;
     }
     
-    // Validate Tiers before saving
     const hasInvalidTiers = feeConfig.platform_charge.some(t => t.min === '' || t.max === '' || t.fee === '');
     if (hasInvalidTiers) {
       alert("Please fill in all tier values (Min, Max, Fee) correctly.");
@@ -222,11 +222,8 @@ export default function AdminDashboard() {
 
     const payload = {
       ...feeConfig,
-      platform_charge: JSON.stringify(feeConfig.platform_charge) // Convert array to string if backend expects text/json
+      platform_charge: JSON.stringify(feeConfig.platform_charge) 
     };
-
-    // If backend expects direct array, send feeConfig directly:
-    // const success = await handleAction('https://backend-6aiq.onrender.com/api/config/fees', 'POST', feeConfig);
     
     const success = await handleAction('https://backend-6aiq.onrender.com/api/config/fees', 'POST', payload);
     if (success) fetchAllFeeConfigs();
@@ -426,7 +423,6 @@ export default function AdminDashboard() {
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
   const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
   
-// 🔥 Cloudinary Handler for Withdrawal Proof
   const handleWithdrawalImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -504,7 +500,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🔥 Cloudinary Handler for Refund Proof
   const handleRefundImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -535,7 +530,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if(await handleAction(`https://backend-6aiq.onrender.com/api/applications/${refundAppId}/confirm-refund`, 'PATCH', {
       refund_order_number: refundData.orderNumber, 
-      refund_screenshot_url: refundData.screenshot_url || refundData.orderNumber, // Added Fallback Support
+      refund_screenshot_url: refundData.screenshot_url || refundData.orderNumber,
       refund_comment: refundData.comment
     })) {
       setShowRefundModal(false); setShowAppDetailsModal(false); setRefundData({ orderNumber: '', screenshot_url: '', comment: '' }); fetchApplications();
@@ -608,7 +603,7 @@ export default function AdminDashboard() {
     setIsPublishingBlog(true);
     const formData = new FormData();
     formData.append("title", newBlog.title); formData.append("content", newBlog.content); formData.append("is_published", newBlog.is_published);
-    if (blogImage) formData.append("image", blogImage); // Blog Image handled via Backend Multer (no change required here)
+    if (blogImage) formData.append("image", blogImage); 
     try {
       const res = await fetch("https://backend-6aiq.onrender.com/api/blogs", { method: "POST", headers: getAuthHeaders(), body: formData });
       const data = await res.json();
@@ -677,7 +672,6 @@ export default function AdminDashboard() {
       
       <div className="max-w-7xl mx-auto p-4 md:p-6 -mt-6">
 
-        {/* 🔥 TAB NAVIGATION MENU (This was missing earlier) */}
         <div className="bg-white p-2 rounded-xl shadow-sm border mb-6 flex overflow-x-auto gap-2 scrollbar-hide">
           {[
             { id: 'overview', icon: <BarChart3 size={16} />, label: 'Overview' },
@@ -747,7 +741,6 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <div className="font-bold text-gray-800">{user.name}</div>
                         <div className="text-xs text-gray-500">{user.email}</div>
-                        
                         {user.last_ip && user.last_ip !== 'Unknown' && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
@@ -806,7 +799,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* OVERVIEW TAB + MONTHLY REPORT */}
+        {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div className="space-y-8 animate-fade-in-up">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -839,7 +832,6 @@ export default function AdminDashboard() {
                     <p className="text-xs text-gray-500">Performance overview by selected month</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border shadow-sm">
                   <Calendar size={18} className="text-gray-400 ml-2" />
                   <input 
@@ -850,7 +842,6 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-
               <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl flex flex-col items-center justify-center text-center">
                   <p className="text-blue-600 font-bold text-xs uppercase mb-1">Monthly Total Orders</p>
@@ -872,6 +863,167 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* SETTINGS TAB (DYNAMIC FEES) */}
+        {activeTab === 'settings' && (
+          <div className="space-y-8 animate-fade-in-up mt-6 max-w-5xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-bold text-xl text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                <Settings size={22} className="text-[#0066ff]" /> Dynamic Tariffs & Fee Configuration
+              </h3>
+              <p className="text-xs text-gray-500 mb-6 font-semibold">
+                Type Country and Platform to automatically fetch, configure, or update active system parameters using UPSERT logic.
+              </p>
+
+              <form onSubmit={handleSaveFeeConfig} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                  <div>
+                    <label className="block text-xs font-black uppercase text-gray-600 mb-1">Target Country</label>
+                    <input type="text" required placeholder="e.g. USA, India, Bangladesh..." value={feeConfig.country} onChange={(e) => handleFeeSelectorChange('country', e.target.value)} onBlur={handleFeeBlur} className="w-full p-2.5 bg-white border rounded-lg font-bold text-sm text-gray-800 outline-none focus:border-[#0066ff]"/>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase text-gray-600 mb-1">Target Platform</label>
+                    <input type="text" required placeholder="e.g. Amazon, Daraz, Shopee..." value={feeConfig.platform} onChange={(e) => handleFeeSelectorChange('platform', e.target.value)} onBlur={handleFeeBlur} className="w-full p-2.5 bg-white border rounded-lg font-bold text-sm text-gray-800 outline-none focus:border-[#0066ff]"/>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 relative">
+                  {feeLoading && (
+                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center text-sm font-bold text-[#0066ff]">Fetching active configurations...</div>
+                  )}
+                  
+                  <div className="col-span-full mb-2 bg-gray-50 border p-4 rounded-xl">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <label className="block text-sm font-bold text-gray-800">Dynamic Tier-Based Platform Charge</label>
+                        <p className="text-[10px] text-gray-500">Set fixed fees based on the product price range.</p>
+                      </div>
+                      <button type="button" onClick={handleAddTier} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors">+ Add Tier</button>
+                    </div>
+                    
+                    {feeConfig.platform_charge.map((tier, index) => (
+                      <div key={index} className="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex-1"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price ($)</label><input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" /></div>
+                        <div className="flex-1"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price ($)</label><input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" /></div>
+                        <div className="flex-1"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee ($)</label><input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" /></div>
+                        {feeConfig.platform_charge.length > 1 && (
+                          <div className="pb-1"><button type="button" onClick={() => handleRemoveTier(index)} className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors" title="Remove Tier"><Trash2 size={16} /></button></div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 🔥 NEW: Exchange Rate Input */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Exchange Rate (1 USD = ?)</label>
+                    <input type="number" step="0.0001" min="0.0001" required placeholder="e.g. 1.0000" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.exchange_rate} onChange={(e) => handleFeeSelectorChange('exchange_rate', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Buyer Reward (Fixed Amt)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_reward} onChange={(e) => handleFeeSelectorChange('buyer_reward', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Refund Fee (%)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_refund_fee} onChange={(e) => handleFeeSelectorChange('buyer_refund_fee', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Seller Deposit Fee (%)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_deposit_fee} onChange={(e) => handleFeeSelectorChange('seller_deposit_fee', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-600 mb-1">Seller Withdraw Fee (%)</label>
+                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_withdrawal_fee} onChange={(e) => handleFeeSelectorChange('seller_withdrawal_fee', e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button type="submit" disabled={feeLoading || !feeConfig.country || !feeConfig.platform} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50">Save & Apply Tariffs</button>
+                </div>
+              </form>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+                <h3 className="font-bold text-gray-700">All Saved Fee Configurations</h3>
+                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">{allFeeConfigs.length} Total</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-100 text-gray-600">
+                    <tr>
+                      <th className="p-3">Country</th><th className="p-3">Platform</th><th className="p-3 text-center">Tiers Config.</th>
+                      <th className="p-3 text-center">Ex. Rate</th>
+                      <th className="p-3 text-center">Reward (Fixed)</th><th className="p-3 text-center">Refund Fee (%)</th>
+                      <th className="p-3 text-center">Dep. Fee (%)</th><th className="p-3 text-center">W.Draw Fee (%)</th>
+                      <th className="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allFeeConfigs.map(conf => {
+                      let tierCount = 0;
+                      if (Array.isArray(conf.platform_charge)) {
+                        tierCount = conf.platform_charge.length;
+                      } else {
+                        try {
+                          const parsed = JSON.parse(conf.platform_charge);
+                          if(Array.isArray(parsed)) tierCount = parsed.length;
+                        } catch(e) {}
+                      }
+
+                      return (
+                        <tr key={`${conf.country}-${conf.platform}`} className="border-b hover:bg-gray-50 transition-colors">
+                          <td className="p-3 font-bold text-gray-800 capitalize">{conf.country}</td>
+                          <td className="p-3 font-bold text-indigo-700 capitalize">{conf.platform}</td>
+                          <td className="p-3 text-center font-semibold">
+                            {tierCount > 0 ? (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">{tierCount} Tiers</span>
+                            ) : (
+                              <span className="text-gray-500">{conf.platform_charge}%</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-center font-bold text-[#0066ff]">{conf.exchange_rate || 1}</td>
+                          <td className="p-3 text-center font-semibold text-green-600">${conf.buyer_reward}</td>
+                          <td className="p-3 text-center font-semibold text-red-500">{conf.buyer_refund_fee}%</td>
+                          <td className="p-3 text-center font-semibold">{conf.seller_deposit_fee}%</td>
+                          <td className="p-3 text-center font-semibold">{conf.seller_withdrawal_fee}%</td>
+                          <td className="p-3 text-right flex items-center justify-end gap-1">
+                            <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] hover:bg-blue-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Edit"><Edit size={16}/></button>
+                            <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Delete"><Trash2 size={16}/></button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {allFeeConfigs.length === 0 && <tr><td colSpan="9" className="p-6 text-center text-gray-500">No custom fees configured yet.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Payment Receiving Accounts */}
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-bold text-xl text-gray-800 mb-6 border-b pb-2">Payment Receiving Accounts</h3>
+              <div className="space-y-6">
+                {paymentSettings.map(setting => (
+                  <div key={setting.id} className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="w-full md:w-1/4">
+                      <label className="block text-sm font-bold text-gray-600 mb-1">Method</label>
+                      <input type="text" readOnly value={setting.method_name} className="w-full p-2 bg-gray-200 border rounded font-semibold text-gray-700 outline-none" />
+                    </div>
+                    <div className="w-full md:w-2/4">
+                      <label className="block text-sm font-bold text-gray-600 mb-1">Account Details / Wallet Address</label>
+                      <input type="text" defaultValue={setting.account_details} id={`setting-${setting.id}`} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
+                    </div>
+                    <div className="w-full md:w-1/4">
+                      <button onClick={() => updateSetting(setting.id, document.getElementById(`setting-${setting.id}`).value)} className="w-full bg-gray-800 text-white p-2 rounded font-bold hover:bg-gray-900">Save Changes</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* OTHER ADMIN TABS IMPLEMENTATIONS... (Applications, Products, Appeals, Tickets, Announcements, Blogs) */}
+        
         {/* APPEALS TAB */}
         {activeTab === 'appeals' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
@@ -939,7 +1091,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* SUPPORT TICKETS TAB (ADMIN) */}
+        {/* SUPPORT TICKETS TAB */}
         {activeTab === 'support-tickets' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
@@ -1340,203 +1492,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 🔥 DYNAMIC SETTINGS TAB (Manual Inputs + Data Table) */}
-        {activeTab === 'settings' && (
-          <div className="space-y-8 animate-fade-in-up mt-6 max-w-5xl mx-auto">
-            
-            {/* 1. Dynamic Tariffs & Fees Configuration Form */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h3 className="font-bold text-xl text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                <Settings size={22} className="text-[#0066ff]" /> Dynamic Tariffs & Fee Configuration
-              </h3>
-              <p className="text-xs text-gray-500 mb-6 font-semibold">
-                Type Country and Platform to automatically fetch, configure, or update active system parameters using UPSERT logic.
-              </p>
-
-              <form onSubmit={handleSaveFeeConfig} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                  <div>
-                    <label className="block text-xs font-black uppercase text-gray-600 mb-1">Target Country</label>
-                    <input 
-                      type="text" required placeholder="e.g. USA, India, Bangladesh..."
-                      value={feeConfig.country}
-                      onChange={(e) => handleFeeSelectorChange('country', e.target.value)}
-                      onBlur={handleFeeBlur}
-                      className="w-full p-2.5 bg-white border rounded-lg font-bold text-sm text-gray-800 outline-none focus:border-[#0066ff]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase text-gray-600 mb-1">Target Platform</label>
-                    <input 
-                      type="text" required placeholder="e.g. Amazon, Daraz, Shopee..."
-                      value={feeConfig.platform}
-                      onChange={(e) => handleFeeSelectorChange('platform', e.target.value)}
-                      onBlur={handleFeeBlur}
-                      className="w-full p-2.5 bg-white border rounded-lg font-bold text-sm text-gray-800 outline-none focus:border-[#0066ff]"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 relative">
-                  {feeLoading && (
-                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center text-sm font-bold text-[#0066ff]">
-                      Fetching active configurations...
-                    </div>
-                  )}
-                  
-                  {/* Dynamic Tier Container */}
-                  <div className="col-span-full mb-2 bg-gray-50 border p-4 rounded-xl">
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <label className="block text-sm font-bold text-gray-800">Dynamic Tier-Based Platform Charge</label>
-                        <p className="text-[10px] text-gray-500">Set fixed fees based on the product price range.</p>
-                      </div>
-                      <button 
-                        type="button" 
-                        onClick={handleAddTier} 
-                        className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors"
-                      >
-                        + Add Tier
-                      </button>
-                    </div>
-                    
-                    {feeConfig.platform_charge.map((tier, index) => (
-                      <div key={index} className="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex-1">
-                          <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price ($)</label>
-                          <input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price ($)</label>
-                          <input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee ($)</label>
-                          <input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" />
-                        </div>
-                        {feeConfig.platform_charge.length > 1 && (
-                          <div className="pb-1">
-                            <button type="button" onClick={() => handleRemoveTier(index)} className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors" title="Remove Tier">
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Buyer Reward (Fixed Amt)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_reward} onChange={(e) => handleFeeSelectorChange('buyer_reward', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Refund Fee (%)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_refund_fee} onChange={(e) => handleFeeSelectorChange('buyer_refund_fee', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Seller Deposit Fee (%)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_deposit_fee} onChange={(e) => handleFeeSelectorChange('seller_deposit_fee', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Seller Withdraw Fee (%)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.seller_withdrawal_fee} onChange={(e) => handleFeeSelectorChange('seller_withdrawal_fee', e.target.value)} />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <button type="submit" disabled={feeLoading || !feeConfig.country || !feeConfig.platform} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50">
-                    Save & Apply Tariffs
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* 2. SAVED CONFIGURATIONS DATA TABLE */}
-            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-              <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-                <h3 className="font-bold text-gray-700">All Saved Fee Configurations</h3>
-                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">{allFeeConfigs.length} Total</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-100 text-gray-600">
-                    <tr>
-                      <th className="p-3">Country</th><th className="p-3">Platform</th><th className="p-3 text-center">Tiers Config.</th>
-                      <th className="p-3 text-center">Reward (Fixed)</th><th className="p-3 text-center">Refund Fee (%)</th>
-                      <th className="p-3 text-center">Dep. Fee (%)</th><th className="p-3 text-center">W.Draw Fee (%)</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allFeeConfigs.map(conf => {
-                      let tierCount = 0;
-                      if (Array.isArray(conf.platform_charge)) {
-                        tierCount = conf.platform_charge.length;
-                      } else {
-                        try {
-                          const parsed = JSON.parse(conf.platform_charge);
-                          if(Array.isArray(parsed)) tierCount = parsed.length;
-                        } catch(e) {}
-                      }
-
-                      return (
-                        <tr key={`${conf.country}-${conf.platform}`} className="border-b hover:bg-gray-50 transition-colors">
-                          <td className="p-3 font-bold text-gray-800 capitalize">{conf.country}</td>
-                          <td className="p-3 font-bold text-indigo-700 capitalize">{conf.platform}</td>
-                          <td className="p-3 text-center font-semibold">
-                            {tierCount > 0 ? (
-                              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">{tierCount} Tiers</span>
-                            ) : (
-                              <span className="text-gray-500">{conf.platform_charge}%</span> // Fallback for old percentage strings
-                            )}
-                          </td>
-                          <td className="p-3 text-center font-semibold text-green-600">${conf.buyer_reward}</td>
-                          <td className="p-3 text-center font-semibold text-red-500">{conf.buyer_refund_fee}%</td>
-                          <td className="p-3 text-center font-semibold">{conf.seller_deposit_fee}%</td>
-                          <td className="p-3 text-center font-semibold">{conf.seller_withdrawal_fee}%</td>
-                          <td className="p-3 text-right flex items-center justify-end gap-1">
-                            <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] hover:bg-blue-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Edit">
-                              <Edit size={16}/>
-                            </button>
-                            <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors font-bold text-xs" title="Delete">
-                              <Trash2 size={16}/>
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {allFeeConfigs.length === 0 && <tr><td colSpan="8" className="p-6 text-center text-gray-500">No custom fees configured yet.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* 3. Payment Receiving Accounts */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h3 className="font-bold text-xl text-gray-800 mb-6 border-b pb-2">Payment Receiving Accounts</h3>
-              <div className="space-y-6">
-                {paymentSettings.map(setting => (
-                  <div key={setting.id} className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div className="w-full md:w-1/4">
-                      <label className="block text-sm font-bold text-gray-600 mb-1">Method</label>
-                      <input type="text" readOnly value={setting.method_name} className="w-full p-2 bg-gray-200 border rounded font-semibold text-gray-700 outline-none" />
-                    </div>
-                    <div className="w-full md:w-2/4">
-                      <label className="block text-sm font-bold text-gray-600 mb-1">Account Details / Wallet Address</label>
-                      <input type="text" defaultValue={setting.account_details} id={`setting-${setting.id}`} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
-                    </div>
-                    <div className="w-full md:w-1/4">
-                      <button onClick={() => updateSetting(setting.id, document.getElementById(`setting-${setting.id}`).value)} className="w-full bg-gray-800 text-white p-2 rounded font-bold hover:bg-gray-900">Save Changes</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {/* 🔥 ANNOUNCEMENTS TAB CONTENT */}
+        {/* ANNOUNCEMENTS TAB */}
         {activeTab === 'announcements' && (
           <div className="space-y-6 animate-fade-in-up mt-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border">
@@ -1576,7 +1532,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 🔥 BLOGS TAB CONTENT */}
+        {/* BLOGS TAB */}
         {activeTab === 'blogs' && (
           <div className="space-y-6 animate-fade-in-up mt-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border">
@@ -1637,7 +1593,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 💬 ADMIN TICKET CHAT MODAL */}
+        {/* ADMIN TICKET CHAT MODAL */}
         {showTicketViewModal && selectedTicket && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up">
@@ -1690,7 +1646,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 🔥 APPROVE WITHDRAWAL MODAL UPDATE: Firebase Image Upload */}
+        {/* APPROVE WITHDRAWAL MODAL */}
         {showApproveWithdrawalModal && withdrawalToApprove && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
             <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
@@ -1711,12 +1667,7 @@ export default function AdminDashboard() {
                 
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional / Required)</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleWithdrawalImageUpload} 
-                    className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" 
-                  />
+                  <input type="file" accept="image/*" onChange={handleWithdrawalImageUpload} className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" />
                   {isUploadingWithdrawalProof && <p className="text-xs text-green-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
                   {withdrawalProof.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
                 </div>
@@ -1978,31 +1929,7 @@ export default function AdminDashboard() {
                    <img src={selectedProductDetails.image_url} alt="Product" className="w-full h-48 object-contain bg-white rounded-lg border shadow-sm p-2" />
                    <div className="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200">
                       <p className="text-xs text-gray-500 uppercase font-bold">Total Deposit Deducted</p>
-                      {(() => {
-                        const price = parseFloat(selectedProductDetails.price) || 0;
-                        const reward = parseFloat(selectedProductDetails.reward) || 0;
-                        const qty = parseInt(selectedProductDetails.required_orders) || 1;
-                        const costPerOrder = price + reward;
-                        
-                        const pConfig = allFeeConfigs.find(c => c.country?.toLowerCase() === selectedProductDetails.country?.toLowerCase() && c.platform?.toLowerCase() === selectedProductDetails.platform?.toLowerCase());
-                        
-                        // 🔥 Updated to calculate Commission using JSON Dynamic Tiers
-                        let commission = 0;
-                        if (pConfig && Array.isArray(pConfig.platform_charge)) {
-                          const matchedTier = pConfig.platform_charge.find(t => price >= Number(t.min) && price <= Number(t.max));
-                          commission = matchedTier ? Number(matchedTier.fee) : 0;
-                        } else if (pConfig && !isNaN(pConfig.platform_charge)) {
-                          commission = price * (parseFloat(pConfig.platform_charge) / 100);
-                        } else {
-                          commission = price * 0.10; // Fallback 10%
-                        }
-                        
-                        const refundFeePercent = pConfig ? (parseFloat(pConfig.buyer_refund_fee) / 100) : 0.05;
-                        const refundFee = costPerOrder * refundFeePercent;
-                        const totalDeducted = (costPerOrder + commission + refundFee) * qty;
-
-                        return <p className="text-xl font-black text-yellow-700">${totalDeducted.toFixed(2)}</p>;
-                      })()}
+                      <p className="text-xl font-black text-yellow-700">${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)}</p>
                       <p className="text-xs text-gray-400 mt-1">Safely held by system</p>
                    </div>
                 </div>
@@ -2154,7 +2081,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 🔥 DYNAMIC REFUND / PAYMENT MODAL UPDATE: Firebase Image Upload */}
+        {/* DYNAMIC REFUND / PAYMENT MODAL */}
         {showRefundModal && selectedAppDetails && (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
             <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md animate-fade-in-up">

@@ -84,7 +84,7 @@ export default function AddProduct({ onProductAdded }) {
         const data = await res.json();
         
         if (data.success && data.data) {
-          // JSON Tier Parsing
+          // JSON Tier Parsing fix
           let parsedTiers = [];
           if (Array.isArray(data.data.platform_charge)) {
             parsedTiers = data.data.platform_charge;
@@ -110,7 +110,6 @@ export default function AddProduct({ onProductAdded }) {
     fetchDynamicFee();
   }, [formData.country, formData.platform]);
 
-  // 🔥 Handle Dropdown Changes Dynamically
   const handleCountryChange = (e) => {
     const selectedCountry = e.target.value;
     const platforms = allConfigs.filter(c => c.country === selectedCountry).map(c => c.platform);
@@ -135,37 +134,42 @@ export default function AddProduct({ onProductAdded }) {
     }
   };
 
-  // 🔥 UPDATED CALCULATION LOGIC (WITH JSON TIERS)
+  // ==========================================
+  // 🔥 UPDATED CALCULATION LOGIC (JSON TIERS + EXCHANGE RATE)
+  // ==========================================
   const priceNum = parseFloat(formData.price) || 0;
   const rewardNum = parseFloat(formData.reward) || 0;
   const qtyNum = parseInt(formData.required_orders) || 1;
   
-  const costPerOrder = priceNum + rewardNum;
+  const costPerOrderLocal = priceNum + rewardNum;
   
-  // Tier based fixed fee calculation
-  let platformCommission = 0;
+  let platformCommissionLocal = 0;
   if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
       const matchedTier = activeConfig.parsed_platform_charge.find(t => priceNum >= Number(t.min) && priceNum <= Number(t.max));
-      platformCommission = matchedTier ? Number(matchedTier.fee) : 0;
+      platformCommissionLocal = matchedTier ? Number(matchedTier.fee) : 0;
   } else if (activeConfig && !isNaN(activeConfig.platform_charge)) {
-      platformCommission = priceNum * (parseFloat(activeConfig.platform_charge) / 100);
+      platformCommissionLocal = priceNum * (parseFloat(activeConfig.platform_charge) / 100);
   } else {
-      platformCommission = priceNum * 0.10; // 10% fallback
+      platformCommissionLocal = priceNum * 0.10; // Fallback
   }
   
   const refundFeePercent = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
-  const refundFeeAmount = costPerOrder * refundFeePercent;
+  const refundFeeAmountLocal = costPerOrderLocal * refundFeePercent;
   
-  const totalDeposit = (costPerOrder + platformCommission + refundFeeAmount) * qtyNum;
+  // Total in Local Currency
+  const totalDepositLocal = (costPerOrderLocal + platformCommissionLocal + refundFeeAmountLocal) * qtyNum;
 
- const handleSubmit = async (e) => {
+  // 🔥 Exchange Rate & USD Conversion
+  const exchangeRate = activeConfig && activeConfig.exchange_rate ? parseFloat(activeConfig.exchange_rate) : 1.0;
+  const totalDepositUSD = totalDepositLocal / exchangeRate;
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!imageFile) return alert("Please upload a product image.");
     if (!formData.country.trim() || !formData.platform.trim()) return alert("Country and Platform are required fields.");
 
-    // Prevent submission if price doesn't match any tier
-    if (activeConfig?.parsed_platform_charge?.length > 0 && platformCommission === 0) {
-       return alert(`The product price (${currency}${priceNum}) does not match any valid fee tier for ${formData.platform}. Please adjust the price.`);
+    if (activeConfig?.parsed_platform_charge?.length > 0 && platformCommissionLocal === 0 && priceNum > 0) {
+       return alert(`The product price (${currency}${priceNum}) does not match any valid fixed fee tier for ${formData.platform}. Please adjust the price.`);
     }
 
     setLoading(true);
@@ -237,8 +241,6 @@ export default function AddProduct({ onProductAdded }) {
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Left Column: Product Details */}
         <div className="space-y-5">
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Product Name *</label>
@@ -269,7 +271,6 @@ export default function AddProduct({ onProductAdded }) {
               placeholder="https://amazon.com/dp/B08XYZ..." />
           </div>
 
-          {/* 🔥 DYNAMIC DROPDOWNS */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Target Country *</label>
@@ -307,7 +308,6 @@ export default function AddProduct({ onProductAdded }) {
           </div>
         </div>
 
-        {/* Right Column: Pricing & Upload */}
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -337,7 +337,7 @@ export default function AddProduct({ onProductAdded }) {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Quantity (Number of Orders) *</label>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Quantity (Orders) *</label>
             <input required type="number" min="1" name="required_orders" value={formData.required_orders} onChange={handleChange} 
               className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] transition-all bg-gray-50 focus:bg-white text-lg font-bold" 
               placeholder="1" />
@@ -347,7 +347,6 @@ export default function AddProduct({ onProductAdded }) {
             <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Product Image *</label>
             <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer relative overflow-hidden">
               <input type="file" required accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-              
               {imagePreview ? (
                 <div className="relative w-full h-32 flex items-center justify-center">
                   <img src={imagePreview} alt="Preview" className="max-h-full max-w-full object-contain rounded" />
@@ -370,7 +369,6 @@ export default function AddProduct({ onProductAdded }) {
           </div>
         </div>
 
-        {/* Full Width: Dynamic Fee Breakdown & Summary */}
         {user.role === 'seller' && (
         <div className="md:col-span-2 mt-2 bg-yellow-50/80 p-5 rounded-2xl flex flex-col border border-yellow-200 shadow-sm relative overflow-hidden">
           
@@ -394,7 +392,6 @@ export default function AddProduct({ onProductAdded }) {
           </div>
 
           <div className="flex flex-col md:flex-row gap-4">
-             {/* Dynamic Tariffs Box */}
              {activeConfig && (
                <div className="bg-white p-3 rounded-xl border border-yellow-200 w-full md:w-1/3">
                   <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">Active Tariffs Overview</h4>
@@ -407,23 +404,26 @@ export default function AddProduct({ onProductAdded }) {
                      <li className="flex justify-between"><span>Refund Fee:</span> <b className="text-red-500">{activeConfig.buyer_refund_fee}%</b></li>
                      <li className="flex justify-between"><span>Deposit Fee:</span> <b>{activeConfig.seller_deposit_fee}%</b></li>
                      <li className="flex justify-between"><span>W.Draw Fee:</span> <b>{activeConfig.seller_withdrawal_fee}%</b></li>
+                     <li className="flex justify-between mt-1 pt-1 border-t border-gray-100">
+                       <span className="text-[10px] uppercase text-gray-400">Exchange Rate:</span> 
+                       <b className="text-[#0066ff] text-[10px]">1 USD = {exchangeRate} {currency}</b>
+                     </li>
                   </ul>
                </div>
              )}
 
-             {/* Calculation Box */}
              <div className={`bg-white p-4 rounded-xl border border-yellow-200 ${activeConfig ? 'w-full md:w-2/3' : 'w-full'}`}>
                 <div className="space-y-2 text-sm text-gray-700">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-500">Unit Cost (Price + Reward)</span>
-                    <span className="font-bold text-gray-800">{currency}{costPerOrder.toFixed(2)}</span>
+                    <span className="font-bold text-gray-800">{currency}{costPerOrderLocal.toFixed(2)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-500 flex items-center gap-1">
                       Platform Tariff {activeConfig?.parsed_platform_charge?.length > 0 ? '(Fixed Tier)' : ''}
                     </span>
-                    <span className="font-bold text-red-500">+{currency}{platformCommission.toFixed(2)}</span>
+                    <span className="font-bold text-red-500">+{currency}{platformCommissionLocal.toFixed(2)}</span>
                   </div>
 
                   {activeConfig && parseFloat(activeConfig.buyer_refund_fee) > 0 && (
@@ -431,7 +431,7 @@ export default function AddProduct({ onProductAdded }) {
                       <span className="font-semibold text-gray-500 flex items-center gap-1">
                         Refund Fee ({parseFloat(activeConfig.buyer_refund_fee).toFixed(1)}%) 
                       </span>
-                      <span className="font-bold text-red-500">+{currency}{refundFeeAmount.toFixed(2)}</span>
+                      <span className="font-bold text-red-500">+{currency}{refundFeeAmountLocal.toFixed(2)}</span>
                     </div>
                   )}
                   
@@ -440,16 +440,28 @@ export default function AddProduct({ onProductAdded }) {
                     <span className="font-bold text-gray-800">x {qtyNum}</span>
                   </div>
                   
-                  <div className="border-t border-gray-200 pt-3 mt-2 flex justify-between items-center">
-                    <span className="font-black text-gray-800 text-base">Total Required Deposit</span>
-                    <span className="font-black text-2xl text-[#0066ff]">{currency}{totalDeposit.toFixed(2)}</span>
+                  {/* 🔥 NEW: LOCAL CURRENCY VS USD DEDUCTION DISPLAY */}
+                  <div className="border-t border-gray-100 pt-3 mt-2 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-gray-600">Total in Local Currency</span>
+                      <span className="font-bold text-gray-800">{currency}{totalDepositLocal.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center bg-blue-50 p-2.5 rounded-xl border border-blue-100">
+                      <span className="font-black text-blue-900 text-sm flex items-center gap-1"><Wallet size={16}/> Final Deduction (USD)</span>
+                      <div className="text-right">
+                         <span className="font-black text-2xl text-[#0066ff]">${totalDepositUSD.toFixed(2)}</span>
+                         <p className="text-[10px] text-blue-600 font-bold mt-0.5">Will be deducted from wallet</p>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
              </div>
           </div>
           
           <p className="text-xs text-yellow-700 mt-3 font-medium flex items-start gap-1">
-            <Info size={14} className="shrink-0 mt-0.5"/> This amount will be temporarily locked from your wallet. Unused funds are automatically refunded if orders are cancelled.
+            <Info size={14} className="shrink-0 mt-0.5"/> This USD amount will be temporarily locked from your wallet. Unused funds are automatically refunded if orders are cancelled.
           </p>
         </div>
         )}
