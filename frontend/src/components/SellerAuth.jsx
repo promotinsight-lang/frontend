@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { User, ShoppingBag, FileText, X, RefreshCcw } from 'lucide-react'; 
 
 // 🔥 Firebase Imports (apnar firebase.js filer location onujayi path thik kore niben)
-import { signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, yahooProvider } from '../firebase'; 
 
 export default function SellerAuth({ onAuthSuccess }) {
@@ -111,64 +111,47 @@ export default function SellerAuth({ onAuthSuccess }) {
     }
   };
 
-// 🔥 ASOL SOCIAL LOGIN HANDLER (Firebase Integrated with Referral Code - Redirect Method)
-  
-  // ১. রিডাইরেক্ট হয়ে ফিরে আসার পর ডেটা ধরার জন্য useEffect
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          setSocialLoading(true);
-          // কোন প্রোভাইডার দিয়ে লগইন হয়েছিল তা লোকাল স্টোরেজ থেকে নিচ্ছি
-          const providerName = localStorage.getItem('social_provider') || 'google';
-          const userEmail = result.user.email;
-          const userName = result.user.displayName || `${providerName} User`;
-
-          if (!userEmail) {
-            throw new Error("Email not found from social account.");
-          }
-
-          const res = await fetch('https://backend-6aiq.onrender.com/api/users/social-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: userEmail, name: userName, auth_provider: providerName, referred_by_code: referredByCode })
-          });
-          
-          const data = await res.json();
-
-          if (res.ok) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            if (referredByCode) localStorage.removeItem('referral_code'); // Clean up
-            localStorage.removeItem('social_provider'); // Clean up
-            
-            onAuthSuccess(data.user);
-            navigate('/dashboard'); 
-          } else {
-            setError(data.message || `${providerName} login failed`);
-          }
-        }
-      } catch (err) {
-        console.error("Firebase Auth Error:", err);
-        setError("Social login connection error. Please try again.");
-      } finally {
-        setSocialLoading(false);
-      }
-    };
-    
-    checkRedirectResult();
-  }, [referredByCode, navigate, onAuthSuccess]);
-
-  // ২. বাটনে ক্লিক করলে রিডাইরেক্ট করার ফাংশন
-  const handleSocialLogin = (providerName) => {
+  // 🔥 ASOL SOCIAL LOGIN HANDLER (Firebase Integrated with Referral Code)
+  const handleSocialLogin = async (providerName) => {
     setSocialLoading(true);
     setError('');
-    // কোন প্রোভাইডার দিয়ে লগইন হচ্ছে তা সেভ করে রাখছি, ফিরে এলে কাজে লাগবে
-    localStorage.setItem('social_provider', providerName); 
-    
-    const provider = providerName === 'google' ? googleProvider : yahooProvider;
-    signInWithRedirect(auth, provider);
+    try {
+      const provider = providerName === 'google' ? googleProvider : yahooProvider;
+      const result = await signInWithPopup(auth, provider);
+      
+      const userEmail = result.user.email;
+      const userName = result.user.displayName || `${providerName} User`;
+
+      if (!userEmail) {
+        throw new Error("Email not found from social account.");
+      }
+
+      const res = await fetch('https://backend-6aiq.onrender.com/api/users/social-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, name: userName, auth_provider: providerName, referred_by_code: referredByCode })
+      });
+      
+      const data = await res.json();
+
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        if (referredByCode) localStorage.removeItem('referral_code'); // Clean up
+        
+        onAuthSuccess(data.user);
+        navigate('/dashboard'); 
+      } else {
+        setError(data.message || `${providerName} login failed`);
+      }
+    } catch (err) {
+      console.error("Firebase Auth Error:", err);
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError("Social login connection error. Please try again.");
+      }
+    } finally {
+      setSocialLoading(false);
+    }
   };
 
   // STANDARD EMAIL SUBMIT (With Referral Code)
