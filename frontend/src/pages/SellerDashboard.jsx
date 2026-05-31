@@ -41,6 +41,7 @@ export default function SellerDashboard() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawData, setWithdrawData] = useState({ amount: '', payment_method: 'Bank', account_details: '' });
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [localCurrencyInfo, setLocalCurrencyInfo] = useState({ rate: 1, code: 'Local' });
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -104,7 +105,24 @@ export default function SellerDashboard() {
     try {
       const profileRes = await secureFetch('https://backend-6aiq.onrender.com/api/users/profile', { headers: authHeaders });
       const profileData = await profileRes.json();
-      if (profileData.success) setWalletBalance(parseFloat(profileData.user.wallet_balance) || 0);
+      if (profileData.success) {
+         setWalletBalance(parseFloat(profileData.user.wallet_balance) || 0);
+         
+         // Fetch Local Currency Rate based on Seller's Country
+         try {
+            const userCountry = profileData.user.country || '';
+            if (userCountry) {
+               const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: authHeaders });
+               const feeData = await feeRes.json();
+               if (feeData.success && feeData.data) {
+                  const config = feeData.data.find(c => c.country.toLowerCase() === userCountry.toLowerCase());
+                  if (config && config.exchange_rate) {
+                     setLocalCurrencyInfo({ rate: parseFloat(config.exchange_rate), code: config.country });
+                  }
+               }
+            }
+         } catch(e) { console.error("Currency fetch error", e); }
+      }
 
       const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
       const productsData = await productsRes.json();
@@ -409,7 +427,12 @@ export default function SellerDashboard() {
         <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center justify-between gap-6 w-full md:w-auto min-w-[280px] shadow-lg">
           <div>
             <p className="text-xs text-blue-100 font-bold uppercase tracking-wider">Wallet Balance</p>
-            <p className="text-2xl md:text-3xl font-black">${walletBalance.toFixed(2)}</p>
+            <div className="flex flex-col">
+              <p className="text-2xl md:text-3xl font-black">${walletBalance.toFixed(2)} <span className="text-sm font-bold">USD</span></p>
+              <p className="text-[10px] text-blue-100 font-bold bg-white/10 px-2 py-0.5 rounded border border-white/20 w-max mt-1">
+                 ~ {(walletBalance * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
+              </p>
+            </div>
           </div>
           
           <button 
@@ -1069,9 +1092,16 @@ export default function SellerDashboard() {
             <h3 className="text-2xl font-black text-gray-800 mb-6 border-b border-gray-100 pb-3 flex items-center gap-2"><Landmark className="text-red-500"/> Withdraw Funds</h3>
             <form onSubmit={handleWithdraw}>
               <div className="mb-5">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Amount ($)</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Amount (USD)</label>
                 <input type="number" step="0.01" max={walletBalance} required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-500 outline-none transition-colors text-lg font-bold" value={withdrawData.amount} onChange={e => setWithdrawData({...withdrawData, amount: e.target.value})} />
-                <p className="text-xs text-green-600 font-bold mt-2">Available: ${walletBalance.toFixed(2)}</p>
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-xs text-green-600 font-bold">Available: ${walletBalance.toFixed(2)}</p>
+                  {withdrawData.amount && (
+                    <p className="text-[11px] text-red-600 font-bold bg-red-50 px-2 py-1 rounded border border-red-100">
+                      ~ {(Number(withdrawData.amount) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Withdrawal Method</label>

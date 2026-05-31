@@ -49,7 +49,8 @@ export default function AdminDashboard() {
 
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
-  const [userAppStats, setUserAppStats] = useState({ listed: 0, active: 0, success: 0, failed: 0 }); 
+  const [profileContextProduct, setProfileContextProduct] = useState(null); // NEW: To track product context for dual currency deductions
+  const [userAppStats, setUserAppStats] = useState({ listed: 0, active: 0, success: 0, failed: 0 });
   const [selectedUserApps, setSelectedUserApps] = useState([]); 
   const [sellerProductsList, setSellerProductsList] = useState([]); 
   const [profileViewMode, setProfileViewMode] = useState('details'); 
@@ -82,8 +83,16 @@ export default function AdminDashboard() {
 
   const [adminBlogs, setAdminBlogs] = useState([]);
   const [newBlog, setNewBlog] = useState({ title: '', content: '', is_published: true });
-  const [blogImage, setBlogImage] = useState(null);
+ const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
+
+  // Helper for Dual Currency Calculation
+  const getConvertedPrice = (amount, country, platform) => {
+    if (!amount) return '0.00';
+    const config = allFeeConfigs.find(c => c.country === country && c.platform === platform);
+    const rate = config && config.exchange_rate ? parseFloat(config.exchange_rate) : 1;
+    return (parseFloat(amount) * rate).toFixed(2);
+  };
 
   // 🔥 DYNAMIC FEE CONFIGURATION STATES
   const [feeConfig, setFeeConfig] = useState({
@@ -1927,10 +1936,36 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-1">
                    <img src={selectedProductDetails.image_url} alt="Product" className="w-full h-48 object-contain bg-white rounded-lg border shadow-sm p-2" />
-                   <div className="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200">
-                      <p className="text-xs text-gray-500 uppercase font-bold">Total Deposit Deducted</p>
-                      <p className="text-xl font-black text-yellow-700">${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)}</p>
-                      <p className="text-xs text-gray-400 mt-1">Safely held by system</p>
+                   
+                   <div className="mt-4 bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm">
+                      <p className="text-xs text-gray-500 uppercase font-bold mb-2">Total Deposit Deducted</p>
+                      
+                      {/* USD & Local Currency Display */}
+                      <div className="flex flex-col gap-1 mb-4">
+                         <p className="text-2xl font-black text-yellow-700">
+                            ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)} <span className="text-sm font-bold text-gray-500">USD</span>
+                         </p>
+                         <p className="text-sm font-bold text-gray-600 bg-yellow-100/50 w-max px-2 py-0.5 rounded border border-yellow-200">
+                            ~ {getConvertedPrice(selectedProductDetails.total_deposit, selectedProductDetails.country, selectedProductDetails.platform)} <span className="text-[10px] uppercase">Local ({selectedProductDetails.country || 'N/A'})</span>
+                         </p>
+                      </div>
+
+                      {/* Seller Balance Deduction Math */}
+                      <div className="space-y-2 text-xs font-semibold bg-white p-3 rounded-lg border border-yellow-100">
+                         <div className="flex justify-between text-gray-600">
+                            <span>Previous Balance:</span>
+                            <span>${(parseFloat(selectedProductDetails.seller_wallet_balance || 0) + parseFloat(selectedProductDetails.total_deposit || 0)).toFixed(2)}</span>
+                         </div>
+                         <div className="flex justify-between text-red-500 border-b border-gray-100 pb-2">
+                            <span>Deducted (This Product):</span>
+                            <span>- ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)}</span>
+                         </div>
+                         <div className="flex justify-between text-green-700 pt-1 font-bold">
+                            <span>Remaining Balance:</span>
+                            <span>${parseFloat(selectedProductDetails.seller_wallet_balance || 0).toFixed(2)}</span>
+                         </div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-3 text-center italic">Safely held by system</p>
                    </div>
                 </div>
                 
@@ -1951,7 +1986,16 @@ export default function AdminDashboard() {
                   <p><span className="font-semibold text-gray-500 w-24 inline-block">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold">{selectedProductDetails.search_keyword}</span></p>
                   <p><span className="font-semibold text-gray-500 w-24 inline-block">Category:</span> <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase">{selectedProductDetails.category || 'General'}</span></p>
                   <p><span className="font-semibold text-gray-500 w-24 inline-block">Platform:</span> {selectedProductDetails.platform} ({selectedProductDetails.country})</p>
-                  <p><span className="font-semibold text-gray-500 w-24 inline-block">Financials:</span> Price: <b>${selectedProductDetails.price}</b> | Reward: <b className="text-green-600">${selectedProductDetails.reward}</b></p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
+                    <span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Financials:</span> 
+                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                       Price: <b>${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold ml-1">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
+                    </span>
+                    <span className="hidden sm:inline text-gray-300">|</span>
+                    <span className="bg-green-50 px-2 py-1 rounded border border-green-100">
+                       Reward: <b className="text-green-600">${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold ml-1">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
+                    </span>
+                  </div>
                   <p><span className="font-semibold text-gray-500 w-24 inline-block">Status:</span> {renderStatusBadge(selectedProductDetails.status)}</p>
                   
                   <div className="flex flex-wrap items-center gap-4 bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 mt-2">

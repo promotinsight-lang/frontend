@@ -32,6 +32,7 @@ const BuyerDashboard = () => {
   const [reviewForm, setReviewForm] = useState({ review_link: '', review_screenshot_url: '' });
   
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', payment_method: 'PayPal', account_details: '' });
+  const [localCurrencyInfo, setLocalCurrencyInfo] = useState({ rate: 1, code: 'Local' });
 
   const [supportTickets, setSupportTickets] = useState([]);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
@@ -92,6 +93,21 @@ const BuyerDashboard = () => {
             setLoading(false);
             return; 
           }
+          
+          // Fetch Local Currency Rate based on Buyer's Country
+          try {
+             const userCountry = profileData.user.amazon_location || profileData.user.country || '';
+             if (userCountry) {
+                const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const feeData = await feeRes.json();
+                if (feeData.success && feeData.data) {
+                   const config = feeData.data.find(c => c.country.toLowerCase() === userCountry.toLowerCase());
+                   if (config && config.exchange_rate) {
+                      setLocalCurrencyInfo({ rate: parseFloat(config.exchange_rate), code: config.country });
+                   }
+                }
+             }
+          } catch(e) { console.error("Currency fetch error", e); }
         }
       }
 
@@ -616,16 +632,21 @@ const BuyerDashboard = () => {
         {!loading && activeTab === 'wallet' && (
           <div className="space-y-6">
              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-               <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-4">
                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Wallet size={20} className="text-green-500"/> Request Withdrawal</h3>
-                 <span className="bg-green-100 text-green-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-green-200">
-                    Bal: ${Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0).toFixed(2)}
-                 </span>
+                 <div className="flex flex-col items-end">
+                   <span className="bg-green-100 text-green-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-green-200 shadow-sm">
+                      Bal: ${Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0).toFixed(2)} USD
+                   </span>
+                   <span className="text-[10px] font-bold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                      ~ {(Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
+                   </span>
+                 </div>
                </div>
                <form onSubmit={submitWithdrawal} className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
-                     <label className="block text-xs font-bold text-gray-600 mb-1">Amount ($)</label>
+                     <label className="block text-xs font-bold text-gray-600 mb-1">Amount (USD)</label>
                      {/* 🔥 NEW: Added max limit here */}
                      <input 
                        required 
@@ -638,6 +659,11 @@ const BuyerDashboard = () => {
                        onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} 
                        placeholder="e.g. 50.00" 
                      />
+                     {withdrawForm.amount && (
+                       <p className="text-[11px] text-[#0066ff] font-bold mt-1.5 flex items-center gap-1 bg-blue-50 w-max px-2 py-1 rounded border border-blue-100">
+                         You will receive: ~ {(Number(withdrawForm.amount) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
+                       </p>
+                     )}
                    </div>
                    <div>
                      <label className="block text-xs font-bold text-gray-600 mb-1">Payment Method</label>
@@ -668,7 +694,13 @@ const BuyerDashboard = () => {
                    {withdrawals.map(w => (
                      <div key={w.id} className="flex justify-between items-center p-3 border border-gray-100 bg-gray-50 rounded-lg">
                        <div>
-                         <p className="font-bold text-gray-800">${Number(w.amount).toFixed(2)} <span className="text-xs text-gray-500 font-normal">via {w.payment_method}</span></p>
+                         <p className="font-bold text-gray-800">
+                           ${Number(w.amount).toFixed(2)} 
+                           <span className="text-[10px] text-green-600 font-bold ml-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
+                             (~ {(Number(w.amount) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code})
+                           </span>
+                         </p>
+                         <p className="text-[10px] text-gray-500 font-bold mt-1">via {w.payment_method}</p>
                          <p className="text-[10px] text-gray-400 mt-0.5">{new Date(w.created_at).toLocaleString()}</p>
                        </div>
                        <div className="flex flex-col items-end gap-1">
@@ -751,7 +783,15 @@ const BuyerDashboard = () => {
             </div>
             
             <div className="space-y-3 text-sm text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <p className="flex justify-between"><span className="font-bold text-gray-500">Amount:</span> <span className="font-black text-green-600 text-lg">${Number(selectedWithdrawal.amount).toFixed(2)}</span></p>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-500">Amount:</span> 
+                <div className="text-right">
+                  <span className="font-black text-green-600 text-lg">${Number(selectedWithdrawal.amount).toFixed(2)} USD</span>
+                  <p className="text-[10px] font-bold text-gray-500 mt-0.5 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 w-max ml-auto">
+                    ~ {(Number(selectedWithdrawal.amount) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
+                  </p>
+                </div>
+              </div>
               <div className="w-full h-px bg-gray-200"></div>
               <p className="flex justify-between"><span className="font-bold text-gray-500">Method:</span> <span className="font-semibold">{selectedWithdrawal.payment_method}</span></p>
               <div className="w-full h-px bg-gray-200"></div>
