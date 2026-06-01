@@ -10,7 +10,7 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import Verification from './pages/Verification';
 import ForgotPassword from './pages/ForgotPassword';
-import RoleSelection from './pages/RoleSelection'; // 🔥 NEW: Import Role Selection
+import RoleSelection from './components/RoleSelection';
 
 // 櫨 NEW: Footer Pages Import
 
