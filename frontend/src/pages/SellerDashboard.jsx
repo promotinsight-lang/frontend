@@ -468,7 +468,7 @@ export default function SellerDashboard() {
                       className="relative group cursor-pointer bg-gray-50" 
                       onClick={() => { setFullImageUrl(product.image_url); setShowFullImageModal(true); }}
                     >
-                      <img src={product.image_url} alt="Product" className="w-full h-40 object-cover" />
+                      <img src={product.image_url} alt="Product" className="w-full h-48 object-contain bg-white p-2" />
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                          <span className="bg-white/90 text-gray-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1"><Eye size={14}/> View Image</span>
                       </div>
@@ -891,27 +891,38 @@ export default function SellerDashboard() {
 
             <div className="flex-1 overflow-y-auto pr-2 flex flex-col md:flex-row gap-8">
               
-              <div className="w-full md:w-1/3 bg-gray-50 p-5 rounded-2xl border border-gray-200 self-start sticky top-0">
+          <div className="w-full md:w-1/3 bg-gray-50 p-5 rounded-2xl border border-gray-200 shrink-0 self-start md:sticky md:top-0">
                 
                 <div className="bg-[#fff9e6] border border-[#ffdf7e] rounded-xl p-3 mb-5 text-center shadow-sm">
                   <p className="text-[10px] text-[#b38600] font-black uppercase tracking-widest mb-1">Task Condition</p>
                   <p className="text-base font-black text-gray-900">{selectedProduct.category || 'Need Review'}</p>
                 </div>
 
-                <img src={selectedProduct.image_url} alt="Product" className="w-full h-48 object-contain bg-white rounded-xl mb-5 border border-gray-100 shadow-sm p-2" />
+                <img src={selectedProduct.image_url} alt="Product" className="w-full h-48 md:h-56 object-contain bg-white rounded-xl mb-5 border border-gray-100 shadow-sm p-2" />
                 <div className="space-y-3 text-sm">
                   <p><span className="font-bold text-gray-500">Product:</span> <span className="font-semibold text-gray-800">{selectedProduct.product_name}</span></p>
                   <p><span className="font-bold text-gray-500">Keyword:</span> <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-mono font-bold text-xs">{selectedProduct.search_keyword}</span></p>
                   <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-gray-200">
-                    <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Price</span> <span className="font-black text-gray-800">${selectedProduct.price}</span></p>
-                    <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Reward</span> <span className="font-black text-green-600">${selectedProduct.reward}</span></p>
+                    <div>
+                      <span className="font-bold text-gray-400 block text-[10px] uppercase">Price</span> 
+                      <span className="font-black text-gray-800">${selectedProduct.price}</span>
+                      <span className="block text-[9px] text-gray-500 font-bold mt-0.5">~ {(parseFloat(selectedProduct.price || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-400 block text-[10px] uppercase">Reward</span> 
+                      <span className="font-black text-green-600">${selectedProduct.reward}</span>
+                      <span className="block text-[9px] text-green-600 font-bold mt-0.5">~ {(parseFloat(selectedProduct.reward || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</span>
+                    </div>
                     <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Platform</span> <span className="font-bold text-gray-800">{selectedProduct.platform}</span></p>
                     <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Target Qty</span> <span className="font-black text-[#0066ff]">{selectedProduct.required_orders}</span></p>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Total Deducted (DB Record)</p>
-                    <p className="text-xl font-black text-red-500">${parseFloat(selectedProduct.total_deposit || 0).toFixed(2)}</p>
+                  <div className="mt-4 bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm">
+                    <p className="text-[10px] text-red-500 font-bold uppercase mb-1">Total Deducted (DB Record)</p>
+                    <p className="text-2xl font-black text-red-600">${parseFloat(selectedProduct.total_deposit || 0).toFixed(2)} <span className="text-sm font-bold text-red-400">USD</span></p>
+                    <p className="text-[10px] font-bold text-red-600 bg-red-100/50 w-max px-2 py-0.5 rounded border border-red-200 mt-1">
+                      ~ {(parseFloat(selectedProduct.total_deposit || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -931,7 +942,7 @@ export default function SellerDashboard() {
                     {productReviews.map(review => (
                       <div key={review.application_id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all">
                         
-                        <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-gray-100 pb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <p className="font-bold text-gray-800 text-base">Buyer: {review.buyer_name}</p>
@@ -981,7 +992,7 @@ export default function SellerDashboard() {
                                </p>
                                <p className="text-xs text-indigo-600 mt-1 font-medium">Please check the details and verify. Auto-approves in 24 hours.</p>
                             </div>
-                            <div className="flex gap-3 w-full md:w-auto">
+                            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-3 md:mt-0">
                               <button 
                                 onClick={() => {
                                   setAppealData({ application_id: review.application_id, reason: '' });
