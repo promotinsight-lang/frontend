@@ -987,7 +987,8 @@ export default function SellerDashboard() {
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Order Details</p>
                             <div className="flex flex-col gap-2">
                               {review.order_number ? <p className="font-mono text-gray-800 font-bold bg-white px-2 py-1 rounded border shadow-sm w-fit">{review.order_number}</p> : <p className="text-gray-400 italic text-xs">No Order ID</p>}
-                              {review.screenshot_url && <a href={review.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof</a>}
+                              {review.screenshot_url && <a href={review.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 1</a>}
+                              {review.screenshot_url_2 && <a href={review.screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 2</a>}
                             </div>
                           </div>
                           
@@ -995,7 +996,8 @@ export default function SellerDashboard() {
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Review Details</p>
                             <div className="flex flex-col gap-2">
                               {review.review_link ? <a href={review.review_link} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-blue-600 font-bold hover:underline text-xs bg-blue-50 px-2 py-1 rounded border border-blue-100 w-fit"><LinkIcon size={14} /> View Review Link</a> : <p className="text-gray-400 italic text-xs">No Review Link</p>}
-                              {review.review_screenshot_url && <a href={review.review_screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-600 font-bold hover:underline text-xs bg-purple-50 px-2 py-1 rounded border border-purple-100 w-fit"><ImageIcon size={14} /> View Review Proof</a>}
+                              {review.review_screenshot_url && <a href={review.review_screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-600 font-bold hover:underline text-xs bg-purple-50 px-2 py-1 rounded border border-purple-100 w-fit"><ImageIcon size={14} /> View Review Proof 1</a>}
+                              {review.review_screenshot_url_2 && <a href={review.review_screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-600 font-bold hover:underline text-xs bg-purple-50 px-2 py-1 rounded border border-purple-100 w-fit"><ImageIcon size={14} /> View Review Proof 2</a>}
                             </div>
                           </div>
                         </div>

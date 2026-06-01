@@ -28,8 +28,8 @@ const BuyerDashboard = () => {
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
 
-  const [orderForm, setOrderForm] = useState({ order_number: '', screenshot_url: '', order_comment: '' });
-  const [reviewForm, setReviewForm] = useState({ review_link: '', review_screenshot_url: '' });
+  const [orderForm, setOrderForm] = useState({ order_number: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
+  const [reviewForm, setReviewForm] = useState({ review_link: '', review_screenshot_url: '', review_screenshot_url_2: '' });
   
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', payment_method: 'PayPal', account_details: '' });
   const [localCurrencyInfo, setLocalCurrencyInfo] = useState({ rate: 1, code: 'Local' });
@@ -183,8 +183,12 @@ const BuyerDashboard = () => {
 
       if (formType === 'order') {
         setOrderForm(prev => ({ ...prev, screenshot_url: downloadURL }));
+      } else if (formType === 'order2') {
+        setOrderForm(prev => ({ ...prev, screenshot_url_2: downloadURL }));
       } else if (formType === 'review') {
         setReviewForm(prev => ({ ...prev, review_screenshot_url: downloadURL }));
+      } else if (formType === 'review2') {
+        setReviewForm(prev => ({ ...prev, review_screenshot_url_2: downloadURL }));
       }
     } catch (error) {
       console.error("Cloudinary upload error:", error);
@@ -208,7 +212,7 @@ const BuyerDashboard = () => {
       if(res.ok) {
         alert('Order submitted successfully!');
         setShowOrderModal(false);
-        setOrderForm({ order_number: '', screenshot_url: '', order_comment: '' });
+        setOrderForm({ order_number: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
         fetchData();
       } else {
         alert('Failed to submit order');
@@ -234,7 +238,7 @@ const BuyerDashboard = () => {
       if(res.ok) {
         alert('Review submitted successfully!');
         setShowReviewModal(false);
-        setReviewForm({ review_link: '', review_screenshot_url: '' });
+        setReviewForm({ review_link: '', review_screenshot_url: '', review_screenshot_url_2: '' });
         fetchData();
       } else {
         alert('Failed to submit review');
@@ -842,15 +846,25 @@ const BuyerDashboard = () => {
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Screenshot (Optional)</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Screenshot 1 (Optional)</label>
                 <input 
                   type="file" 
                   accept="image/*" 
                   onChange={(e) => handleImageUpload(e, 'order')} 
                   className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
                 />
+                {orderForm.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image 1 attached!</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Screenshot 2 (Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleImageUpload(e, 'order2')} 
+                  className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
+                />
                 {isUploadingImage && <p className="text-xs text-blue-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
-                {orderForm.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
+                {orderForm.screenshot_url_2 && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image 2 attached!</p>}
               </div>
 
               <div className="flex gap-3 mt-6">
@@ -874,15 +888,25 @@ const BuyerDashboard = () => {
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Review Screenshot</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Review Screenshot 1</label>
                 <input 
                   type="file" 
                   accept="image/*" 
                   onChange={(e) => handleImageUpload(e, 'review')} 
                   className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-purple-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer" 
                 />
+                {reviewForm.review_screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image 1 attached!</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Review Screenshot 2 (Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => handleImageUpload(e, 'review2')} 
+                  className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-purple-500 outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer" 
+                />
                 {isUploadingImage && <p className="text-xs text-purple-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
-                {reviewForm.review_screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
+                {reviewForm.review_screenshot_url_2 && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image 2 attached!</p>}
               </div>
               
               <p className="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold pt-2">Please provide at least one proof.</p>

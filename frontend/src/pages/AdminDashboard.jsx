@@ -2085,16 +2085,18 @@ export default function AdminDashboard() {
                      <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
                        <h4 className="font-bold text-indigo-800 mb-2 border-b border-indigo-200 pb-1">Order Submission</h4>
                        <p className="text-sm"><span className="font-semibold text-gray-600">Order No:</span> {selectedAppDetails.order_number || 'N/A'}</p>
-                       {selectedAppDetails.screenshot_url && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot:</span> <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
+                       {selectedAppDetails.screenshot_url && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot 1:</span> <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
+                       {selectedAppDetails.screenshot_url_2 && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot 2:</span> <a href={selectedAppDetails.screenshot_url_2} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
                        {selectedAppDetails.order_comment && (<div className="mt-3 text-sm bg-white p-2 rounded border border-indigo-100"><span className="font-semibold text-gray-600 text-xs block mb-1">Buyer Comment:</span><p className="text-gray-700 italic">{selectedAppDetails.order_comment}</p></div>)}
                      </div>
                    )}
 
-                   {(selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && selectedAppDetails.review_link && (
+                   {(selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && (selectedAppDetails.review_link || selectedAppDetails.review_screenshot_url || selectedAppDetails.review_screenshot_url_2) && (
                      <div className="bg-pink-50 p-4 rounded-lg border border-pink-100">
                        <h4 className="font-bold text-pink-800 mb-2 border-b border-pink-200 pb-1">Review Submission</h4>
                        {selectedAppDetails.review_link && (<p className="text-sm mb-2"><span className="font-semibold text-gray-600">Review Link:</span> <a href={selectedAppDetails.review_link} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">Click to Open</a></p>)}
-                       {selectedAppDetails.review_screenshot_url && (<p className="text-sm"><span className="font-semibold text-gray-600">Screenshot:</span> <a href={selectedAppDetails.review_screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
+                       {selectedAppDetails.review_screenshot_url && (<p className="text-sm"><span className="font-semibold text-gray-600">Screenshot 1:</span> <a href={selectedAppDetails.review_screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
+                       {selectedAppDetails.review_screenshot_url_2 && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot 2:</span> <a href={selectedAppDetails.review_screenshot_url_2} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
                      </div>
                    )}
                 </div>
