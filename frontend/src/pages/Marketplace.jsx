@@ -98,7 +98,7 @@ export default function Marketplace() {
       }
 
       const result = await res.json();
-      if (res.ok) alert("Applied Successfully! Go to 'My Account' or 'Orders' to view details.");
+      if (res.ok) alert("Applied Successfully! Go to 'My Orders' & view details.");
       else alert(result.message || "Failed to apply");
     } catch (error) {
       alert("Error applying for product. Please try again.");
