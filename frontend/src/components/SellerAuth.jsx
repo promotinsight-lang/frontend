@@ -2,21 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, ShoppingBag, FileText, X, RefreshCcw } from 'lucide-react'; 
 
-// 🔥 Firebase Imports (apnar firebase.js filer location onujayi path thik kore niben)
+// 🔥 Firebase Imports (আপনার firebase.js ফাইলের লোকেশন অনুযায়ী পাথ ঠিক আছে)
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, yahooProvider } from '../firebase'; 
 
 export default function SellerAuth({ onAuthSuccess }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const isLoginForm = location.pathname.includes('/login-form');
+  const [isLogin, setIsLogin] = useState(isLoginForm); 
+
+  // URL থেকে role বের করার ফাংশন
+  const getRoleFromUrl = () => {
+    const params = new URLSearchParams(location.search);
+    const urlRole = params.get('role');
+    return urlRole === 'seller' || urlRole === 'buyer' ? urlRole : 'buyer';
+  };
+
+  const [role, setRole] = useState(getRoleFromUrl());
+
+  // URL পরিবর্তন হলে role স্টেট আপডেট হবে
+  useEffect(() => {
+    setRole(getRoleFromUrl());
+  }, [location.search]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState(''); 
-  const location = useLocation(); // Keep your existing location variable if it's already there
-  const queryParams = new URLSearchParams(location.search);
-  const selectedRole = queryParams.get('role') || 'buyer';
-  const isLoginForm = location.pathname.includes('/login-form');
-
-  const [role, setRole] = useState(selectedRole); 
-  const [isLogin, setIsLogin] = useState(isLoginForm); 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
@@ -27,7 +40,7 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  // 🔥 NEW: Referral Code State
+  // 🔥 Referral Code State
   const [referredByCode, setReferredByCode] = useState('');
 
   // STATES FOR CAPTCHA AND OTP
@@ -39,10 +52,16 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
 
-  const navigate = useNavigate();
-  const location = useLocation();
+  // Login/Register মোড পরিবর্তন করার ফাংশন (Role URL-এ ধরে রাখবে)
+  const switchAuthMode = (login) => {
+    const params = new URLSearchParams(location.search);
+    if (!params.get('role')) params.set('role', role);
+    const path = login ? '/login-form' : '/register-form';
+    navigate(`${path}?${params.toString()}`, { replace: true });
+    setIsLogin(login);
+  };
 
-  // 🔥 URL theke Referral Code dhora abong LocalStorage e save kora
+  // 🔥 URL থেকে Referral Code ধরা এবং LocalStorage এ সেভ করা
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const ref = params.get('ref');
@@ -131,16 +150,19 @@ export default function SellerAuth({ onAuthSuccess }) {
         throw new Error("Email not found from social account.");
       }
 
-      // 🔥 NEW: Send the selected "role" to the backend for social login
+      const roleForApi = getRoleFromUrl(); // URL থেকে সরাসরি টাটকা রোল নিচ্ছি
+
+      console.log("Social Login - Sending Role to API:", roleForApi);
+
       const res = await fetch('https://backend-6aiq.onrender.com/api/users/social-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: userEmail, 
-          name: userName, 
-          auth_provider: providerName, 
+        body: JSON.stringify({
+          email: userEmail,
+          name: userName,
+          auth_provider: providerName,
           referred_by_code: referredByCode,
-          role: role // Send selected role (buyer or seller)
+          role: roleForApi
         })
       });
       
@@ -226,19 +248,26 @@ export default function SellerAuth({ onAuthSuccess }) {
         {/* HEADER */}
         <div className="bg-[#0066ff] p-8 text-center text-white relative">
            <h2 className="text-3xl font-black mb-1">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-           <p className="text-blue-100 text-sm">PromotInsight Global Platform</p>
+           <p className="text-blue-100 text-sm">
+             PromotInsight Global Platform
+             <span className="block mt-1 text-xs font-bold uppercase tracking-wide text-blue-200">
+               {role === 'seller' ? 'Seller account' : 'Buyer account'}
+             </span>
+           </p>
         </div>
 
         {/* TOGGLE */}
         <div className="flex bg-gray-100 p-1 m-6 rounded-xl">
            <button 
-             onClick={() => setIsLogin(true)} 
+             type="button"
+             onClick={() => switchAuthMode(true)} 
              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${isLogin ? 'bg-white text-[#0066ff] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
            >
              Log In
            </button>
            <button 
-             onClick={() => setIsLogin(false)} 
+             type="button"
+             onClick={() => switchAuthMode(false)} 
              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${!isLogin ? 'bg-white text-[#0066ff] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
            >
              Register
@@ -412,7 +441,6 @@ export default function SellerAuth({ onAuthSuccess }) {
           <button type="submit" disabled={loading} className="w-full py-3.5 mt-6 bg-[#0066ff] text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-colors disabled:opacity-50">
             {loading ? 'Processing...' : (isLogin ? 'Secure Login' : 'Create Account')}
           </button>
-
         </form>
       </div>
 
