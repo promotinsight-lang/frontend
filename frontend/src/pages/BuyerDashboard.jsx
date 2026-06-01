@@ -1096,14 +1096,44 @@ const BuyerDashboard = () => {
                 </div>
               )}
 
-              {(selectedItem.data.order_number || selectedItem.data.review_link) && (
+              {(selectedItem.data.order_number || selectedItem.data.screenshot_url || selectedItem.data.screenshot_url_2 || selectedItem.data.review_link || selectedItem.data.review_screenshot_url || selectedItem.data.review_screenshot_url_2) && (
                 <div className="mt-6 border-t border-gray-100 pt-4">
                   <h4 className="font-bold text-gray-700 text-sm mb-3">Your Submissions</h4>
                   {selectedItem.data.order_number && (
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order ID</p><p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded inline-block border border-gray-200">{selectedItem.data.order_number}</p></div>
                   )}
+                  {(selectedItem.data.screenshot_url || selectedItem.data.screenshot_url_2) && (
+                    <div className="mt-2 flex flex-col gap-2">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Order Screenshots</p>
+                      {selectedItem.data.screenshot_url && (
+                        <a href={selectedItem.data.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1.5 rounded border border-emerald-100 w-fit">
+                          <ImageIcon size={14} /> View Order Screenshot 1
+                        </a>
+                      )}
+                      {selectedItem.data.screenshot_url_2 && (
+                        <a href={selectedItem.data.screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1.5 rounded border border-emerald-100 w-fit">
+                          <ImageIcon size={14} /> View Order Screenshot 2
+                        </a>
+                      )}
+                    </div>
+                  )}
                   {selectedItem.data.review_link && (
-                    <div><p className="text-[10px] text-gray-500 uppercase font-bold mt-2">Review Link</p><a href={selectedItem.data.review_link} target="_blank" rel="noreferrer" className="text-sm text-blue-600 underline truncate block">{selectedItem.data.review_link}</a></div>
+                    <div className="mt-3"><p className="text-[10px] text-gray-500 uppercase font-bold">Review Link</p><a href={selectedItem.data.review_link} target="_blank" rel="noreferrer" className="text-sm text-blue-600 underline truncate block">{selectedItem.data.review_link}</a></div>
+                  )}
+                  {(selectedItem.data.review_screenshot_url || selectedItem.data.review_screenshot_url_2) && (
+                    <div className="mt-2 flex flex-col gap-2">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">Review Screenshots</p>
+                      {selectedItem.data.review_screenshot_url && (
+                        <a href={selectedItem.data.review_screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-600 font-bold hover:underline text-xs bg-purple-50 px-2 py-1.5 rounded border border-purple-100 w-fit">
+                          <ImageIcon size={14} /> View Review Screenshot 1
+                        </a>
+                      )}
+                      {selectedItem.data.review_screenshot_url_2 && (
+                        <a href={selectedItem.data.review_screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-600 font-bold hover:underline text-xs bg-purple-50 px-2 py-1.5 rounded border border-purple-100 w-fit">
+                          <ImageIcon size={14} /> View Review Screenshot 2
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
