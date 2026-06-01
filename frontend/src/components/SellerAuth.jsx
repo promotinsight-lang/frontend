@@ -131,10 +131,17 @@ export default function SellerAuth({ onAuthSuccess }) {
         throw new Error("Email not found from social account.");
       }
 
+      // 🔥 NEW: Send the selected "role" to the backend for social login
       const res = await fetch('https://backend-6aiq.onrender.com/api/users/social-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, name: userName, auth_provider: providerName, referred_by_code: referredByCode })
+        body: JSON.stringify({ 
+          email: userEmail, 
+          name: userName, 
+          auth_provider: providerName, 
+          referred_by_code: referredByCode,
+          role: role // Send selected role (buyer or seller)
+        })
       });
       
       const data = await res.json();
