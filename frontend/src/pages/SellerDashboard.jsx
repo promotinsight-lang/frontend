@@ -89,6 +89,22 @@ export default function SellerDashboard() {
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
+  // Prevent background scrolling when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = showDepositModal || showWithdrawModal || showViewModal || showEditModal || showSellerAppealModal || showLedgerModal || showCreateTicketModal || showTicketViewModal || showFullImageModal || showTrxDetailsModal;
+    
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showDepositModal, showWithdrawModal, showViewModal, showEditModal, showSellerAppealModal, showLedgerModal, showCreateTicketModal, showTicketViewModal, showFullImageModal, showTrxDetailsModal]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
