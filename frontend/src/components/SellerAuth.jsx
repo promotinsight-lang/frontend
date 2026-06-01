@@ -10,8 +10,13 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState(''); 
-  const [role, setRole] = useState('buyer'); 
-  const [isLogin, setIsLogin] = useState(true); 
+  const location = useLocation(); // Keep your existing location variable if it's already there
+  const queryParams = new URLSearchParams(location.search);
+  const selectedRole = queryParams.get('role') || 'buyer';
+  const isLoginForm = location.pathname.includes('/login-form');
+
+  const [role, setRole] = useState(selectedRole); 
+  const [isLogin, setIsLogin] = useState(isLoginForm); 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
@@ -276,17 +281,7 @@ export default function SellerAuth({ onAuthSuccess }) {
           
           {!isLogin && (
             <>
-              <div className="flex gap-4 mb-2">
-                 <button type="button" onClick={() => setRole('buyer')} className={`flex-1 flex flex-col items-center p-3 rounded-xl border-2 transition-all ${role === 'buyer' ? 'border-[#0066ff] bg-blue-50 text-[#0066ff]' : 'border-gray-100 hover:border-blue-200'}`}>
-                   <ShoppingBag size={24} className="mb-1" />
-                   <span className="text-xs font-bold">Buyer</span>
-                 </button>
-                 <button type="button" onClick={() => setRole('seller')} className={`flex-1 flex flex-col items-center p-3 rounded-xl border-2 transition-all ${role === 'seller' ? 'border-[#0066ff] bg-blue-50 text-[#0066ff]' : 'border-gray-100 hover:border-blue-200'}`}>
-                   <User size={24} className="mb-1" />
-                   <span className="text-xs font-bold">Seller</span>
-                 </button>
-              </div>
-
+            
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Full Name</label>
                 <input required type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Doe" />

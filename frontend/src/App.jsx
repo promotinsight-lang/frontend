@@ -10,6 +10,10 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import Verification from './pages/Verification';
 import ForgotPassword from './pages/ForgotPassword';
+import RoleSelection from './pages/RoleSelection'; // 🔥 NEW: Import Role Selection
+
+// 櫨 NEW: Footer Pages Import
+
 
 // 🔥 NEW: Footer Pages Import
 import Terms from './pages/Terms';
@@ -85,17 +89,28 @@ export default function App() {
           <Route path="/blogs" element={<Blogs />} />
           <Route path="/blog/:slug" element={<BlogDetails />} />
 
+          {/* 🔥 NEW: Route to Role Selection first */}
           <Route 
             path="/login" 
-            element={!user ? <SellerAuth onAuthSuccess={handleLoginSuccess} /> : <Navigate to={user.role === 'buyer' ? "/" : "/dashboard"} />} 
+            element={!user ? <RoleSelection /> : <Navigate to={user.role === 'buyer' ? "/" : "/dashboard"} />} 
           />
           <Route 
             path="/register" 
+            element={!user ? <RoleSelection /> : <Navigate to={user.role === 'buyer' ? "/" : "/dashboard"} />} 
+          />
+
+          {/* 🔥 Actual Auth Forms */}
+          <Route 
+            path="/login-form" 
+            element={!user ? <SellerAuth onAuthSuccess={handleLoginSuccess} /> : <Navigate to={user.role === 'buyer' ? "/" : "/dashboard"} />} 
+          />
+          <Route 
+            path="/register-form" 
             element={!user ? <SellerAuth onAuthSuccess={handleLoginSuccess} /> : <Navigate to={user.role === 'buyer' ? "/" : "/dashboard"} />} 
           />
 
           <Route 
-            path="/dashboard" 
+            path="/dashboard"
             element={
               !user ? (
                 <Navigate to="/login" />
