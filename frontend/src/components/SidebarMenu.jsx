@@ -6,10 +6,12 @@ import {
   LayoutDashboard, ShoppingCart, Package, Wallet, Landmark, Settings,
   List, UserCheck, History, PlusCircle, Users, Scale, Headset, Megaphone, FileText 
 } from 'lucide-react';
+import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 
 const SidebarMenu = ({ isOpen, setIsOpen }) => {
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
+  const { formatWallet } = useBuyerCurrency();
 
   const handleLogout = async () => {
     try {
@@ -113,8 +115,20 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               <span className="bg-white p-1.5 rounded-full text-green-500 shadow-sm border border-gray-100">
                 <Wallet size={20} />
               </span>
-              ${Number(user?.wallet_balance || 0).toFixed(2)}
+              {(() => {
+                if (user?.role === 'buyer') {
+                  const bal = formatWallet(user?.wallet_balance || 0);
+                  return bal.primary;
+                }
+                return `$${Number(user?.wallet_balance || 0).toFixed(2)}`;
+              })()}
             </div>
+            {user?.role === 'buyer' && (() => {
+              const bal = formatWallet(user?.wallet_balance || 0);
+              return bal.secondary ? (
+                <p className="text-[10px] text-gray-400 font-bold mt-1">{bal.secondary}</p>
+              ) : null;
+            })()}
           </div>
         )}
 

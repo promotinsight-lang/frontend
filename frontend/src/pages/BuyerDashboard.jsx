@@ -5,9 +5,11 @@ import {
   ShoppingBag, CheckCircle, Clock, ChevronRight, X, ShieldAlert, 
   XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon,
   Headset, PlusCircle, MessageCircle, Send, Megaphone, Users 
-} from 'lucide-react'; 
+} from 'lucide-react';
+import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 
 const BuyerDashboard = () => {
+  const { formatWallet, formatProduct } = useBuyerCurrency();
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('active'); 
@@ -32,7 +34,6 @@ const BuyerDashboard = () => {
   const [reviewForm, setReviewForm] = useState({ review_link: '', review_screenshot_url: '', review_screenshot_url_2: '' });
   
   const [withdrawForm, setWithdrawForm] = useState({ amount: '', payment_method: 'PayPal', account_details: '' });
-  const [localCurrencyInfo, setLocalCurrencyInfo] = useState({ rate: 1, code: 'Local' });
 
   const [supportTickets, setSupportTickets] = useState([]);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
@@ -94,20 +95,6 @@ const BuyerDashboard = () => {
             return; 
           }
           
-          // Fetch Local Currency Rate based on Buyer's Country
-          try {
-             const userCountry = profileData.user.amazon_location || profileData.user.country || '';
-             if (userCountry) {
-                const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: { 'Authorization': `Bearer ${token}` } });
-                const feeData = await feeRes.json();
-                if (feeData.success && feeData.data) {
-                   const config = feeData.data.find(c => c.country.toLowerCase() === userCountry.toLowerCase());
-                   if (config && config.exchange_rate) {
-                      setLocalCurrencyInfo({ rate: parseFloat(config.exchange_rate), code: config.country });
-                   }
-                }
-             }
-          } catch(e) { console.error("Currency fetch error", e); }
         }
       }
 
@@ -550,7 +537,7 @@ const BuyerDashboard = () => {
                       <div className="flex justify-between items-start mb-1">
                         <h3 className="text-sm font-bold text-gray-800 line-clamp-2">{app.product_name || `Order #${app.application_id}`}</h3>
                       </div>
-                      <p className="text-xs text-gray-500 mb-2">Reward: <span className="font-bold text-green-600">+${Number(app.reward).toFixed(2)}</span></p>
+                      <p className="text-xs text-gray-500 mb-2">Reward: <span className="font-bold text-green-600">+{formatProduct(app.reward, app.country).formatted}</span></p>
                       
                       <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${app.application_status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
                         {(app.application_status || '').replace('_', ' ')}
@@ -596,7 +583,7 @@ const BuyerDashboard = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-bold text-gray-800 line-clamp-1">{app.product_name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">Earned: <span className="font-bold text-green-600">${(parseFloat(app.price || 0) + parseFloat(app.reward || 0)).toFixed(2)}</span></p>
+                    <p className="text-xs text-gray-500 mt-1">Earned: <span className="font-bold text-green-600">{formatProduct(parseFloat(app.price || 0) + parseFloat(app.reward || 0), app.country).formatted}</span></p>
                   </div>
                   <div className="shrink-0 bg-green-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm shadow-green-500/30">
                     <CheckCircle size={14}/> Success
@@ -639,12 +626,21 @@ const BuyerDashboard = () => {
               <div className="flex justify-between items-center mb-4">
                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Wallet size={20} className="text-green-500"/> Request Withdrawal</h3>
                  <div className="flex flex-col items-end">
-                   <span className="bg-green-100 text-green-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-green-200 shadow-sm">
-                      Bal: ${Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0).toFixed(2)} USD
-                   </span>
-                   <span className="text-[10px] font-bold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                      ~ {(Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
-                   </span>
+                   {(() => {
+                     const bal = formatWallet(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0);
+                     return (
+                       <>
+                         <span className="bg-green-100 text-green-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-green-200 shadow-sm">
+                           Bal: {bal.primary} <span className="text-[10px] opacity-80">{bal.code}</span>
+                         </span>
+                         {bal.secondary && (
+                           <span className="text-[10px] font-bold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                             {bal.secondary}
+                           </span>
+                         )}
+                       </>
+                     );
+                   })()}
                  </div>
                </div>
                <form onSubmit={submitWithdrawal} className="space-y-4">
@@ -663,11 +659,14 @@ const BuyerDashboard = () => {
                        onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} 
                        placeholder="e.g. 50.00" 
                      />
-                     {withdrawForm.amount && (
-                       <p className="text-[11px] text-[#0066ff] font-bold mt-1.5 flex items-center gap-1 bg-blue-50 w-max px-2 py-1 rounded border border-blue-100">
-                         You will receive: ~ {(Number(withdrawForm.amount) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
-                       </p>
-                     )}
+                     {withdrawForm.amount && (() => {
+                       const est = formatWallet(withdrawForm.amount);
+                       return (
+                         <p className="text-[11px] text-[#0066ff] font-bold mt-1.5 flex items-center gap-1 bg-blue-50 w-max px-2 py-1 rounded border border-blue-100">
+                           You will receive: ~ {est.primary} {est.code !== 'USD' && `(${est.code})`}
+                         </p>
+                       );
+                     })()}
                    </div>
                    <div>
                      <label className="block text-xs font-bold text-gray-600 mb-1">Payment Method</label>
@@ -695,14 +694,18 @@ const BuyerDashboard = () => {
                  <p className="text-gray-500 text-sm text-center py-6">No withdrawal records found.</p>
                ) : (
                  <div className="space-y-3">
-                   {withdrawals.map(w => (
+                   {withdrawals.map(w => {
+                     const wAmt = formatWallet(w.amount);
+                     return (
                      <div key={w.id} className="flex justify-between items-center p-3 border border-gray-100 bg-gray-50 rounded-lg">
                        <div>
                          <p className="font-bold text-gray-800">
-                           ${Number(w.amount).toFixed(2)} 
+                           {wAmt.primary}
+                           {wAmt.secondary && (
                            <span className="text-[10px] text-green-600 font-bold ml-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
-                             (~ {(Number(w.amount) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code})
+                             ({wAmt.secondary})
                            </span>
+                           )}
                          </p>
                          <p className="text-[10px] text-gray-500 font-bold mt-1">via {w.payment_method}</p>
                          <p className="text-[10px] text-gray-400 mt-0.5">{new Date(w.created_at).toLocaleString()}</p>
@@ -719,7 +722,7 @@ const BuyerDashboard = () => {
                          </button>
                        </div>
                      </div>
-                   ))}
+                   );})}
                  </div>
                )}
              </div>
@@ -790,10 +793,19 @@ const BuyerDashboard = () => {
               <div className="flex justify-between items-center">
                 <span className="font-bold text-gray-500">Amount:</span> 
                 <div className="text-right">
-                  <span className="font-black text-green-600 text-lg">${Number(selectedWithdrawal.amount).toFixed(2)} USD</span>
-                  <p className="text-[10px] font-bold text-gray-500 mt-0.5 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 w-max ml-auto">
-                    ~ {(Number(selectedWithdrawal.amount) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
-                  </p>
+                  {(() => {
+                    const wDetail = formatWallet(selectedWithdrawal.amount);
+                    return (
+                      <>
+                        <span className="font-black text-green-600 text-lg">{wDetail.primary}</span>
+                        {wDetail.secondary && (
+                          <p className="text-[10px] font-bold text-gray-500 mt-0.5 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 w-max ml-auto">
+                            {wDetail.secondary}
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="w-full h-px bg-gray-200"></div>
@@ -1059,8 +1071,8 @@ const BuyerDashboard = () => {
               <h2 className="text-lg font-bold text-gray-800">{selectedItem.data.product_name}</h2>
               
               <div className="bg-gray-50 p-4 rounded-xl mt-4 border border-gray-100 flex justify-between">
-                <div><p className="text-xs text-gray-500">Price</p><p className="text-lg font-bold text-gray-800">${Number(selectedItem.data.price || 0).toFixed(2)}</p></div>
-                <div className="text-right"><p className="text-xs text-gray-500">Reward</p><p className="text-lg font-bold text-green-600">+ ${Number(selectedItem.data.reward || 0).toFixed(2)}</p></div>
+                <div><p className="text-xs text-gray-500">Price</p><p className="text-lg font-bold text-gray-800">{formatProduct(selectedItem.data.price, selectedItem.data.country).formatted}</p></div>
+                <div className="text-right"><p className="text-xs text-gray-500">Reward</p><p className="text-lg font-bold text-green-600">+ {formatProduct(selectedItem.data.reward, selectedItem.data.country).formatted}</p></div>
               </div>
 
               {['approved', 'order_submitted', 'order_approved', 'review_submitted', 'pending_refund', 'completed'].includes(selectedItem.data.application_status) && (

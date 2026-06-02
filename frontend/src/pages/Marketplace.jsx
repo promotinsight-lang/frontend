@@ -4,6 +4,7 @@ import {
   Search, Lock, ShieldAlert, Sparkles, Eye 
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { formatProductMoney } from '../utils/currency';
 
 export default function Marketplace() {
   const navigate = useNavigate();
@@ -246,6 +247,8 @@ function ProductCard({ product, user, onApply, navigate }) {
   const appliedQty = parseInt(product.application_count) || 0;
   const availableQty = Math.max(0, targetQty - appliedQty);
   const isSoldOut = (targetQty > 0 && availableQty === 0) || product.status === 'stopped';
+  const priceDisplay = formatProductMoney(product.price, product.country);
+  const rewardDisplay = formatProductMoney(product.reward, product.country);
 
   return (
     <div className={`bg-white rounded-lg overflow-hidden border ${isSoldOut ? 'border-gray-200 opacity-70' : 'border-gray-200 hover:border-emerald-300 hover:shadow-lg hover:-translate-y-1'} transition-all duration-300 flex flex-col h-full group`}>
@@ -273,13 +276,13 @@ function ProductCard({ product, user, onApply, navigate }) {
         </h3>
         <div className="flex justify-between items-end mb-4 pt-3 border-t border-gray-100">
           <div>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">Price</p>
-            <p className={`text-xl font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>${Number(product.price).toFixed(2)}</p>
+            <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">Price ({priceDisplay.code})</p>
+            <p className={`text-xl font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>{priceDisplay.formatted}</p>
           </div>
           <div className="text-right">
              <p className="text-[10px] text-emerald-600 font-bold uppercase mb-0.5 flex items-center gap-1 justify-end"><Sparkles size={10}/> Reward</p>
              <span className={`text-sm font-black px-2 py-1 rounded-md ${isSoldOut ? 'text-gray-400 bg-gray-100' : 'text-[#10b981] bg-emerald-50 border border-emerald-100'}`}>
-              +${Number(product.reward).toFixed(2)}
+              +{rewardDisplay.formatted}
             </span>
           </div>
         </div>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, Home, Bell, X, ShoppingBag, FileText } from 'lucide-react'; 
 import SidebarMenu from './SidebarMenu';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Navbar = () => {
+  const { t } = useLanguage();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -208,24 +210,24 @@ const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-               <Link to="/" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title="Home">
+               <Link to="/" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title={t('nav_home')}>
                  <Home size={22} />
                </Link>
 
-               <Link to="/blogs" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title="Blogs">
+               <Link to="/blogs" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title={t('nav_blogs')}>
                  <FileText size={22} />
                </Link>
 
                {user ? (
                  <>
                    {user.role !== 'admin' && (
-                     <Link to="/marketplace" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title="Marketplace">
+                     <Link to="/marketplace" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title={t('nav_marketplace')}>
                        <ShoppingBag size={22} />
                      </Link>
                    )}
 
                    <div className="relative">
-                     <div className="cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all flex items-center" onClick={toggleNotifications} title="Notifications">
+                     <div className="cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all flex items-center" onClick={toggleNotifications} title={t('nav_notifications')}>
                        <Bell size={22} />
                        {unreadCount > 0 && (
                          <span className="absolute top-1.5 right-1.5 bg-[#10b981] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm animate-pulse">
@@ -238,12 +240,12 @@ const Navbar = () => {
                        <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in-up">
                          
                          <div className="bg-gray-50/50 border-b border-gray-100 px-4 py-4 flex justify-between items-center">
-                           <h3 className="text-gray-900 font-black text-sm">Notifications</h3>
+                           <h3 className="text-gray-900 font-black text-sm">{t('notifications')}</h3>
                            <div className="flex items-center gap-3">
-                             <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{unreadCount} New</span>
+                             <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-bold">{unreadCount} {t('new_count')}</span>
                              {unreadCount > 0 && (
                                <button onClick={clearAllNotifications} className="text-[10px] text-red-500 hover:text-red-700 font-bold hover:underline transition-colors">
-                                 Clear All
+                                 {t('clear_all')}
                                </button>
                              )}
                            </div>
@@ -255,7 +257,7 @@ const Navbar = () => {
                                 <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
                                   <Bell size={20} className="text-gray-300" />
                                 </div>
-                                <p className="text-gray-400 text-xs font-medium">No new notifications.</p>
+                                <p className="text-gray-400 text-xs font-medium">{t('no_notifications')}</p>
                               </div>
                             ) : (
                               notifications.map((n, idx) => {
@@ -271,7 +273,7 @@ const Navbar = () => {
                                     >
                                       {/* 🔥 UPDATE: পড়া হলে নরমাল লেখা, না পড়া হলে বোল্ড (Bold) লেখা */}
                                       <p className={`text-sm text-gray-800 leading-tight mb-1 ${isRead ? 'font-medium' : 'font-black'}`}>{n.text}</p>
-                                      <p className={`text-[11px] ${isRead ? 'text-gray-400' : 'text-gray-600 font-medium'} line-clamp-1`}>{n.subtext || 'Click to view details'}</p>
+                                      <p className={`text-[11px] ${isRead ? 'text-gray-400' : 'text-gray-600 font-medium'} line-clamp-1`}>{n.subtext || t('click_to_view')}</p>
                                     </Link>
                                     
                                     <button 
@@ -292,8 +294,8 @@ const Navbar = () => {
                  </>
                ) : (
                  <div className="flex items-center gap-2 sm:gap-3 ml-2">
-                   <Link to="/login" className="text-sm font-bold text-gray-600 hover:text-[#10b981] transition-colors">Log In</Link>
-                   <Link to="/register" className="bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-sm transition-all">Sign Up</Link>
+                   <Link to="/login" className="text-sm font-bold text-gray-600 hover:text-[#10b981] transition-colors">{t('login')}</Link>
+                   <Link to="/register" className="bg-[#10b981] hover:bg-[#059669] text-white text-sm font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-sm transition-all">{t('signup')}</Link>
                  </div>
                )}
             </div>

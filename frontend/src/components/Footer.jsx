@@ -1,24 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Globe, ShieldCheck, X } from 'lucide-react';
-
-const LANGUAGE_STORAGE_KEY = 'language';
-
-const LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'es', label: 'Spanish', flag: '🇪🇸' },
-  { code: 'fr', label: 'French', flag: '🇫🇷' },
-];
-
-function getStoredLanguage() {
-  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  return LANGUAGES.find((l) => l.code === stored) ?? LANGUAGES[0];
-}
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function Footer() {
+  const { language, setLanguage, t, languages } = useLanguage();
   const [languageOpen, setLanguageOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(getStoredLanguage);
   const languageMenuRef = useRef(null);
 
   useEffect(() => {
@@ -52,9 +40,8 @@ export default function Footer() {
     };
   }, [securityOpen]);
 
-  const handleLanguageSelect = (lang) => {
-    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang.code);
-    setSelectedLanguage(lang);
+  const handleLanguageSelect = (code) => {
+    setLanguage(code);
     setLanguageOpen(false);
   };
 
@@ -66,39 +53,35 @@ export default function Footer() {
             <div className="text-white font-black text-2xl tracking-tight mb-2">
               PromotInsight.
             </div>
-            <p className="text-sm">
-              Connecting global sellers with real buyers for authentic e-commerce
-              growth.
-            </p>
+            <p className="text-sm">{t('footer_tagline')}</p>
           </div>
           <div className="flex justify-center gap-6 text-sm font-bold">
             <Link
               to="/terms"
               className="hover:text-white transition-colors"
             >
-              Terms of Use
+              {t('terms')}
             </Link>
             <Link
               to="/privacy"
               className="hover:text-white transition-colors"
             >
-              Privacy Policy
+              {t('privacy')}
             </Link>
             <Link
               to="/support"
               className="hover:text-white transition-colors"
             >
-              Support Center
+              {t('support')}
             </Link>
           </div>
           <div className="flex justify-center md:justify-end">
             <div className="bg-gray-800 p-3 rounded-xl inline-flex gap-4 relative">
-              {/* Language selector */}
               <div className="relative" ref={languageMenuRef}>
                 <button
                   type="button"
                   onClick={() => setLanguageOpen((open) => !open)}
-                  aria-label="Select language or region"
+                  aria-label={t('select_language')}
                   aria-expanded={languageOpen}
                   aria-haspopup="listbox"
                   className="text-gray-400 hover:text-white transition-colors p-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -109,18 +92,18 @@ export default function Footer() {
                 {languageOpen && (
                   <ul
                     role="listbox"
-                    aria-label="Language options"
+                    aria-label={t('language_options')}
                     className="absolute bottom-full right-0 mb-2 w-44 py-1 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden"
                   >
-                    {LANGUAGES.map((lang) => (
+                    {languages.map((lang) => (
                       <li key={lang.code} role="presentation">
                         <button
                           type="button"
                           role="option"
-                          aria-selected={selectedLanguage.code === lang.code}
-                          onClick={() => handleLanguageSelect(lang)}
+                          aria-selected={language === lang.code}
+                          onClick={() => handleLanguageSelect(lang.code)}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors hover:bg-gray-700 focus:outline-none focus-visible:bg-gray-700 ${
-                            selectedLanguage.code === lang.code
+                            language === lang.code
                               ? 'text-white bg-gray-700/50'
                               : 'text-gray-300'
                           }`}
@@ -136,11 +119,10 @@ export default function Footer() {
                 )}
               </div>
 
-              {/* Security & trust */}
               <button
                 type="button"
                 onClick={() => setSecurityOpen(true)}
-                aria-label="Security and trust information"
+                aria-label={t('security_trust')}
                 className="text-gray-400 hover:text-white transition-colors p-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <ShieldCheck size={20} aria-hidden="true" />
@@ -148,12 +130,9 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="text-center text-xs font-medium">
-          © 2025 PromotInsight. Built by WitchBella. All Rights Reserved.
-        </div>
+        <div className="text-center text-xs font-medium">{t('copyright')}</div>
       </footer>
 
-      {/* Security modal */}
       {securityOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
@@ -164,7 +143,7 @@ export default function Footer() {
           <button
             type="button"
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-            aria-label="Close security dialog"
+            aria-label={t('close_security')}
             onClick={() => setSecurityOpen(false)}
           />
           <div className="relative w-full max-w-md bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 text-gray-300">
@@ -181,29 +160,25 @@ export default function Footer() {
                   id="security-modal-title"
                   className="text-lg font-bold text-white"
                 >
-                  Security &amp; Trust
+                  {t('security_title')}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => setSecurityOpen(false)}
-                aria-label="Close"
+                aria-label={t('close')}
                 className="text-gray-400 hover:text-white p-1 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <X size={20} aria-hidden="true" />
               </button>
             </div>
-            <p className="text-sm leading-relaxed mb-4">
-              Your data is 100% secure. SSL Certified. We use industry-standard
-              encryption, secure escrow handling, and strict access controls to
-              protect your account and transactions.
-            </p>
+            <p className="text-sm leading-relaxed mb-4">{t('security_body')}</p>
             <Link
               to="/privacy"
               onClick={() => setSecurityOpen(false)}
               className="inline-flex items-center text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors focus:outline-none focus-visible:underline"
             >
-              Read our Privacy Policy →
+              {t('read_privacy')}
             </Link>
           </div>
         </div>

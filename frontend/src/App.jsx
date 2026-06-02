@@ -23,6 +23,7 @@ import Support from './pages/Support';
 // 🔥 NEW: Blog Pages Import
 import Blogs from './pages/Blogs';
 import BlogDetails from './pages/BlogDetails';
+import { LanguageProvider } from './i18n/LanguageContext';
 
 export default function App() {
   
@@ -69,10 +70,10 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-slate-950">
-        
-        <Routes>
+    <LanguageProvider>
+      <BrowserRouter>
+        <div className="min-h-screen bg-slate-950">
+          <Routes>
           {/* Admin login kora thakle homepage-er bodle shorasori dashboard-e jabe */}
           <Route 
             path="/" 
@@ -136,9 +137,9 @@ export default function App() {
           <Route path="/support" element={<Support />} />
 
           <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-        
-      </div>
-    </BrowserRouter>
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </LanguageProvider>
   );
 }
