@@ -7,6 +7,7 @@ import {
   Headset, PlusCircle, MessageCircle, Send, Megaphone, Users 
 } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
+import BottomNavbar from '../components/BottomNavbar';
 
 const BuyerDashboard = () => {
   const { formatWallet, formatProduct } = useBuyerCurrency();
@@ -383,7 +384,7 @@ const BuyerDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans pb-10 flex flex-col">
+    <div className="min-h-screen bg-gray-50 font-sans pb-24 md:pb-10 flex flex-col">
       <Navbar />
 
       <div className="bg-white px-4 py-6 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
@@ -1210,6 +1211,8 @@ const BuyerDashboard = () => {
           </div>
         </div>
       )}
+
+      <BottomNavbar />
 
       <style dangerouslySetInnerHTML={{__html: `
         .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }

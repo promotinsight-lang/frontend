@@ -7,6 +7,7 @@ import {
   Briefcase, LayoutDashboard
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { ResponsiveTableShell, AdminMobileCard, AdminField } from '../components/admin/AdminMobileUi';
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -655,7 +656,7 @@ export default function AdminDashboard() {
       <Navbar /> 
       
       <div className="bg-[#0066ff] pt-6 pb-12 px-4 shadow-lg text-white">
-        <div className="max-w-7xl mx-auto flex justify-between items-end">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
             <h2 className="text-2xl font-bold">Admin Master Panel</h2>
             <p className="text-blue-100 text-sm opacity-80">Smart Review System Management</p>
@@ -733,7 +734,103 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={
+                usersList.filter(
+                  (u) =>
+                    u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                    u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+                ).length === 0
+              }
+              emptyMessage="No users found."
+              mobile={usersList
+                .filter(
+                  (u) =>
+                    u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+                    u.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+                )
+                .map((user) => (
+                  <AdminMobileCard
+                    key={user.id}
+                    title={user.name}
+                    subtitle={user.email}
+                    className={!user.is_active ? 'border-red-200 bg-red-50/40' : ''}
+                    actions={
+                      <>
+                        <button
+                          onClick={() => fetchAndShowUserProfile(user.id)}
+                          className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          title="View Full Profile"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => toggleUserStatus(user.id, { is_frozen: !user.is_frozen })}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 ${user.is_frozen ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-600 border-blue-100'}`}
+                        >
+                          {user.is_frozen ? (
+                            <>
+                              <Play size={14} /> Unfreeze
+                            </>
+                          ) : (
+                            <>
+                              <Snowflake size={14} /> Freeze
+                            </>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => toggleUserStatus(user.id, { is_active: !user.is_active })}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 ${!user.is_active ? 'bg-green-500 text-white border-green-500' : 'bg-red-50 text-red-600 border-red-100'}`}
+                        >
+                          {user.is_active ? (
+                            <>
+                              <ShieldAlert size={14} /> Disable
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck size={14} /> Enable
+                            </>
+                          )}
+                        </button>
+                      </>
+                    }
+                  >
+                    <AdminField label="Verification">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${user.verification_status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
+                      >
+                        {user.verification_status}
+                      </span>
+                    </AdminField>
+                    <AdminField label="Trust">
+                      <button
+                        onClick={() => updateTrust(user.id, user.trust_score)}
+                        className="flex items-center gap-1 text-orange-500 font-bold ml-auto"
+                      >
+                        <Star size={14} fill="currentColor" /> {Number(user.trust_score || 0).toFixed(1)}
+                      </button>
+                    </AdminField>
+                    <AdminField label="Wallet">
+                      <span className="text-green-600 font-bold">
+                        ${Number(user.wallet_balance).toFixed(2)}
+                      </span>
+                    </AdminField>
+                    {user.last_ip && user.last_ip !== 'Unknown' && (
+                      <AdminField label="IP" align="start">
+                        <span className="text-xs">{user.ip_location || 'Unknown'}</span>
+                        <a
+                          href={`https://ipinfo.io/${user.last_ip}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#0066ff] text-xs font-bold"
+                        >
+                          {user.last_ip}
+                        </a>
+                      </AdminField>
+                    )}
+                  </AdminMobileCard>
+                ))}
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   <tr>
@@ -801,10 +898,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {usersList.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500">No users found.</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
@@ -955,7 +1051,40 @@ export default function AdminDashboard() {
                 <h3 className="font-bold text-gray-700">All Saved Fee Configurations</h3>
                 <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">{allFeeConfigs.length} Total</span>
               </div>
-              <div className="overflow-x-auto">
+              <ResponsiveTableShell
+                empty={allFeeConfigs.length === 0}
+                emptyMessage="No custom fees configured yet."
+                mobile={allFeeConfigs.map((conf) => {
+                  let tierCount = 0;
+                  if (Array.isArray(conf.platform_charge)) {
+                    tierCount = conf.platform_charge.length;
+                  } else {
+                    try {
+                      const parsed = JSON.parse(conf.platform_charge);
+                      if (Array.isArray(parsed)) tierCount = parsed.length;
+                    } catch (e) {}
+                  }
+                  return (
+                    <AdminMobileCard
+                      key={`${conf.country}-${conf.platform}`}
+                      title={`${conf.country} — ${conf.platform}`}
+                      actions={
+                        <>
+                          <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] bg-blue-50 p-2 rounded-lg text-xs font-bold flex items-center gap-1"><Edit size={14}/> Edit</button>
+                          <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 bg-red-50 p-2 rounded-lg text-xs font-bold flex items-center gap-1"><Trash2 size={14}/> Delete</button>
+                        </>
+                      }
+                    >
+                      <AdminField label="Platform fee">{tierCount > 0 ? `${tierCount} tiers` : `${conf.platform_charge}%`}</AdminField>
+                      <AdminField label="Ex. rate"><span className="text-[#0066ff] font-bold">{conf.exchange_rate || 1}</span></AdminField>
+                      <AdminField label="Reward">${conf.buyer_reward}</AdminField>
+                      <AdminField label="Refund">{conf.buyer_refund_fee}%</AdminField>
+                      <AdminField label="Deposit">{conf.seller_deposit_fee}%</AdminField>
+                      <AdminField label="Withdraw">{conf.seller_withdrawal_fee}%</AdminField>
+                    </AdminMobileCard>
+                  );
+                })}
+              >
                 <table className="w-full text-left text-sm">
                   <thead className="bg-gray-100 text-gray-600">
                     <tr>
@@ -1001,10 +1130,9 @@ export default function AdminDashboard() {
                         </tr>
                       );
                     })}
-                    {allFeeConfigs.length === 0 && <tr><td colSpan="9" className="p-6 text-center text-gray-500">No custom fees configured yet.</td></tr>}
                   </tbody>
                 </table>
-              </div>
+              </ResponsiveTableShell>
             </div>
 
             {/* Payment Receiving Accounts */}
@@ -1045,7 +1173,45 @@ export default function AdminDashboard() {
                 {appeals.filter(a => a.status === 'pending').length} Pending
               </span>
             </div>
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={appeals.length === 0}
+              emptyMessage="No appeals submitted yet."
+              mobile={appeals.map((appeal) => (
+                <AdminMobileCard
+                  key={appeal.id}
+                  title={appeal.name}
+                  subtitle={appeal.email}
+                  className={appeal.status === 'pending' ? 'border-indigo-200 bg-indigo-50/30' : ''}
+                  actions={
+                    <button
+                      onClick={() => {
+                        setSelectedAppeal(appeal);
+                        setShowAppealModal(true);
+                        setDisputeComment('');
+                      }}
+                      className="w-full bg-[#0066ff] text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                    >
+                      <Eye size={14} /> Resolve Issue
+                    </button>
+                  }
+                >
+                  <AdminField label="Role">{appeal.role}</AdminField>
+                  <AdminField label="Type">
+                    {appeal.appeal_type === 'order_dispute' ? 'Order Dispute' : 'Account Ban'}
+                  </AdminField>
+                  <AdminField label="Status">{renderStatusBadge(appeal.status)}</AdminField>
+                  <AdminField label="Reason" align="start">
+                    <span className="text-xs italic text-gray-500 text-left max-w-full">"{appeal.reason}"</span>
+                  </AdminField>
+                  <button
+                    onClick={() => fetchAndShowUserProfile(appeal.user_id)}
+                    className="text-[#0066ff] text-xs font-bold mt-2"
+                  >
+                    View Profile
+                  </button>
+                </AdminMobileCard>
+              ))}
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   <tr>
@@ -1091,12 +1257,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {appeals.length === 0 && (
-                    <tr><td colSpan="3" className="p-8 text-center text-gray-500">No appeals submitted yet.</td></tr>
-                  )}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
@@ -1113,7 +1276,37 @@ export default function AdminDashboard() {
               </span>
             </div>
             
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={supportTickets.length === 0}
+              emptyMessage="No support tickets found."
+              mobile={supportTickets.map((ticket) => (
+                <AdminMobileCard
+                  key={ticket.id}
+                  title={ticket.subject}
+                  subtitle={`${ticket.user_name} · ${ticket.user_email}`}
+                  className={ticket.status === 'open' ? 'border-yellow-200 bg-yellow-50/30' : ''}
+                  actions={
+                    <button
+                      onClick={() => openTicketView(ticket)}
+                      className="w-full bg-[#0066ff] text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                    >
+                      <MessageCircle size={14} /> Reply
+                    </button>
+                  }
+                >
+                  <AdminField label="Role">{ticket.user_role}</AdminField>
+                  <AdminField label="Status">{ticket.status}</AdminField>
+                  <AdminField label="Updated">
+                    {new Date(ticket.updated_at).toLocaleDateString()}
+                  </AdminField>
+                  <AdminField label="Message" align="start">
+                    <span className="text-xs text-gray-500 text-left max-w-full line-clamp-3">
+                      {ticket.message}
+                    </span>
+                  </AdminField>
+                </AdminMobileCard>
+              ))}
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   <tr>
@@ -1157,12 +1350,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {supportTickets.length === 0 && (
-                    <tr><td colSpan="4" className="p-8 text-center text-gray-500">No support tickets found.</td></tr>
-                  )}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
@@ -1260,7 +1450,36 @@ export default function AdminDashboard() {
                 <input type="text" placeholder="Search product..." className="pl-9 pr-4 py-1.5 border rounded-full text-sm focus:outline-none focus:border-blue-500" />
               </div>
             </div>
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={allProducts.length === 0}
+              emptyMessage="No products found in the system."
+              mobile={allProducts.map((p) => (
+                <AdminMobileCard
+                  key={p.id}
+                  title={p.product_name || p.store_name}
+                  subtitle={p.platform}
+                  actions={
+                    <button
+                      onClick={() => {
+                        setSelectedProductDetails(p);
+                        setShowProductModal(true);
+                      }}
+                      className="w-full bg-blue-50 text-blue-600 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                    >
+                      <Eye size={16} /> View Details
+                    </button>
+                  }
+                >
+                  {p.image_url && (
+                    <img src={p.image_url} alt="" className="w-full h-28 object-contain bg-gray-50 rounded-lg border mb-2 p-2" />
+                  )}
+                  <AdminField label="Seller">{p.seller_name}</AdminField>
+                  <AdminField label="Price">${p.price}</AdminField>
+                  <AdminField label="Reward"><span className="text-green-600">${p.reward}</span></AdminField>
+                  <AdminField label="Status">{renderStatusBadge(p.status)}</AdminField>
+                </AdminMobileCard>
+              ))}
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   <tr>
@@ -1299,10 +1518,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {allProducts.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500">No products found in the system.</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
@@ -1310,7 +1528,42 @@ export default function AdminDashboard() {
         {activeTab === 'applications' && (
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b"><h3 className="font-bold text-gray-700">Manage Buyer Orders & Applications</h3></div>
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={applications.length === 0}
+              emptyMessage="No applications found."
+              mobile={applications.map((app) => (
+                <AdminMobileCard
+                  key={app.id}
+                  title={app.product_name}
+                  subtitle={app.buyer_name}
+                  actions={
+                    <>
+                      {app.status === 'rejected' && (
+                        <button
+                          onClick={() => deleteApplication(app.id)}
+                          className="flex-1 border border-red-200 text-red-500 py-2 rounded-lg text-xs font-bold"
+                        >
+                          <Trash2 size={14} className="inline mr-1" /> Clear
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectedAppDetails(app);
+                          setShowAppDetailsModal(true);
+                        }}
+                        className="flex-1 bg-[#0066ff] text-white py-2 rounded-lg text-xs font-bold"
+                      >
+                        <Eye size={14} className="inline mr-1" /> Details
+                      </button>
+                    </>
+                  }
+                >
+                  <AdminField label="Buyer email">{app.buyer_email}</AdminField>
+                  <AdminField label="Reward"><span className="text-green-600">${app.reward}</span></AdminField>
+                  <AdminField label="Status">{renderStatusBadge(app.status)}</AdminField>
+                </AdminMobileCard>
+              ))}
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   <tr>
@@ -1372,10 +1625,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {applications.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-gray-500">No applications found.</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
@@ -1383,7 +1635,21 @@ export default function AdminDashboard() {
         {activeTab === 'deposits' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b"><h3 className="font-bold text-gray-700">Pending Deposit Requests</h3></div>
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={deposits.length === 0}
+              emptyMessage="No pending deposits."
+              mobile={deposits.map((d) => (
+                <AdminMobileCard key={d.id} title={d.email} subtitle={d.payment_method} actions={
+                  <>
+                    <button onClick={() => approveDeposit(d.id)} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold">Approve</button>
+                    <button onClick={() => rejectDeposit(d.id)} className="flex-1 bg-red-500 text-white py-2 rounded-lg text-xs font-bold">Reject</button>
+                  </>
+                }>
+                  <AdminField label="Amount"><span className="text-green-600 font-bold">${d.amount}</span></AdminField>
+                  <AdminField label="Trx ID"><span className="font-mono text-xs">{d.transaction_id}</span></AdminField>
+                </AdminMobileCard>
+              ))}
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   <tr><th className="p-4">User</th><th className="p-4">Amount</th><th className="p-4">Method</th><th className="p-4">Trx ID</th><th className="p-4 text-right">Actions</th></tr>
@@ -1401,10 +1667,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {deposits.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500">No pending deposits.</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
@@ -1412,7 +1677,22 @@ export default function AdminDashboard() {
         {activeTab === 'withdrawals' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b"><h3 className="font-bold text-gray-700">Pending Withdrawal Requests</h3></div>
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={withdrawals.length === 0}
+              emptyMessage="No pending withdrawals."
+              mobile={withdrawals.map((w) => (
+                <AdminMobileCard key={w.id} title={w.name} subtitle={w.email} actions={
+                  <>
+                    <button onClick={() => { setWithdrawalToApprove(w); setShowApproveWithdrawalModal(true); }} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold">Mark Paid</button>
+                    <button onClick={() => rejectWithdrawal(w.id)} className="flex-1 bg-gray-800 text-white py-2 rounded-lg text-xs font-bold">Reject</button>
+                  </>
+                }>
+                  <AdminField label="Amount"><span className="text-red-600 font-bold">${w.amount}</span></AdminField>
+                  <AdminField label="Method">{w.payment_method}</AdminField>
+                  <AdminField label="Account" align="start"><span className="text-xs break-all text-left max-w-full">{w.account_details}</span></AdminField>
+                </AdminMobileCard>
+              ))}
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   <tr><th className="p-4">User Info</th><th className="p-4">Amount</th><th className="p-4">Method</th><th className="p-4">Account Details</th><th className="p-4 text-right">Actions</th></tr>
@@ -1433,10 +1713,9 @@ export default function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {withdrawals.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500">No pending withdrawals.</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
@@ -1451,7 +1730,75 @@ export default function AdminDashboard() {
                 <button onClick={() => setSubTabHistory('refunds')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'refunds' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Product Refunds</button>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            <ResponsiveTableShell
+              empty={
+                (subTabHistory === 'withdrawals' && historyWithdrawals.length === 0) ||
+                (subTabHistory === 'deposits' && historyDeposits.length === 0) ||
+                (subTabHistory === 'refunds' && historyRefunds.length === 0)
+              }
+              emptyMessage="No records in this history tab."
+              mobile={
+                <>
+                  {subTabHistory === 'withdrawals' &&
+                    historyWithdrawals.map((w) => (
+                      <AdminMobileCard
+                        key={w.id}
+                        title={w.name}
+                        subtitle={w.email}
+                        actions={
+                          <button
+                            onClick={() => openTrxDetails(w, 'withdrawal')}
+                            className="w-full text-[#0066ff] py-2 text-xs font-bold border border-blue-100 rounded-lg bg-blue-50"
+                          >
+                            <Eye size={12} className="inline mr-1" /> View Details
+                          </button>
+                        }
+                      >
+                        <AdminField label="Amount"><span className="text-red-600 font-bold">${w.amount}</span></AdminField>
+                        <AdminField label="Method">{w.payment_method}</AdminField>
+                        <AdminField label="Date">{new Date(w.created_at).toLocaleDateString()}</AdminField>
+                        <AdminField label="Status">{renderStatusBadge(w.status)}</AdminField>
+                      </AdminMobileCard>
+                    ))}
+                  {subTabHistory === 'deposits' &&
+                    historyDeposits.map((d) => (
+                      <AdminMobileCard
+                        key={d.id}
+                        title={d.name}
+                        subtitle={d.email}
+                        actions={
+                          <button
+                            onClick={() => openTrxDetails(d, 'deposit')}
+                            className="w-full text-[#0066ff] py-2 text-xs font-bold border border-blue-100 rounded-lg bg-blue-50"
+                          >
+                            <Eye size={12} className="inline mr-1" /> View Details
+                          </button>
+                        }
+                      >
+                        <AdminField label="Amount"><span className="text-green-600 font-bold">${d.amount}</span></AdminField>
+                        <AdminField label="Method">{d.payment_method}</AdminField>
+                        <AdminField label="Trx">{d.transaction_id}</AdminField>
+                        <AdminField label="Date">{new Date(d.created_at).toLocaleDateString()}</AdminField>
+                        <AdminField label="Status">{renderStatusBadge(d.status)}</AdminField>
+                      </AdminMobileCard>
+                    ))}
+                  {subTabHistory === 'refunds' &&
+                    historyRefunds.map((r) => (
+                      <AdminMobileCard
+                        key={r.id}
+                        title={r.name}
+                        subtitle={r.email}
+                        className="border-red-100 bg-red-50/20"
+                      >
+                        <AdminField label="Refund"><span className="text-green-600 font-bold">+${Number(r.amount).toFixed(2)}</span></AdminField>
+                        <AdminField label="Description" align="start"><span className="text-xs italic text-left max-w-full">{r.description}</span></AdminField>
+                        <AdminField label="Date">{new Date(r.created_at).toLocaleDateString()}</AdminField>
+                        <AdminField label="Status">{renderStatusBadge(r.status)}</AdminField>
+                      </AdminMobileCard>
+                    ))}
+                </>
+              }
+            >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
                   {subTabHistory === 'withdrawals' ? (
@@ -1497,7 +1844,7 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTableShell>
           </div>
         )}
 
