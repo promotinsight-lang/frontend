@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard,
-  TrendingUp, ShieldCheck, Zap, Globe, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift 
+  TrendingUp, ShieldCheck, Zap, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift 
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -576,29 +577,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-gray-900 text-gray-400 py-12 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-b border-gray-800 pb-8 mb-8">
-          <div>
-             <div className="text-white font-black text-2xl tracking-tight mb-2">PromotInsight.</div>
-             <p className="text-sm">Connecting global sellers with real buyers for authentic e-commerce growth.</p>
-          </div>
-          <div className="flex justify-center gap-6 text-sm font-bold">
-            <Link to="/terms" className="hover:text-white transition-colors">Terms of Use</Link>
-            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link to="/support" className="hover:text-white transition-colors">Support Center</Link>
-          </div>
-          <div className="flex justify-end">
-             <div className="bg-gray-800 p-3 rounded-xl inline-flex gap-4">
-                <Globe size={20} className="text-gray-400 hover:text-white cursor-pointer"/>
-                <ShieldCheck size={20} className="text-gray-400 hover:text-white cursor-pointer"/>
-             </div>
-          </div>
-        </div>
-        <div className="text-center text-xs font-medium">
-          © 2025 PromotInsight. Built by WitchBella. All Rights Reserved.
-        </div>
-      </footer>
+      <Footer />
 
       <style dangerouslySetInnerHTML={{__html: `
         .animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
