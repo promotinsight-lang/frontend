@@ -20,13 +20,15 @@ export default function RoleSelection() {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Navbar />
       
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <button 
-          onClick={() => navigate('/')} 
-          className="absolute top-20 left-4 md:left-8 flex items-center gap-2 text-gray-500 hover:text-gray-800 font-bold transition-colors"
-        >
-          <ArrowLeft size={20} /> Back to Home
-        </button>
+      <div className="flex-1 flex flex-col items-center justify-center p-4 pt-6">
+        <div className="w-full max-w-3xl mb-10 md:mb-12">
+          <button 
+            onClick={() => navigate('/')} 
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 font-bold transition-colors"
+          >
+            <ArrowLeft size={20} /> Back to Home
+          </button>
+        </div>
 
         <div className="text-center mb-10 animate-fade-in-up">
           <h1 className="text-3xl md:text-4xl font-black text-gray-800 mb-2">Welcome to PromotInsight</h1>

@@ -98,10 +98,16 @@ export default function AdminDashboard() {
   // 🔥 DYNAMIC FEE CONFIGURATION STATES
   const [feeConfig, setFeeConfig] = useState({
     country: '', platform: '', platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', 
-    buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: '', exchange_rate: 1
+    buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: '', exchange_rate: 1,
+    verification_fields: [
+      { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
+      { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
+    ],
   });
   const [allFeeConfigs, setAllFeeConfigs] = useState([]);
   const [feeLoading, setFeeLoading] = useState(false);
+  const [globalVerificationFields, setGlobalVerificationFields] = useState([]);
+  const [verificationConfigLoading, setVerificationConfigLoading] = useState(false);
 
   const token = localStorage.getItem('token');
   const getAuthHeaders = () => {
@@ -149,11 +155,25 @@ export default function AdminDashboard() {
           } catch(e) { }
         }
 
+        let parsedVerificationFields = [
+          { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
+          { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
+        ];
+        if (Array.isArray(data.data.verification_fields) && data.data.verification_fields.length > 0) {
+          parsedVerificationFields = data.data.verification_fields;
+        } else if (typeof data.data.verification_fields === 'string') {
+          try {
+            const parsed = JSON.parse(data.data.verification_fields);
+            if (Array.isArray(parsed) && parsed.length > 0) parsedVerificationFields = parsed;
+          } catch (e) { /* keep defaults */ }
+        }
+
         setFeeConfig({
           country: data.data.country, platform: data.data.platform, platform_charge: parsedTiers,
           buyer_reward: data.data.buyer_reward, buyer_refund_fee: data.data.buyer_refund_fee,
           seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee,
-          exchange_rate: data.data.exchange_rate || 1
+          exchange_rate: data.data.exchange_rate || 1,
+          verification_fields: parsedVerificationFields,
         });
       } else {
         setFeeConfig(prev => ({
@@ -208,13 +228,96 @@ export default function AdminDashboard() {
       } catch(e) { }
     }
 
+    let parsedVerificationFields = [
+      { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
+      { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
+    ];
+    if (Array.isArray(config.verification_fields) && config.verification_fields.length > 0) {
+      parsedVerificationFields = config.verification_fields;
+    } else if (typeof config.verification_fields === 'string') {
+      try {
+        const parsed = JSON.parse(config.verification_fields);
+        if (Array.isArray(parsed) && parsed.length > 0) parsedVerificationFields = parsed;
+      } catch (e) { /* keep defaults */ }
+    }
+
     setFeeConfig({
       country: config.country, platform: config.platform, platform_charge: parsedTiers,
       buyer_reward: config.buyer_reward, buyer_refund_fee: config.buyer_refund_fee,
       seller_deposit_fee: config.seller_deposit_fee, seller_withdrawal_fee: config.seller_withdrawal_fee,
-      exchange_rate: config.exchange_rate || 1
+      exchange_rate: config.exchange_rate || 1,
+      verification_fields: parsedVerificationFields,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const fetchGlobalVerificationFields = async () => {
+    setVerificationConfigLoading(true);
+    try {
+      const res = await fetch('https://backend-6aiq.onrender.com/api/config/verification/global', {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) setGlobalVerificationFields(data.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setVerificationConfigLoading(false);
+    }
+  };
+
+  const saveGlobalVerificationFields = async () => {
+    const success = await handleAction(
+      'https://backend-6aiq.onrender.com/api/config/verification/global',
+      'PUT',
+      { fields: globalVerificationFields }
+    );
+    if (success) fetchGlobalVerificationFields();
+  };
+
+  const handleVerificationFieldChange = (index, prop, value) => {
+    setFeeConfig((prev) => {
+      const fields = [...prev.verification_fields];
+      fields[index] = { ...fields[index], [prop]: prop === 'required' ? Boolean(value) : value };
+      return { ...prev, verification_fields: fields };
+    });
+  };
+
+  const handleAddVerificationField = () => {
+    setFeeConfig((prev) => ({
+      ...prev,
+      verification_fields: [
+        ...prev.verification_fields,
+        { key: `field_${prev.verification_fields.length + 1}`, label: 'New Field', type: 'text', required: false, placeholder: '' },
+      ],
+    }));
+  };
+
+  const handleRemoveVerificationField = (index) => {
+    setFeeConfig((prev) => ({
+      ...prev,
+      verification_fields: prev.verification_fields.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleGlobalVerificationFieldChange = (index, prop, value) => {
+    setGlobalVerificationFields((prev) => {
+      const fields = [...prev];
+      fields[index] = { ...fields[index], [prop]: prop === 'required' ? Boolean(value) : value };
+      return fields;
+    });
+  };
+
+  const handleAddGlobalVerificationField = () => {
+    setGlobalVerificationFields((prev) => [
+      ...prev,
+      { key: `field_${prev.length + 1}`, label: 'New Field', type: 'text', required: false, placeholder: '' },
+    ]);
+  };
+
+  const handleRemoveGlobalVerificationField = (index) => {
+    setGlobalVerificationFields((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveFeeConfig = async (e) => {
@@ -407,7 +510,7 @@ export default function AdminDashboard() {
     if (activeTab === 'withdrawals' || activeTab === 'history') fetchWithdrawals();
     if (activeTab === 'history') fetchRefunds(); 
     if (activeTab === 'products' || activeTab === 'all-products') fetchProducts();
-    if (activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); } 
+    if (activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); fetchGlobalVerificationFields(); } 
     if (activeTab === 'applications') fetchApplications(); 
     if (activeTab === 'verify-requests') fetchVerifications(); 
     if (activeTab === 'appeals') fetchAppeals(); 
@@ -673,7 +776,7 @@ export default function AdminDashboard() {
             if(activeTab === 'support-tickets') fetchSupportTickets();
             if(activeTab === 'announcements') fetchAnnouncements();
             if(activeTab === 'blogs') fetchAdminBlogs();
-            if(activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); }
+            if(activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); fetchGlobalVerificationFields(); }
           }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-all">
             <RefreshCcw size={20} />
           </button>
@@ -1040,10 +1143,65 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                <div className="col-span-full mb-2 bg-amber-50 border border-amber-100 p-4 rounded-xl">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-800">Buyer Verification Fields (this Country + Platform)</label>
+                      <p className="text-[10px] text-gray-500">Shown on buyer verification after they select this country and platform.</p>
+                    </div>
+                    <button type="button" onClick={handleAddVerificationField} className="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-200">+ Add Field</button>
+                  </div>
+                  {feeConfig.verification_fields.map((field, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-3 bg-white p-3 rounded-lg border items-end">
+                      <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm" /></div>
+                      <div className="md:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm" /></div>
+                      <div><label className="text-[10px] font-bold text-gray-500">Type</label><select value={field.type} onChange={(e) => handleVerificationFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded text-sm"><option value="text">Text</option><option value="email">Email</option><option value="url">URL</option><option value="tel">Phone</option></select></div>
+                      <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm" /></div>
+                      <div className="flex items-center gap-2 pb-2">
+                        <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={!!field.required} onChange={(e) => handleVerificationFieldChange(index, 'required', e.target.checked)} /> Required</label>
+                        {feeConfig.verification_fields.length > 1 && (
+                          <button type="button" onClick={() => handleRemoveVerificationField(index)} className="p-2 bg-red-50 text-red-600 rounded-lg"><Trash2 size={14} /></button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 <div className="flex justify-end pt-2">
                   <button type="submit" disabled={feeLoading || !feeConfig.country || !feeConfig.platform} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50">Save & Apply Tariffs</button>
                 </div>
               </form>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-bold text-xl text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
+                <ShieldCheck size={22} className="text-green-600" /> Global Buyer Verification Fields
+              </h3>
+              <p className="text-xs text-gray-500 mb-4">PayPal, WhatsApp, Facebook, etc. — shown for every country/platform selection.</p>
+              {verificationConfigLoading ? (
+                <p className="text-sm text-gray-500">Loading...</p>
+              ) : (
+                <>
+                  <div className="space-y-3 mb-4">
+                    {globalVerificationFields.map((field, index) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-2 bg-gray-50 p-3 rounded-lg border items-end">
+                        <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleGlobalVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" /></div>
+                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleGlobalVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" /></div>
+                        <div><label className="text-[10px] font-bold text-gray-500">Type</label><select value={field.type} onChange={(e) => handleGlobalVerificationFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded text-sm bg-white"><option value="text">Text</option><option value="email">Email</option><option value="url">URL</option><option value="tel">Phone</option></select></div>
+                        <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleGlobalVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" /></div>
+                        <div className="flex items-center gap-2 pb-2">
+                          <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={!!field.required} onChange={(e) => handleGlobalVerificationFieldChange(index, 'required', e.target.checked)} /> Required</label>
+                          <button type="button" onClick={() => handleRemoveGlobalVerificationField(index)} className="p-2 bg-red-50 text-red-600 rounded-lg"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={handleAddGlobalVerificationField} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold">+ Add Global Field</button>
+                    <button type="button" onClick={saveGlobalVerificationFields} className="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700">Save Global Fields</button>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">

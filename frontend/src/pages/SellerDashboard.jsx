@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import AddProduct from '../components/AddProduct';
+import SellerTariffsPage from '../components/SellerTariffsPage';
 import { 
   Package, PlusCircle, LayoutDashboard, Wallet, Clock,
   Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
-  Headset, MessageCircle, Send, History
+  Headset, MessageCircle, Send, History, Settings
 } from 'lucide-react';
 
 // ================= SECURITY HELPER =================
@@ -755,6 +756,8 @@ export default function SellerDashboard() {
         )}
 
         {/* SUPPORT TAB */}
+        {activeTab === 'tariffs' && <SellerTariffsPage />}
+
         {!loading && activeTab === 'support' && (
           <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
              <button 
