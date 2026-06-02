@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { ResponsiveTableShell, AdminMobileCard, AdminField } from '../components/admin/AdminMobileUi';
+import VerificationFieldsGuide from '../components/admin/VerificationFieldsGuide';
+
+const API_BASE = 'https://backend-6aiq.onrender.com';
 
 export default function AdminDashboard() {
   const location = useLocation();
@@ -168,12 +171,26 @@ export default function AdminDashboard() {
           } catch (e) { /* keep defaults */ }
         }
 
+        let platformVerFields = parsedVerificationFields;
+        try {
+          const vRes = await fetch(
+            `${API_BASE}/api/admin/verification-config/platform?country=${encodeURIComponent(country)}&platform=${encodeURIComponent(platform)}`,
+            { headers: getAuthHeaders(), credentials: 'include' }
+          );
+          if (vRes.ok) {
+            const vData = await vRes.json();
+            if (vData.success && Array.isArray(vData.data) && vData.data.length > 0) {
+              platformVerFields = vData.data;
+            }
+          }
+        } catch (e) { /* use fee row fields */ }
+
         setFeeConfig({
           country: data.data.country, platform: data.data.platform, platform_charge: parsedTiers,
           buyer_reward: data.data.buyer_reward, buyer_refund_fee: data.data.buyer_refund_fee,
           seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee,
           exchange_rate: data.data.exchange_rate || 1,
-          verification_fields: parsedVerificationFields,
+          verification_fields: platformVerFields,
         });
       } else {
         setFeeConfig(prev => ({
@@ -254,10 +271,16 @@ export default function AdminDashboard() {
   const fetchGlobalVerificationFields = async () => {
     setVerificationConfigLoading(true);
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/config/verification/global', {
+      let res = await fetch(`${API_BASE}/api/admin/verification-config/global`, {
         headers: getAuthHeaders(),
         credentials: 'include',
       });
+      if (res.status === 404) {
+        res = await fetch(`${API_BASE}/api/config/verification/global`, {
+          headers: getAuthHeaders(),
+          credentials: 'include',
+        });
+      }
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) setGlobalVerificationFields(data.data);
     } catch (err) {
@@ -269,11 +292,28 @@ export default function AdminDashboard() {
 
   const saveGlobalVerificationFields = async () => {
     const success = await handleAction(
-      'https://backend-6aiq.onrender.com/api/config/verification/global',
-      'PUT',
+      `${API_BASE}/api/admin/verification-config/global`,
+      'POST',
       { fields: globalVerificationFields }
     );
     if (success) fetchGlobalVerificationFields();
+  };
+
+  const savePlatformVerificationFields = async () => {
+    if (!feeConfig.country.trim() || !feeConfig.platform.trim()) {
+      alert('Enter Country and Platform above first (same as tariffs).');
+      return;
+    }
+    const success = await handleAction(
+      `${API_BASE}/api/admin/verification-config/platform`,
+      'POST',
+      {
+        country: feeConfig.country.trim(),
+        platform: feeConfig.platform.trim(),
+        fields: feeConfig.verification_fields,
+      }
+    );
+    if (success) fetchFeeConfig(feeConfig.country, feeConfig.platform);
   };
 
   const handleVerificationFieldChange = (index, prop, value) => {
@@ -335,11 +375,23 @@ export default function AdminDashboard() {
 
     const payload = {
       ...feeConfig,
-      platform_charge: JSON.stringify(feeConfig.platform_charge) 
+      platform_charge: JSON.stringify(feeConfig.platform_charge),
+      verification_fields: feeConfig.verification_fields,
     };
     
-    const success = await handleAction('https://backend-6aiq.onrender.com/api/config/fees', 'POST', payload);
-    if (success) fetchAllFeeConfigs();
+    const success = await handleAction(`${API_BASE}/api/config/fees`, 'POST', payload);
+    if (success) {
+      await handleAction(
+        `${API_BASE}/api/admin/verification-config/platform`,
+        'POST',
+        {
+          country: feeConfig.country.trim(),
+          platform: feeConfig.platform.trim(),
+          fields: feeConfig.verification_fields,
+        }
+      );
+      fetchAllFeeConfigs();
+    }
   };
 
   const handleDeleteFeeConfig = async (country, platform) => {
@@ -1144,19 +1196,20 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="col-span-full mb-2 bg-amber-50 border border-amber-100 p-4 rounded-xl">
-                  <div className="flex justify-between items-center mb-4">
+                  <VerificationFieldsGuide variant="platform" />
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
                     <div>
                       <label className="block text-sm font-bold text-gray-800">Buyer Verification Fields (this Country + Platform)</label>
-                      <p className="text-[10px] text-gray-500">Shown on buyer verification after they select this country and platform.</p>
+                      <p className="text-[10px] text-gray-500">Buyer verification-এ এই country + platform বেছে নিলে এই ফিল্ডগুলো দেখাবে। Tariffs আলাদা; নিচের বাটন দিয়ে শুধু verification সেভ করুন।</p>
                     </div>
-                    <button type="button" onClick={handleAddVerificationField} className="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-200">+ Add Field</button>
+                    <button type="button" onClick={handleAddVerificationField} className="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-200 shrink-0">+ Add Field</button>
                   </div>
                   {feeConfig.verification_fields.map((field, index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-2 mb-3 bg-white p-3 rounded-lg border items-end">
-                      <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm" /></div>
-                      <div className="md:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm" /></div>
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 mb-3 bg-white p-3 rounded-lg border items-end">
+                      <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="account_name" /></div>
+                      <div className="sm:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Amazon Account Name" /></div>
                       <div><label className="text-[10px] font-bold text-gray-500">Type</label><select value={field.type} onChange={(e) => handleVerificationFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded text-sm"><option value="text">Text</option><option value="email">Email</option><option value="url">URL</option><option value="tel">Phone</option></select></div>
-                      <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm" /></div>
+                      <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Example for buyer..." /></div>
                       <div className="flex items-center gap-2 pb-2">
                         <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={!!field.required} onChange={(e) => handleVerificationFieldChange(index, 'required', e.target.checked)} /> Required</label>
                         {feeConfig.verification_fields.length > 1 && (
@@ -1165,10 +1218,18 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ))}
+                  <button
+                    type="button"
+                    onClick={savePlatformVerificationFields}
+                    disabled={!feeConfig.country || !feeConfig.platform}
+                    className="w-full sm:w-auto bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-amber-700 disabled:opacity-50"
+                  >
+                    Save Verification Fields (this Country + Platform)
+                  </button>
                 </div>
 
-                <div className="flex justify-end pt-2">
-                  <button type="submit" disabled={feeLoading || !feeConfig.country || !feeConfig.platform} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50">Save & Apply Tariffs</button>
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                  <button type="submit" disabled={feeLoading || !feeConfig.country || !feeConfig.platform} className="w-full sm:w-auto bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors disabled:opacity-50">Save & Apply Tariffs (fees only)</button>
                 </div>
               </form>
             </div>
@@ -1177,18 +1238,19 @@ export default function AdminDashboard() {
               <h3 className="font-bold text-xl text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
                 <ShieldCheck size={22} className="text-green-600" /> Global Buyer Verification Fields
               </h3>
-              <p className="text-xs text-gray-500 mb-4">PayPal, WhatsApp, Facebook, etc. — shown for every country/platform selection.</p>
+              <p className="text-xs text-gray-500 mb-2">PayPal, WhatsApp, Facebook, etc. — buyer যেকোনো country/platform বেছে নিলেও দেখাবে।</p>
+              <VerificationFieldsGuide variant="global" />
               {verificationConfigLoading ? (
                 <p className="text-sm text-gray-500">Loading...</p>
               ) : (
                 <>
                   <div className="space-y-3 mb-4">
                     {globalVerificationFields.map((field, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-2 bg-gray-50 p-3 rounded-lg border items-end">
-                        <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleGlobalVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" /></div>
-                        <div className="md:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleGlobalVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" /></div>
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 bg-gray-50 p-3 rounded-lg border items-end">
+                        <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleGlobalVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="paypal_account" /></div>
+                        <div className="sm:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleGlobalVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="PayPal Email Address" /></div>
                         <div><label className="text-[10px] font-bold text-gray-500">Type</label><select value={field.type} onChange={(e) => handleGlobalVerificationFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded text-sm bg-white"><option value="text">Text</option><option value="email">Email</option><option value="url">URL</option><option value="tel">Phone</option></select></div>
-                        <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleGlobalVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" /></div>
+                        <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleGlobalVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="yourname@email.com" /></div>
                         <div className="flex items-center gap-2 pb-2">
                           <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={!!field.required} onChange={(e) => handleGlobalVerificationFieldChange(index, 'required', e.target.checked)} /> Required</label>
                           <button type="button" onClick={() => handleRemoveGlobalVerificationField(index)} className="p-2 bg-red-50 text-red-600 rounded-lg"><Trash2 size={14} /></button>
@@ -1196,7 +1258,7 @@ export default function AdminDashboard() {
                       </div>
                     ))}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <button type="button" onClick={handleAddGlobalVerificationField} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold">+ Add Global Field</button>
                     <button type="button" onClick={saveGlobalVerificationFields} className="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700">Save Global Fields</button>
                   </div>
