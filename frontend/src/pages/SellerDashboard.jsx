@@ -49,9 +49,10 @@ export default function SellerDashboard() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawData, setWithdrawData] = useState({ 
     amount: '', payment_method: '', account_details: '',
-    crypto_address: '', crypto_network: '', crypto_memo: '' 
+    crypto_address: '', crypto_network: '', crypto_memo: '', qr_code_url: '' 
   });
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isUploadingWithdrawQR, setIsUploadingWithdrawQR] = useState(false);
   const [localCurrencyInfo, setLocalCurrencyInfo] = useState({ rate: 1, code: 'Local' });
 
   const [showViewModal, setShowViewModal] = useState(false);
@@ -287,6 +288,30 @@ export default function SellerDashboard() {
     const method = paymentMethods.find(m => m.name === methodName);
     setSelectedDepositMethod(method);
     setDepositData(prev => ({ ...prev, payment_method: methodName, crypto_network: '' }));
+  };
+
+  const handleWithdrawQrUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploadingWithdrawQR(true);
+    try {
+      const cloudData = new FormData();
+      cloudData.append("file", file);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST", body: cloudData,
+      });
+      const cloudJson = await res.json();
+      if (cloudJson.secure_url) {
+        setWithdrawData(prev => ({ ...prev, qr_code_url: cloudJson.secure_url }));
+      }
+    } catch (error) {
+      alert("QR Code upload failed!");
+    } finally {
+      setIsUploadingWithdrawQR(false);
+    }
   };
 
   const handleWithdrawMethodChange = (methodName) => {
@@ -1253,6 +1278,33 @@ export default function SellerDashboard() {
                   )}
                 </div>
               )}
+
+              {/* 🔥 NEW: Seller Uploads Receiving QR Code */}
+              {selectedWithdrawMethod && (
+                <div className="bg-white p-3 rounded-lg border border-gray-200 mb-6 animate-fade-in">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">My Receiving QR Code (Optional)</label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleWithdrawQrUpload} 
+                    className="w-full text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"
+                  />
+                  {isUploadingWithdrawQR && <p className="text-[10px] text-red-600 mt-1 animate-pulse font-bold">Uploading QR Code...</p>}
+                  {withdrawData.qr_code_url && (
+                    <div className="mt-2 relative inline-block">
+                      <img src={withdrawData.qr_code_url} alt="QR Code" className="w-20 h-20 object-contain border rounded shadow-sm p-1 bg-gray-50" />
+                      <button 
+                        type="button"
+                        onClick={() => setWithdrawData({...withdrawData, qr_code_url: ''})} 
+                        className="absolute -top-2 -right-2 bg-gray-800 text-white rounded-full p-1 shadow-md hover:bg-black"
+                      >
+                        <X size={12}/>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex justify-end gap-3">
                 <button type="button" onClick={() => setShowWithdrawModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
                 <button type="submit" disabled={isWithdrawing} className="px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold shadow-md disabled:bg-red-300 transition-colors">

@@ -2225,6 +2225,23 @@ export default function AdminDashboard() {
                 ) : (
                   <p className="font-mono text-sm break-all bg-white p-1 mt-1 border rounded">{withdrawalToApprove.account_details}</p>
                 )}
+                
+                {/* 🔥 Show User's Uploaded QR Code */}
+                {withdrawalToApprove.qr_code_url && (
+                  <div className="mt-3 bg-white p-2 border rounded">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">User's Receiving QR Code:</p>
+                    <img 
+                      src={withdrawalToApprove.qr_code_url} 
+                      alt="User QR Code" 
+                      className="w-20 h-20 object-contain border p-1 rounded cursor-pointer hover:opacity-80 transition-opacity shadow-sm" 
+                      onClick={() => { 
+                        setFullImageUrl(withdrawalToApprove.qr_code_url); 
+                        setShowFullImageModal(true); 
+                      }}
+                      title="Click to view full screen"
+                    />
+                  </div>
+                )}
               </div>
 
               <form onSubmit={submitWithdrawalApproval} className="space-y-4">
