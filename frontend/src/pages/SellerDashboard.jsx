@@ -1375,26 +1375,44 @@ export default function SellerDashboard() {
               <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Method:</span> <span className="font-bold bg-white px-3 py-1 rounded shadow-sm border border-gray-100">{selectedTrx.payment_method}</span></p>
               <div className="w-full h-px bg-gray-200"></div>
               
-              {trxType === 'withdrawal' && selectedTrx.account_details && (
-                <div className="bg-white p-3 border border-gray-100 rounded-xl shadow-sm">
-                  <span className="font-bold text-gray-400 block text-[10px] uppercase tracking-wider mb-1.5">To Account:</span>
-                  <span className="font-mono text-sm font-medium break-all">{selectedTrx.account_details}</span>
+              {/* Account / Wallet Details Section */}
+              {(selectedTrx.account_details || selectedTrx.crypto_address) && (
+                <div className="bg-white p-3 border border-gray-100 rounded-xl shadow-sm mt-3">
+                  <span className="font-bold text-gray-400 block text-[10px] uppercase tracking-wider mb-1.5">
+                    {trxType === 'deposit' ? 'From Account / Wallet:' : 'To Account:'}
+                  </span>
+                  
+                  {selectedTrx.crypto_address ? (
+                    <div className="space-y-1 text-xs text-gray-700">
+                      <p><span className="font-semibold">Address:</span> <span className="font-mono break-all font-medium text-gray-800">{selectedTrx.crypto_address}</span></p>
+                      {selectedTrx.crypto_network && <p><span className="font-semibold">Network:</span> {selectedTrx.crypto_network}</p>}
+                      {selectedTrx.crypto_memo && <p><span className="font-semibold">Memo:</span> {selectedTrx.crypto_memo}</p>}
+                    </div>
+                  ) : (
+                    <span className="font-mono text-sm font-medium break-all">{selectedTrx.account_details}</span>
+                  )}
                 </div>
               )}
 
+              {/* Payment Proof Section */}
               {(selectedTrx.transaction_id || selectedTrx.screenshot_url) && (
                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mt-3 shadow-sm">
                   <p className="font-black text-blue-800 text-[10px] uppercase tracking-wider mb-3 flex items-center gap-1"><ShieldCheck size={14}/> Payment Proof</p>
+                  
                   {selectedTrx.transaction_id && (
                      <div className="mb-3">
                        <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Trx ID:</p>
                        <p className="font-mono bg-white px-2 py-1.5 border border-blue-200 rounded font-bold text-gray-800 break-all">{selectedTrx.transaction_id}</p>
                      </div>
                   )}
+                  
                   {selectedTrx.screenshot_url && (
-                     <a href={selectedTrx.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 text-[#0066ff] font-bold hover:bg-blue-100 text-sm bg-white px-3 py-2 rounded-lg border border-blue-200 shadow-sm transition-colors">
-                       <ImageIcon size={16} /> View Attached Image
-                     </a>
+                     <div>
+                       <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Screenshot:</p>
+                       <a href={selectedTrx.screenshot_url} target="_blank" rel="noreferrer" className="inline-block mt-1">
+                         <img src={selectedTrx.screenshot_url} alt="Proof" className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-sm hover:opacity-80 transition-opacity" />
+                       </a>
+                     </div>
                   )}
                 </div>
               )}
