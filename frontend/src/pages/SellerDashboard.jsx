@@ -36,11 +36,21 @@ export default function SellerDashboard() {
   // Modal States
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState([]); 
-  const [depositData, setDepositData] = useState({ amount: '', payment_method: 'PayPal', transaction_id: '' });
+  const [paymentMethods, setPaymentMethods] = useState([]); 
+  const [selectedDepositMethod, setSelectedDepositMethod] = useState(null); 
+  const [selectedWithdrawMethod, setSelectedWithdrawMethod] = useState(null); 
+  
+  const [depositData, setDepositData] = useState({ 
+    amount: '', payment_method: '', transaction_id: '',
+    account_details: '', crypto_address: '', crypto_network: '', crypto_memo: '' 
+  });
   const [isDepositing, setIsDepositing] = useState(false);
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [withdrawData, setWithdrawData] = useState({ amount: '', payment_method: 'Bank', account_details: '' });
+  const [withdrawData, setWithdrawData] = useState({ 
+    amount: '', payment_method: '', account_details: '',
+    crypto_address: '', crypto_network: '', crypto_memo: '' 
+  });
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [localCurrencyInfo, setLocalCurrencyInfo] = useState({ rate: 1, code: 'Local' });
 
@@ -149,7 +159,13 @@ export default function SellerDashboard() {
       const settingsData = await settingsRes.json();
       if (settingsData.success && settingsData.data.length > 0) {
         setPaymentSettings(settingsData.data);
-        setDepositData(prev => ({ ...prev, payment_method: settingsData.data[0].method_name }));
+      }
+
+      // Fetch dynamic payment methods
+      const pmRes = await fetch('https://backend-6aiq.onrender.com/api/payment-methods/list', { headers: authHeaders });
+      const pmData = await pmRes.json();
+      if (pmRes.ok && pmData.success) {
+         setPaymentMethods(pmData.data || []);
       }
 
       try {
@@ -265,6 +281,18 @@ export default function SellerDashboard() {
     } finally {
       setIsAppealing(false);
     }
+  };
+
+  const handleDepositMethodChange = (methodName) => {
+    const method = paymentMethods.find(m => m.name === methodName);
+    setSelectedDepositMethod(method);
+    setDepositData(prev => ({ ...prev, payment_method: methodName, crypto_network: '' }));
+  };
+
+  const handleWithdrawMethodChange = (methodName) => {
+    const method = paymentMethods.find(m => m.name === methodName);
+    setSelectedWithdrawMethod(method);
+    setWithdrawData(prev => ({ ...prev, payment_method: methodName, crypto_network: '' }));
   };
 
   const handleDeposit = async (e) => {
@@ -1094,14 +1122,54 @@ export default function SellerDashboard() {
               </div>
               <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Payment Method</label>
-                <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none transition-colors font-semibold cursor-pointer" value={depositData.payment_method} onChange={e => setDepositData({...depositData, payment_method: e.target.value})}>
-                  {paymentSettings.map(setting => <option key={setting.id} value={setting.method_name}>{setting.method_name}</option>)}
+                <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none transition-colors font-semibold cursor-pointer" value={depositData.payment_method} onChange={e => handleDepositMethodChange(e.target.value)}>
+                  <option value="">Select Method</option>
+                  {paymentMethods.map(method => <option key={method.id} value={method.name}>{method.name}</option>)}
                 </select>
               </div>
-              <div className="mb-5 bg-blue-50 border border-blue-200 p-5 rounded-xl">
-                <p className="text-xs text-[#0066ff] font-bold uppercase tracking-wider mb-2">Send Payment To:</p>
-                <p className="font-mono text-base font-black text-gray-800 break-all bg-white p-2 rounded border shadow-sm">{paymentSettings.find(s => s.method_name === depositData.payment_method)?.account_details || 'Loading...'}</p>
-              </div>
+
+              {selectedDepositMethod && (
+                <div className="space-y-4 mb-5 animate-fade-in">
+                  <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl">
+                    <p className="text-xs text-[#0066ff] font-bold uppercase tracking-wider mb-2">Send Payment To:</p>
+                    <p className="font-mono text-base font-black text-gray-800 break-all bg-white p-2 rounded border shadow-sm">
+                      {paymentSettings.find(s => s.method_name === selectedDepositMethod.name)?.account_details || selectedDepositMethod.example_address || 'Details will be provided by admin'}
+                    </p>
+                  </div>
+
+                  {selectedDepositMethod.requires_account_details && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Your Account Details</label>
+                      <input required type="text" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={depositData.account_details} onChange={e => setDepositData({...depositData, account_details: e.target.value})} placeholder="Your sending account details" />
+                    </div>
+                  )}
+
+                  {selectedDepositMethod.requires_address && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Your Wallet Address</label>
+                      <input required type="text" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={depositData.crypto_address} onChange={e => setDepositData({...depositData, crypto_address: e.target.value})} placeholder="Your sending wallet address" />
+                    </div>
+                  )}
+
+                  {selectedDepositMethod.requires_network && selectedDepositMethod.networks && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Network</label>
+                      <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={depositData.crypto_network} onChange={e => setDepositData({...depositData, crypto_network: e.target.value})}>
+                        <option value="">Select Network</option>
+                        {selectedDepositMethod.networks.map(net => <option key={net.id} value={net.code}>{net.name} ({net.code})</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {selectedDepositMethod.requires_memo && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Memo / Tag</label>
+                      <input required type="text" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={depositData.crypto_memo} onChange={e => setDepositData({...depositData, crypto_memo: e.target.value})} placeholder="Transaction Memo/Tag" />
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mb-8">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Transaction ID (Trx ID)</label>
                 <input type="text" required placeholder="e.g. TRX123456789" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none transition-colors" value={depositData.transaction_id} onChange={(e) => setDepositData({...depositData, transaction_id: e.target.value})} />
@@ -1137,16 +1205,46 @@ export default function SellerDashboard() {
               </div>
               <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Withdrawal Method</label>
-                <select className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-500 outline-none transition-colors font-semibold cursor-pointer" value={withdrawData.payment_method} onChange={e => setWithdrawData({...withdrawData, payment_method: e.target.value})}>
-                  <option value="Bank">Bank Transfer</option>
-                  <option value="PayPal">PayPal</option>
-                  <option value="Crypto">Crypto (USDT)</option>
+                <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-red-500 outline-none transition-colors font-semibold cursor-pointer" value={withdrawData.payment_method} onChange={e => handleWithdrawMethodChange(e.target.value)}>
+                  <option value="">Select Method</option>
+                  {paymentMethods.map(method => <option key={method.id} value={method.name}>{method.name}</option>)}
                 </select>
               </div>
-              <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Account Details</label>
-                <textarea required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl h-28 focus:bg-white focus:ring-2 focus:ring-red-500 outline-none transition-colors resize-none text-sm" placeholder="Provide bank/paypal details..." value={withdrawData.account_details} onChange={e => setWithdrawData({...withdrawData, account_details: e.target.value})}></textarea>
-              </div>
+
+              {selectedWithdrawMethod && (
+                <div className="space-y-4 mb-8 animate-fade-in">
+                  {selectedWithdrawMethod.requires_account_details && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">{selectedWithdrawMethod.name} Account Details</label>
+                      <textarea required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl h-24 outline-none resize-none text-sm" placeholder="Provide exact receiving details..." value={withdrawData.account_details} onChange={e => setWithdrawData({...withdrawData, account_details: e.target.value})}></textarea>
+                    </div>
+                  )}
+
+                  {selectedWithdrawMethod.requires_address && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Wallet Address</label>
+                      <input required type="text" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={withdrawData.crypto_address} onChange={e => setWithdrawData({...withdrawData, crypto_address: e.target.value})} placeholder="Enter crypto wallet address" />
+                    </div>
+                  )}
+
+                  {selectedWithdrawMethod.requires_network && selectedWithdrawMethod.networks && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Network</label>
+                      <select required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={withdrawData.crypto_network} onChange={e => setWithdrawData({...withdrawData, crypto_network: e.target.value})}>
+                        <option value="">Select Network</option>
+                        {selectedWithdrawMethod.networks.map(net => <option key={net.id} value={net.code}>{net.name} ({net.code})</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {selectedWithdrawMethod.requires_memo && (
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Memo / Tag</label>
+                      <input required type="text" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none" value={withdrawData.crypto_memo} onChange={e => setWithdrawData({...withdrawData, crypto_memo: e.target.value})} placeholder="Enter Memo/Tag" />
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex justify-end gap-3">
                 <button type="button" onClick={() => setShowWithdrawModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
                 <button type="submit" disabled={isWithdrawing} className="px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold shadow-md disabled:bg-red-300 transition-colors">

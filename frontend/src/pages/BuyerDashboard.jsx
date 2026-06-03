@@ -34,7 +34,16 @@ const BuyerDashboard = () => {
   const [orderForm, setOrderForm] = useState({ order_number: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
   const [reviewForm, setReviewForm] = useState({ review_link: '', review_screenshot_url: '', review_screenshot_url_2: '' });
   
-  const [withdrawForm, setWithdrawForm] = useState({ amount: '', payment_method: 'PayPal', account_details: '' });
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [selectedMethodData, setSelectedMethodData] = useState(null);
+  const [withdrawForm, setWithdrawForm] = useState({ 
+    amount: '', 
+    payment_method: '', 
+    account_details: '',
+    crypto_address: '',
+    crypto_network: '',
+    crypto_memo: '' 
+  });
 
   const [supportTickets, setSupportTickets] = useState([]);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
@@ -122,6 +131,16 @@ const BuyerDashboard = () => {
          });
          const wData = await wRes.json();
          if (wRes.ok) setWithdrawals(wData.data || []);
+
+         // Fetch dynamic payment methods
+         const pmRes = await fetch('https://backend-6aiq.onrender.com/api/payment-methods/list', {
+            headers: { 'Authorization': `Bearer ${token}` },
+            credentials: 'include'
+         });
+         const pmData = await pmRes.json();
+         if (pmRes.ok && pmData.success) {
+            setPaymentMethods(pmData.data || []);
+         }
       }
 
       if (activeTab === 'support') {
@@ -236,6 +255,16 @@ const BuyerDashboard = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleMethodChange = (methodName) => {
+    const method = paymentMethods.find(m => m.name === methodName);
+    setSelectedMethodData(method);
+    setWithdrawForm(prev => ({
+      ...prev, 
+      payment_method: methodName,
+      crypto_network: '', // reset network on change
+    }));
   };
 
   const submitWithdrawal = async (e) => {
@@ -644,11 +673,10 @@ const BuyerDashboard = () => {
                    })()}
                  </div>
                </div>
-               <form onSubmit={submitWithdrawal} className="space-y-4">
+             <form onSubmit={submitWithdrawal} className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
                      <label className="block text-xs font-bold text-gray-600 mb-1">Amount (USD)</label>
-                     {/* 🔥 NEW: Added max limit here */}
                      <input 
                        required 
                        type="number" 
@@ -671,19 +699,53 @@ const BuyerDashboard = () => {
                    </div>
                    <div>
                      <label className="block text-xs font-bold text-gray-600 mb-1">Payment Method</label>
-                     <select required className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.payment_method} onChange={e => setWithdrawForm({...withdrawForm, payment_method: e.target.value})}>
-                       <option value="PayPal">PayPal</option>
-                       <option value="Crypto (USDT)">Crypto (USDT)</option>
-                       <option value="Bank Transfer">Bank Transfer</option>
-                       <option value="Bkash/Nagad">Bkash / Nagad</option>
+                     <select required className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.payment_method} onChange={e => handleMethodChange(e.target.value)}>
+                       <option value="">Select Method</option>
+                       {paymentMethods.map(method => (
+                         <option key={method.id} value={method.name}>{method.name}</option>
+                       ))}
                      </select>
                    </div>
                  </div>
-                 <div>
-                   <label className="block text-xs font-bold text-gray-600 mb-1">Account Details (Email / Address / A/C No)</label>
-                   <input required type="text" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.account_details} onChange={e => setWithdrawForm({...withdrawForm, account_details: e.target.value})} placeholder="Provide exact receiving details" />
-                 </div>
-                 <button type="submit" disabled={isSubmitting} className="w-full py-3 bg-[#0066ff] text-white rounded-lg font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
+
+                 {selectedMethodData && (
+                   <div className="space-y-4 animate-fade-in">
+                     {selectedMethodData.requires_account_details && (
+                       <div>
+                         <label className="block text-xs font-bold text-gray-600 mb-1">{selectedMethodData.name} Account Details</label>
+                         <input required type="text" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.account_details} onChange={e => setWithdrawForm({...withdrawForm, account_details: e.target.value})} placeholder={selectedMethodData.example_address || "Provide exact receiving details"} />
+                       </div>
+                     )}
+
+                     {selectedMethodData.requires_address && (
+                       <div>
+                         <label className="block text-xs font-bold text-gray-600 mb-1">Wallet Address</label>
+                         <input required type="text" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.crypto_address} onChange={e => setWithdrawForm({...withdrawForm, crypto_address: e.target.value})} placeholder={selectedMethodData.example_address || "Enter crypto wallet address"} />
+                       </div>
+                     )}
+
+                     {selectedMethodData.requires_network && selectedMethodData.networks && (
+                       <div>
+                         <label className="block text-xs font-bold text-gray-600 mb-1">Network</label>
+                         <select required className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.crypto_network} onChange={e => setWithdrawForm({...withdrawForm, crypto_network: e.target.value})}>
+                           <option value="">Select Network</option>
+                           {selectedMethodData.networks.map(net => (
+                             <option key={net.id} value={net.code}>{net.name} ({net.code})</option>
+                           ))}
+                         </select>
+                       </div>
+                     )}
+
+                     {selectedMethodData.requires_memo && (
+                       <div>
+                         <label className="block text-xs font-bold text-gray-600 mb-1">Memo / Tag</label>
+                         <input required type="text" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.crypto_memo} onChange={e => setWithdrawForm({...withdrawForm, crypto_memo: e.target.value})} placeholder={selectedMethodData.example_memo || "Enter Memo/Tag"} />
+                       </div>
+                     )}
+                   </div>
+                 )}
+
+                 <button type="submit" disabled={isSubmitting || !withdrawForm.payment_method} className="w-full py-3 bg-[#0066ff] text-white rounded-lg font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
                    Submit Request
                  </button>
                </form>

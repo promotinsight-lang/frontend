@@ -9,6 +9,7 @@ import {
 import Navbar from '../components/Navbar';
 import { ResponsiveTableShell, AdminMobileCard, AdminField } from '../components/admin/AdminMobileUi';
 import VerificationFieldsGuide from '../components/admin/VerificationFieldsGuide';
+import PaymentMethodsManager from '../components/admin/PaymentMethodsManager';
 
 const API_BASE = 'https://backend-6aiq.onrender.com';
 
@@ -1355,26 +1356,9 @@ export default function AdminDashboard() {
               </ResponsiveTableShell>
             </div>
 
-            {/* Payment Receiving Accounts */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h3 className="font-bold text-xl text-gray-800 mb-6 border-b pb-2">Payment Receiving Accounts</h3>
-              <div className="space-y-6">
-                {paymentSettings.map(setting => (
-                  <div key={setting.id} className="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <div className="w-full md:w-1/4">
-                      <label className="block text-sm font-bold text-gray-600 mb-1">Method</label>
-                      <input type="text" readOnly value={setting.method_name} className="w-full p-2 bg-gray-200 border rounded font-semibold text-gray-700 outline-none" />
-                    </div>
-                    <div className="w-full md:w-2/4">
-                      <label className="block text-sm font-bold text-gray-600 mb-1">Account Details / Wallet Address</label>
-                      <input type="text" defaultValue={setting.account_details} id={`setting-${setting.id}`} className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500 outline-none" />
-                    </div>
-                    <div className="w-full md:w-1/4">
-                      <button onClick={() => updateSetting(setting.id, document.getElementById(`setting-${setting.id}`).value)} className="w-full bg-gray-800 text-white p-2 rounded font-bold hover:bg-gray-900">Save Changes</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* Payment Receiving Accounts & Methods Manager */}
+            <div className="mt-8">
+               <PaymentMethodsManager />
             </div>
           </div>
         )}
@@ -2232,7 +2216,15 @@ export default function AdminDashboard() {
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
                 <p className="text-xs text-gray-500 font-bold uppercase mb-1">Transfer To:</p>
                 <p className="font-semibold text-sm">{withdrawalToApprove.payment_method}</p>
-                <p className="font-mono text-sm break-all bg-white p-1 mt-1 border rounded">{withdrawalToApprove.account_details}</p>
+                {withdrawalToApprove.is_crypto || withdrawalToApprove.crypto_address ? (
+                  <div className="mt-2 space-y-1 bg-white p-2 border rounded">
+                    <p className="text-xs"><span className="font-bold text-gray-500">Address:</span> <span className="font-mono break-all">{withdrawalToApprove.crypto_address}</span></p>
+                    {withdrawalToApprove.crypto_network && <p className="text-xs"><span className="font-bold text-gray-500">Network:</span> {withdrawalToApprove.crypto_network}</p>}
+                    {withdrawalToApprove.crypto_memo && <p className="text-xs"><span className="font-bold text-gray-500">Memo/Tag:</span> {withdrawalToApprove.crypto_memo}</p>}
+                  </div>
+                ) : (
+                  <p className="font-mono text-sm break-all bg-white p-1 mt-1 border rounded">{withdrawalToApprove.account_details}</p>
+                )}
               </div>
 
               <form onSubmit={submitWithdrawalApproval} className="space-y-4">
@@ -2274,8 +2266,19 @@ export default function AdminDashboard() {
                 <p className="flex justify-between"><span className="font-bold text-gray-500">Method:</span> <span className="font-semibold">{selectedTrx.payment_method}</span></p>
                 <div className="w-full h-px bg-gray-200"></div>
                 
-                {trxType === 'withdrawal' && selectedTrx.account_details && (
-                  <div className="bg-white p-2 border rounded"><span className="font-bold text-gray-500 block text-xs mb-1">To Account:</span><span className="font-mono text-xs break-all">{selectedTrx.account_details}</span></div>
+               {trxType === 'withdrawal' && (
+                  <div className="bg-white p-3 border border-gray-100 rounded-xl shadow-sm">
+                    <span className="font-bold text-gray-400 block text-[10px] uppercase tracking-wider mb-1.5">To Account:</span>
+                    {selectedTrx.is_crypto || selectedTrx.crypto_address ? (
+                      <div className="space-y-1 text-xs text-gray-700">
+                        <p><span className="font-semibold">Address:</span> <span className="font-mono break-all font-medium text-gray-800">{selectedTrx.crypto_address}</span></p>
+                        {selectedTrx.crypto_network && <p><span className="font-semibold">Network:</span> {selectedTrx.crypto_network}</p>}
+                        {selectedTrx.crypto_memo && <p><span className="font-semibold">Memo:</span> {selectedTrx.crypto_memo}</p>}
+                      </div>
+                    ) : (
+                      <span className="font-mono text-sm font-medium break-all">{selectedTrx.account_details}</span>
+                    )}
+                  </div>
                 )}
 
                 {(selectedTrx.transaction_id || selectedTrx.screenshot_url) && (
