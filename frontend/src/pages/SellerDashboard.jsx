@@ -6,7 +6,7 @@ import SellerTariffsPage from '../components/SellerTariffsPage';
 import { 
   Package, PlusCircle, LayoutDashboard, Wallet, Clock,
   Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
-  Headset, MessageCircle, Send, History, Settings
+  Headset, MessageCircle, Send, History, Settings, ShieldCheck 
 } from 'lucide-react';
 
 // ================= SECURITY HELPER =================
@@ -41,10 +41,11 @@ export default function SellerDashboard() {
   const [selectedWithdrawMethod, setSelectedWithdrawMethod] = useState(null); 
   
   const [depositData, setDepositData] = useState({ 
-    amount: '', payment_method: '', transaction_id: '',
+    amount: '', payment_method: '', transaction_id: '', screenshot_url: '',
     account_details: '', crypto_address: '', crypto_network: '', crypto_memo: '' 
   });
   const [isDepositing, setIsDepositing] = useState(false);
+  const [isUploadingDepositProof, setIsUploadingDepositProof] = useState(false);
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawData, setWithdrawData] = useState({ 
@@ -111,7 +112,6 @@ export default function SellerDashboard() {
       document.body.style.overflow = 'unset';
     }
     
-    // Cleanup function
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -136,7 +136,6 @@ export default function SellerDashboard() {
       if (profileData.success) {
          setWalletBalance(parseFloat(profileData.user.wallet_balance) || 0);
          
-         // Fetch Local Currency Rate based on Seller's Country
          try {
             const userCountry = profileData.user.country || '';
             if (userCountry) {
@@ -162,7 +161,6 @@ export default function SellerDashboard() {
         setPaymentSettings(settingsData.data);
       }
 
-      // Fetch dynamic payment methods
       const pmRes = await fetch('https://backend-6aiq.onrender.com/api/payment-methods/list', { headers: authHeaders });
       const pmData = await pmRes.json();
       if (pmRes.ok && pmData.success) {
@@ -290,6 +288,30 @@ export default function SellerDashboard() {
     setDepositData(prev => ({ ...prev, payment_method: methodName, crypto_network: '' }));
   };
 
+  const handleDepositImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploadingDepositProof(true);
+    try {
+      const cloudData = new FormData();
+      cloudData.append("file", file);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST", body: cloudData,
+      });
+      const cloudJson = await res.json();
+      if (cloudJson.secure_url) {
+        setDepositData(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
+      }
+    } catch (error) {
+      alert("Screenshot upload failed!");
+    } finally {
+      setIsUploadingDepositProof(false);
+    }
+  };
+
   const handleWithdrawQrUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -334,7 +356,7 @@ export default function SellerDashboard() {
       if (response.ok) {
         alert(data.message);
         setShowDepositModal(false);
-        setDepositData({ amount: '', payment_method: paymentSettings.length > 0 ? paymentSettings[0].method_name : 'PayPal', transaction_id: '' });
+        setDepositData({ amount: '', payment_method: paymentSettings.length > 0 ? paymentSettings[0].method_name : 'PayPal', transaction_id: '', screenshot_url: '' });
         fetchDashboardData();
       } else alert(data.message || 'Deposit failed');
     } catch (error) { alert('Server error during deposit'); } 
@@ -396,7 +418,6 @@ export default function SellerDashboard() {
     finally { setIsEditing(false); }
   };
 
-  // ================= SUPPORT SYSTEM LOGIC =================
   const handleCreateTicket = async (e) => {
     e.preventDefault();
     setIsSubmittingTicket(true);
@@ -494,7 +515,7 @@ export default function SellerDashboard() {
           <p className="text-sm text-blue-100 opacity-90 mt-1">Manage your products and sales</p>
         </div>
         
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center justify-between gap-6 w-full md:w-auto min-w-[280px] shadow-lg">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-xl flex items-center justify-between gap-4 sm:gap-6 w-full md:w-auto min-w-[280px] shadow-lg">
           <div>
             <p className="text-xs text-blue-100 font-bold uppercase tracking-wider">Wallet Balance</p>
             <div className="flex flex-col">
@@ -590,13 +611,13 @@ export default function SellerDashboard() {
             <h2 className="text-gray-700 text-xl font-bold mb-4">Quota & Review Tracking</h2>
             {products.filter(p => p.status === 'approved' || p.status === 'stopped').map(product => (
               <div key={product.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-6 items-center">
-                <img src={product.image_url} alt="Product" className="w-24 h-24 object-cover rounded-xl border border-gray-200" />
+                <img src={product.image_url} alt="Product" className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl border border-gray-200" />
                 <div className="flex-1 w-full">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{product.product_name}</h3>
-                    {product.status === 'stopped' && <span className="bg-orange-100 text-orange-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase border border-orange-200">Stopped</span>}
+                    {product.status === 'stopped' && <span className="bg-orange-100 text-orange-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase border border-orange-200 w-max">Stopped</span>}
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-4 text-center max-w-lg">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center w-full">
                     <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 shadow-sm">
                       <p className="text-[10px] text-gray-400 font-bold uppercase">Total Quota</p>
                       <p className="text-2xl font-black text-gray-700">{product.required_orders}</p>
@@ -605,7 +626,7 @@ export default function SellerDashboard() {
                       <p className="text-[10px] text-blue-500 font-bold uppercase">Applications</p>
                       <p className="text-2xl font-black text-blue-700">{product.application_count || 0}</p>
                     </div>
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center p-3">
                        <button onClick={() => openViewModal(product)} className="text-[#0066ff] text-sm font-bold flex items-center gap-1 hover:underline"><Eye size={18}/> View Reviews</button>
                     </div>
                   </div>
@@ -623,14 +644,14 @@ export default function SellerDashboard() {
           <div className="space-y-6">
             <h2 className="text-gray-700 text-xl font-bold mb-4">Fund Management</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-between items-center text-center hover:shadow-md transition-shadow">
+              <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-between items-center text-center hover:shadow-md transition-shadow">
                 <div className="w-20 h-20 bg-blue-50 text-[#0066ff] rounded-full flex items-center justify-center mb-4"><Wallet size={40}/></div>
                 <h3 className="text-lg font-bold text-gray-800 mb-2">Add Funds to Wallet</h3>
                 <p className="text-sm text-gray-500 mb-6">Deposit is required to list new products.</p>
                 <button onClick={() => setShowDepositModal(true)} className="w-full bg-[#0066ff] text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-colors">+ Deposit Funds</button>
               </div>
               
-              <div className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 flex flex-col justify-between items-center text-center hover:shadow-md transition-shadow">
+              <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-red-100 flex flex-col justify-between items-center text-center hover:shadow-md transition-shadow">
                 <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4"><Landmark size={40}/></div>
                 <h3 className="text-lg font-bold text-gray-800 mb-2">Withdraw Funds</h3>
                 <p className="text-sm text-gray-500 mb-6">Withdraw your remaining wallet balance.</p>
@@ -638,19 +659,19 @@ export default function SellerDashboard() {
               </div>
             </div>
 
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
+            <div className="bg-white p-4 md:p-8 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-gray-100 pb-4">
                 <h3 className="font-bold text-gray-800 text-xl">Transaction History</h3>
-                <div className="flex bg-gray-100 p-1.5 rounded-xl shadow-inner">
+                <div className="flex w-full sm:w-auto bg-gray-100 p-1.5 rounded-xl shadow-inner">
                   <button 
                     onClick={() => setFundHistoryTab('withdrawals')} 
-                    className={`px-5 py-2 text-sm font-bold rounded-lg transition-colors ${fundHistoryTab === 'withdrawals' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg transition-colors ${fundHistoryTab === 'withdrawals' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     Withdrawals
                   </button>
                   <button 
                     onClick={() => setFundHistoryTab('deposits')} 
-                    className={`px-5 py-2 text-sm font-bold rounded-lg transition-colors ${fundHistoryTab === 'deposits' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg transition-colors ${fundHistoryTab === 'deposits' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     Deposits
                   </button>
@@ -660,12 +681,12 @@ export default function SellerDashboard() {
               <div className="space-y-4">
                  {fundHistoryTab === 'withdrawals' && withdrawals.length === 0 && <p className="text-gray-500 text-sm text-center py-6">No withdrawal records found.</p>}
                  {fundHistoryTab === 'withdrawals' && withdrawals.map(w => (
-                   <div key={w.id} className="flex justify-between items-center p-4 border border-gray-100 bg-gray-50 rounded-xl hover:shadow-sm transition-all">
+                   <div key={w.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 border border-gray-100 bg-gray-50 rounded-xl hover:shadow-sm transition-all">
                      <div>
                        <p className="font-bold text-gray-800 text-lg">${Number(w.amount).toFixed(2)} <span className="text-sm text-gray-500 font-normal">via {w.payment_method}</span></p>
                        <p className="text-xs text-gray-400 mt-1">{new Date(w.created_at).toLocaleString()}</p>
                      </div>
-                     <div className="flex flex-col items-end gap-2">
+                     <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
                        <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${w.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : w.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
                          {w.status}
                        </span>
@@ -678,12 +699,12 @@ export default function SellerDashboard() {
 
                  {fundHistoryTab === 'deposits' && deposits.length === 0 && <p className="text-gray-500 text-sm text-center py-6">No deposit records found.</p>}
                  {fundHistoryTab === 'deposits' && deposits.map(d => (
-                   <div key={d.id} className="flex justify-between items-center p-4 border border-gray-100 bg-gray-50 rounded-xl hover:shadow-sm transition-all">
+                   <div key={d.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 border border-gray-100 bg-gray-50 rounded-xl hover:shadow-sm transition-all">
                      <div>
                        <p className="font-bold text-gray-800 text-lg">${Number(d.amount).toFixed(2)} <span className="text-sm text-gray-500 font-normal">via {d.payment_method}</span></p>
                        <p className="text-xs text-gray-400 mt-1">{new Date(d.created_at).toLocaleString()}</p>
                      </div>
-                     <div className="flex flex-col items-end gap-2">
+                     <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
                        <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${d.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : d.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
                          {d.status}
                        </span>
@@ -701,7 +722,7 @@ export default function SellerDashboard() {
         {/* REFUNDS TAB */}
         {activeTab === 'refunds' && (
           <div className="space-y-6 animate-fade-in-up">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
                <h2 className="text-gray-700 text-xl font-bold flex items-center gap-2">
                   <History className="text-red-500" />
                   Product Deletion Refunds
@@ -709,7 +730,7 @@ export default function SellerDashboard() {
                <span className="bg-red-100 text-red-800 text-sm py-1 px-4 rounded-full font-bold border border-red-200">{refunds.length} Logs</span>
             </div>
             
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
                <div className="space-y-4">
                   {refunds.length === 0 ? (
                      <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl border border-dashed">
@@ -717,12 +738,12 @@ export default function SellerDashboard() {
                      </div>
                   ) : (
                      refunds.map(r => (
-                        <div key={r.id} className="flex justify-between items-center p-5 border border-red-100 bg-red-50/30 rounded-xl hover:shadow-sm transition-all">
+                        <div key={r.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 p-4 border border-red-100 bg-red-50/30 rounded-xl hover:shadow-sm transition-all">
                            <div>
                               <p className="font-bold text-gray-800">{r.description}</p>
                               <p className="text-xs text-gray-500 mt-1">{new Date(r.created_at).toLocaleString()}</p>
                            </div>
-                           <div className="flex flex-col items-end gap-1.5 shrink-0 ml-4">
+                           <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 w-full sm:w-auto justify-between sm:ml-4">
                               <span className="font-black text-2xl text-green-600">+${Number(r.amount).toFixed(2)}</span>
                               <span className="px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider border bg-green-100 text-green-700 border-green-200">
                                 {r.status}
@@ -754,8 +775,8 @@ export default function SellerDashboard() {
             ) : (
               <div className="space-y-6">
                 {myAppeals.map(appeal => (
-                  <div key={appeal.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                    <div className="flex justify-between items-start border-b border-gray-100 pb-4 mb-4">
+                  <div key={appeal.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200">
+                    <div className="flex flex-col sm:flex-row justify-between items-start border-b border-gray-100 pb-4 mb-4 gap-2">
                       <div>
                          <p className="font-bold text-gray-800 text-lg flex items-center gap-2">
                            Application ID: #{appeal.application_id}
@@ -822,7 +843,7 @@ export default function SellerDashboard() {
 
              <div className="space-y-4">
                 {supportTickets.length === 0 ? (
-                  <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 shadow-sm">
+                  <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 shadow-sm px-4">
                     <Headset size={56} className="mx-auto text-gray-300 mb-4" />
                     <h3 className="text-xl font-bold text-gray-800 mb-2">Need Help?</h3>
                     <p className="text-gray-500 max-w-sm mx-auto">Open a ticket and our support team will get back to you as soon as possible.</p>
@@ -832,13 +853,13 @@ export default function SellerDashboard() {
                     <div 
                        key={ticket.id} 
                        onClick={() => openTicketView(ticket)}
-                       className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all flex items-start gap-4"
+                       className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all flex flex-col sm:flex-row items-start gap-4"
                     >
-                      <div className={`p-4 rounded-full shrink-0 ${ticket.status === 'closed' ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-[#0066ff]'}`}>
+                      <div className={`p-4 rounded-full shrink-0 hidden sm:block ${ticket.status === 'closed' ? 'bg-gray-100 text-gray-500' : 'bg-blue-50 text-[#0066ff]'}`}>
                         <MessageCircle size={28} />
                       </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 w-full">
+                        <div className="flex justify-between items-start mb-2 gap-2">
                            <h4 className="text-lg font-bold text-gray-800 line-clamp-1">{ticket.subject}</h4>
                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 border ${
                              ticket.status === 'open' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
@@ -862,19 +883,19 @@ export default function SellerDashboard() {
 
       {/* 🔥 LEDGER MODAL - DATABASE DRIVEN */}
       {showLedgerModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/80">
-              <h3 className="text-2xl font-black text-gray-800 flex items-center gap-3">
-                <Receipt className="text-[#0066ff]" size={28} /> Product Deduction Ledger
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-2 sm:p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-100 bg-gray-50/80">
+              <h3 className="text-lg sm:text-2xl font-black text-gray-800 flex items-center gap-2 sm:gap-3">
+                <Receipt className="text-[#0066ff]" size={28} /> Product Ledger
               </h3>
               <button onClick={() => setShowLedgerModal(false)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm border border-gray-100 p-2 rounded-full transition-colors"><X size={24} /></button>
             </div>
             
-            <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-              <div className="bg-blue-50 border border-blue-100 p-5 rounded-xl mb-6 shadow-sm">
+            <div className="p-4 sm:p-6 flex-1 overflow-y-auto custom-scrollbar">
+              <div className="bg-blue-50 border border-blue-100 p-4 sm:p-5 rounded-xl mb-6 shadow-sm">
                 <h4 className="font-bold text-blue-800 mb-2">How is the deduction calculated?</h4>
-                <p className="text-sm text-blue-700 leading-relaxed font-medium">
+                <p className="text-xs sm:text-sm text-blue-700 leading-relaxed font-medium">
                   When you list a product, the system safely holds funds in escrow based on Active Tariffs. The formula is: <br/>
                   <strong className="bg-white px-3 py-1.5 rounded inline-block mt-2 border border-blue-200 shadow-sm text-[#0066ff]">
                     (Product Price + Buyer Reward + Platform Tariff + Refund Fee) × Target Quantity
@@ -892,50 +913,47 @@ export default function SellerDashboard() {
                      const qty = parseInt(p.required_orders) || 1;
                      const costPerOrder = price + reward;
                      
-                     // 🔥 EXACT DATA FROM DATABASE
+                     // exact data
                      const commission = parseFloat(p.platform_fee_charged) || 0;
                      const totalDeducted = parseFloat(p.total_deposit) || 0;
-                     
-                     // Mathematical back-calculation for Refund Fee part
                      const refundFee = (totalDeducted / qty) - costPerOrder - commission;
 
                      return (
                        <div key={p.id} className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                         <div className="bg-gray-50 p-5 border-b border-gray-200 flex justify-between items-center">
-                           <div className="flex items-center gap-4">
-                             <img src={p.image_url} className="w-14 h-14 object-contain rounded-lg border bg-white p-1" alt="product"/>
-                             <div>
-                               <h4 className="font-bold text-gray-800 text-base line-clamp-1">{p.product_name || p.store_name}</h4>
+                         <div className="bg-gray-50 p-4 sm:p-5 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                           <div className="flex items-center gap-4 w-full sm:w-auto">
+                             <img src={p.image_url} className="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-lg border bg-white p-1" alt="product"/>
+                             <div className="flex-1">
+                               <h4 className="font-bold text-gray-800 text-sm sm:text-base line-clamp-1">{p.product_name || p.store_name}</h4>
                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border mt-1 inline-block ${getStatusColor(p.status)}`}>{p.status}</span>
                              </div>
                            </div>
-                           <div className="text-right shrink-0">
+                           <div className="text-right shrink-0 w-full sm:w-auto flex flex-row sm:flex-col justify-between items-center sm:items-end">
                              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Deducted</p>
-                             <p className="text-2xl font-black text-red-500">-${totalDeducted.toFixed(2)}</p>
+                             <p className="text-xl sm:text-2xl font-black text-red-500">-${totalDeducted.toFixed(2)}</p>
                            </div>
                          </div>
                          
-                         <div className="p-5 grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm bg-white">
+                         <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 text-sm bg-white">
                             <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
                               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Unit Price</p>
-                              <p className="font-black text-gray-800 text-lg">${price.toFixed(2)}</p>
+                              <p className="font-black text-gray-800 text-base sm:text-lg">${price.toFixed(2)}</p>
                             </div>
                             <div className="bg-green-50 p-3 rounded-xl border border-green-100 text-center">
-                              <p className="text-green-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Buyer Reward</p>
-                              <p className="font-black text-green-700 text-lg">+${reward.toFixed(2)}</p>
+                              <p className="text-green-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Reward</p>
+                              <p className="font-black text-green-700 text-base sm:text-lg">+${reward.toFixed(2)}</p>
                             </div>
                             <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 text-center relative group">
-                              <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Platform Tariff</p>
-                              <p className="font-black text-orange-700 text-lg">+${commission.toFixed(2)}</p>
-                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity">Saved from DB</div>
+                              <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Tariff</p>
+                              <p className="font-black text-orange-700 text-base sm:text-lg">+${commission.toFixed(2)}</p>
                             </div>
                             <div className="bg-red-50 p-3 rounded-xl border border-red-100 text-center relative group">
                               <p className="text-red-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Refund Fee</p>
-                              <p className="font-black text-red-700 text-lg">+${Math.max(0, refundFee).toFixed(2)}</p>
+                              <p className="font-black text-red-700 text-base sm:text-lg">+${Math.max(0, refundFee).toFixed(2)}</p>
                             </div>
-                            <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
+                            <div className="col-span-2 sm:col-span-1 bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
                               <p className="text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Target Qty</p>
-                              <p className="font-black text-[#0066ff] text-lg">× {qty}</p>
+                              <p className="font-black text-[#0066ff] text-base sm:text-lg">× {qty}</p>
                             </div>
                          </div>
                        </div>
@@ -944,8 +962,8 @@ export default function SellerDashboard() {
                  )}
               </div>
             </div>
-            <div className="p-5 border-t border-gray-100 bg-gray-50 text-right">
-              <button onClick={() => setShowLedgerModal(false)} className="px-8 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors shadow-md">Close Ledger</button>
+            <div className="p-4 sm:p-5 border-t border-gray-100 bg-gray-50 text-right">
+              <button onClick={() => setShowLedgerModal(false)} className="w-full sm:w-auto px-8 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors shadow-md">Close Ledger</button>
             </div>
           </div>
         </div>
@@ -953,24 +971,24 @@ export default function SellerDashboard() {
 
       {/* VIEW DETAILS MODAL */}
       {showViewModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh]">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-sm">
+          <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh]">
             
-            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-              <h3 className="text-2xl font-black text-gray-800">Review & Application Details</h3>
+            <div className="flex justify-between items-center mb-4 sm:mb-6 border-b border-gray-100 pb-3 sm:pb-4">
+              <h3 className="text-xl sm:text-2xl font-black text-gray-800">Review & Application Details</h3>
               <button onClick={() => setShowViewModal(false)} className="text-gray-400 hover:text-red-500 bg-gray-50 border border-gray-200 p-2 rounded-full transition-colors"><X size={24} /></button>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 flex flex-col md:flex-row gap-8">
+            <div className="flex-1 overflow-y-auto pr-2 flex flex-col md:flex-row gap-6 sm:gap-8">
               
-          <div className="w-full md:w-1/3 bg-gray-50 p-5 rounded-2xl border border-gray-200 shrink-0 self-start md:sticky md:top-0">
+          <div className="w-full md:w-1/3 bg-gray-50 p-4 sm:p-5 rounded-2xl border border-gray-200 shrink-0 self-start md:sticky md:top-0">
                 
                 <div className="bg-[#fff9e6] border border-[#ffdf7e] rounded-xl p-3 mb-5 text-center shadow-sm">
                   <p className="text-[10px] text-[#b38600] font-black uppercase tracking-widest mb-1">Task Condition</p>
                   <p className="text-base font-black text-gray-900">{selectedProduct.category || 'Need Review'}</p>
                 </div>
 
-                <img src={selectedProduct.image_url} alt="Product" className="w-full h-48 md:h-56 object-contain bg-white rounded-xl mb-5 border border-gray-100 shadow-sm p-2" />
+                <img src={selectedProduct.image_url} alt="Product" className="w-full h-40 sm:h-48 md:h-56 object-contain bg-white rounded-xl mb-5 border border-gray-100 shadow-sm p-2" />
                 <div className="space-y-3 text-sm">
                   <p><span className="font-bold text-gray-500">Product:</span> <span className="font-semibold text-gray-800">{selectedProduct.product_name}</span></p>
                   <p><span className="font-bold text-gray-500">Keyword:</span> <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-mono font-bold text-xs">{selectedProduct.search_keyword}</span></p>
@@ -991,7 +1009,7 @@ export default function SellerDashboard() {
 
                   <div className="mt-4 bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm">
                     <p className="text-[10px] text-red-500 font-bold uppercase mb-1">Total Deducted (DB Record)</p>
-                    <p className="text-2xl font-black text-red-600">${parseFloat(selectedProduct.total_deposit || 0).toFixed(2)} <span className="text-sm font-bold text-red-400">USD</span></p>
+                    <p className="text-xl sm:text-2xl font-black text-red-600">${parseFloat(selectedProduct.total_deposit || 0).toFixed(2)} <span className="text-sm font-bold text-red-400">USD</span></p>
                     <p className="text-[10px] font-bold text-red-600 bg-red-100/50 w-max px-2 py-0.5 rounded border border-red-200 mt-1">
                       ~ {(parseFloat(selectedProduct.total_deposit || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
                     </p>
@@ -1000,7 +1018,7 @@ export default function SellerDashboard() {
               </div>
 
               <div className="w-full md:w-2/3">
-                <h4 className="text-lg font-black text-gray-800 mb-4 flex items-center gap-2">
+                <h4 className="text-lg font-black text-gray-800 mb-4 flex flex-wrap items-center gap-2">
                   Buyer Applications
                   <span className="bg-blue-100 text-blue-800 text-xs py-1 px-3 rounded-full font-bold">{productReviews.length} Users</span>
                 </h4>
@@ -1012,12 +1030,12 @@ export default function SellerDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {productReviews.map(review => (
-                      <div key={review.application_id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all">
+                      <div key={review.application_id} className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all">
                         
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-gray-100 pb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <p className="font-bold text-gray-800 text-base">Buyer: {review.buyer_name}</p>
+                              <p className="font-bold text-gray-800 text-sm sm:text-base">Buyer: {review.buyer_name}</p>
                               <span className="bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-black border border-yellow-200">
                                 ⭐ {review.trust_score ? parseFloat(review.trust_score).toFixed(1) : '5.0'}
                               </span>
@@ -1033,7 +1051,7 @@ export default function SellerDashboard() {
                             )}
                           </div>
                           
-                          <span className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg border tracking-wider ${getStatusColor(review.status)}`}>
+                          <span className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg border tracking-wider w-full sm:w-auto text-center ${getStatusColor(review.status)}`}>
                             {review.status.replace('_', ' ')}
                           </span>
                         </div>
@@ -1042,7 +1060,7 @@ export default function SellerDashboard() {
                           <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Order Details</p>
                             <div className="flex flex-col gap-2">
-                              {review.order_number ? <p className="font-mono text-gray-800 font-bold bg-white px-2 py-1 rounded border shadow-sm w-fit">{review.order_number}</p> : <p className="text-gray-400 italic text-xs">No Order ID</p>}
+                              {review.order_number ? <p className="font-mono text-gray-800 font-bold bg-white px-2 py-1 rounded border shadow-sm w-fit truncate max-w-full">{review.order_number}</p> : <p className="text-gray-400 italic text-xs">No Order ID</p>}
                               {review.screenshot_url && <a href={review.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 1</a>}
                               {review.screenshot_url_2 && <a href={review.screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 2</a>}
                             </div>
@@ -1059,26 +1077,26 @@ export default function SellerDashboard() {
                         </div>
 
                         {(review.status === 'review_submitted' || review.status === 'forwarded_to_seller') && !review.refund_comment && (
-                          <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                          <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                             <div>
                                <p className="text-sm text-indigo-800 font-bold flex items-center gap-1.5">
                                  <Clock size={16}/> Action Required
                                </p>
                                <p className="text-xs text-indigo-600 mt-1 font-medium">Please check the details and verify. Auto-approves in 24 hours.</p>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto mt-3 md:mt-0">
+                            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                               <button 
                                 onClick={() => {
                                   setAppealData({ application_id: review.application_id, reason: '' });
                                   setShowSellerAppealModal(true);
                                 }} 
-                                className="flex-1 md:flex-none bg-white border border-red-200 text-red-600 hover:bg-red-50 py-2 px-5 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                                className="flex-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 py-2 px-4 rounded-lg text-xs font-bold transition-colors shadow-sm"
                               >
                                 File Appeal
                               </button>
                               <button 
                                 onClick={() => handleSellerApproveReview(review.application_id)} 
-                                className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-5 rounded-lg text-xs font-bold shadow-md transition-colors"
+                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors"
                               >
                                 Approve Request
                               </button>
@@ -1106,11 +1124,11 @@ export default function SellerDashboard() {
       {/* SELLER APPEAL MODAL */}
       {showSellerAppealModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 animate-fade-in backdrop-blur-sm">
-          <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-md">
             <h3 className="text-xl font-black text-red-600 mb-3 flex items-center gap-2">
               <AlertTriangle size={24} /> File an Appeal
             </h3>
-            <p className="text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200 font-medium">
+            <p className="text-xs sm:text-sm text-gray-600 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-200 font-medium">
               If the buyer provided a fake order/review or violated rules, explain the issue below. Admin will resolve the dispute.
             </p>
             <form onSubmit={handleSellerAppealSubmit}>
@@ -1118,15 +1136,15 @@ export default function SellerDashboard() {
                 <label className="block text-sm font-bold text-gray-700 mb-2">Reason for Appeal</label>
                 <textarea 
                   required 
-                  className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none h-32 resize-none bg-gray-50 focus:bg-white transition-colors" 
+                  className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none h-32 resize-none bg-gray-50 focus:bg-white transition-colors text-sm" 
                   placeholder="Explain exactly what is wrong..." 
                   value={appealData.reason} 
                   onChange={(e) => setAppealData({...appealData, reason: e.target.value})}
                 ></textarea>
               </div>
-              <div className="flex justify-end gap-3 border-t border-gray-100 pt-5">
-                <button type="button" onClick={() => setShowSellerAppealModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
-                <button type="submit" disabled={isAppealing} className="px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold shadow-md disabled:bg-red-300 flex items-center gap-2 transition-colors">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 border-t border-gray-100 pt-5">
+                <button type="button" onClick={() => setShowSellerAppealModal(false)} className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
+                <button type="submit" disabled={isAppealing} className="w-full sm:w-auto px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold shadow-md disabled:bg-red-300 flex items-center justify-center gap-2 transition-colors">
                   {isAppealing ? 'Submitting...' : 'Submit to Admin'}
                 </button>
               </div>
@@ -1138,8 +1156,8 @@ export default function SellerDashboard() {
       {/* DEPOSIT MODAL */}
       {showDepositModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
-            <h3 className="text-2xl font-black text-gray-800 mb-6 border-b border-gray-100 pb-3">Add Funds to Wallet</h3>
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl sm:text-2xl font-black text-gray-800 mb-6 border-b border-gray-100 pb-3">Add Funds to Wallet</h3>
             <form onSubmit={handleDeposit}>
               <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Amount ($)</label>
@@ -1155,13 +1173,12 @@ export default function SellerDashboard() {
 
               {selectedDepositMethod && (
                 <div className="space-y-4 mb-5 animate-fade-in">
-                 <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl">
+                 <div className="bg-blue-50 border border-blue-200 p-4 sm:p-5 rounded-xl">
                     <p className="text-xs text-[#0066ff] font-bold uppercase tracking-wider mb-2">Send Payment To:</p>
                     <div className="font-mono text-sm font-black text-gray-800 break-words bg-white p-3 rounded border shadow-sm whitespace-pre-wrap leading-relaxed">
                       {paymentSettings.find(s => s.method_name === selectedDepositMethod.name)?.account_details || selectedDepositMethod.description || 'Details will be provided by admin'}
                     </div>
                     
-                    {/* 🔥 NEW: Show QR Code if available */}
                     {selectedDepositMethod.qr_code_url && (
                       <div className="mt-4 flex flex-col items-center bg-white p-3 rounded-lg border border-blue-100 shadow-sm">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Scan QR Code to Pay</p>
@@ -1203,13 +1220,38 @@ export default function SellerDashboard() {
                 </div>
               )}
 
-              <div className="mb-8">
+              <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Transaction ID (Trx ID)</label>
                 <input type="text" required placeholder="e.g. TRX123456789" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none transition-colors" value={depositData.transaction_id} onChange={(e) => setDepositData({...depositData, transaction_id: e.target.value})} />
               </div>
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setShowDepositModal(false)} className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
-                <button type="submit" disabled={isDepositing} className="px-6 py-3 bg-[#0066ff] text-white rounded-xl hover:bg-blue-700 font-bold shadow-md disabled:bg-blue-400 transition-colors">
+
+              {/* 🔥 NEW: Deposit Screenshot Upload */}
+              <div className="mb-8">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Payment Screenshot (Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleDepositImageUpload} 
+                  className="w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer border border-gray-200 rounded-xl p-2 bg-gray-50"
+                />
+                {isUploadingDepositProof && <p className="text-[10px] text-blue-600 mt-1 animate-pulse font-bold">Uploading Screenshot...</p>}
+                {depositData.screenshot_url && (
+                  <div className="mt-3 relative inline-block">
+                    <img src={depositData.screenshot_url} alt="Deposit Proof" className="w-24 h-24 object-cover border border-blue-200 rounded-lg shadow-sm p-1 bg-white" />
+                    <button 
+                      type="button"
+                      onClick={() => setDepositData({...depositData, screenshot_url: ''})} 
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600"
+                    >
+                      <X size={12}/>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+                <button type="button" onClick={() => setShowDepositModal(false)} className="w-full sm:w-auto px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
+                <button type="submit" disabled={isDepositing || isUploadingDepositProof} className="w-full sm:w-auto px-6 py-3 bg-[#0066ff] text-white rounded-xl hover:bg-blue-700 font-bold shadow-md disabled:bg-blue-400 disabled:opacity-50 transition-colors">
                   {isDepositing ? 'Processing...' : 'Submit Request'}
                 </button>
               </div>
@@ -1221,8 +1263,8 @@ export default function SellerDashboard() {
       {/* WITHDRAWAL MODAL */}
       {showWithdrawModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
-            <h3 className="text-2xl font-black text-gray-800 mb-6 border-b border-gray-100 pb-3 flex items-center gap-2"><Landmark className="text-red-500"/> Withdraw Funds</h3>
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl sm:text-2xl font-black text-gray-800 mb-6 border-b border-gray-100 pb-3 flex items-center gap-2"><Landmark className="text-red-500"/> Withdraw Funds</h3>
             <form onSubmit={handleWithdraw}>
               <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Amount (USD)</label>
@@ -1305,9 +1347,9 @@ export default function SellerDashboard() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setShowWithdrawModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
-                <button type="submit" disabled={isWithdrawing} className="px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold shadow-md disabled:bg-red-300 transition-colors">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+                <button type="button" onClick={() => setShowWithdrawModal(false)} className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition-colors">Cancel</button>
+                <button type="submit" disabled={isWithdrawing} className="w-full sm:w-auto px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold shadow-md disabled:bg-red-300 transition-colors">
                   {isWithdrawing ? 'Processing...' : 'Submit Request'}
                 </button>
               </div>
@@ -1319,7 +1361,7 @@ export default function SellerDashboard() {
       {/* TRANSACTION DETAILS MODAL */}
       {showTrxDetailsModal && selectedTrx && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-sm">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-black text-gray-800 flex items-center gap-2 capitalize">
                 <Wallet size={24} className={trxType === 'deposit' ? 'text-green-500' : 'text-red-500'}/> {trxType} Details
@@ -1328,7 +1370,7 @@ export default function SellerDashboard() {
             </div>
             
             <div className="space-y-4 text-sm text-gray-700 bg-gray-50 p-5 rounded-2xl border border-gray-200">
-              <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Amount:</span> <span className={`font-black text-2xl ${trxType === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>${Number(selectedTrx.amount).toFixed(2)}</span></p>
+              <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Amount:</span> <span className={`font-black text-xl sm:text-2xl ${trxType === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>${Number(selectedTrx.amount).toFixed(2)}</span></p>
               <div className="w-full h-px bg-gray-200"></div>
               <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Method:</span> <span className="font-bold bg-white px-3 py-1 rounded shadow-sm border border-gray-100">{selectedTrx.payment_method}</span></p>
               <div className="w-full h-px bg-gray-200"></div>
@@ -1358,7 +1400,7 @@ export default function SellerDashboard() {
               )}
               
               <div className="w-full h-px bg-gray-200"></div>
-              <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Date:</span> <span className="font-medium">{new Date(selectedTrx.created_at).toLocaleString()}</span></p>
+              <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Date:</span> <span className="font-medium text-right">{new Date(selectedTrx.created_at).toLocaleString()}</span></p>
               <div className="w-full h-px bg-gray-200"></div>
               <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Status:</span> 
                  <span className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border shadow-sm ${selectedTrx.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : selectedTrx.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>{selectedTrx.status}</span>
@@ -1376,24 +1418,24 @@ export default function SellerDashboard() {
       {showEditModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fade-in">
           <div className="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-2xl overflow-y-auto max-h-[90vh]">
-            <h3 className="text-2xl font-black text-gray-800 mb-4 border-b border-gray-100 pb-3">Edit Product</h3>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-800 mb-4 border-b border-gray-100 pb-3">Edit Product</h3>
             <p className="text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 font-semibold p-4 rounded-xl mb-6 flex items-start gap-2">
               <AlertTriangle size={16} className="shrink-0 mt-0.5 text-yellow-600"/>
               Note: For wallet security, product price, reward, or quota cannot be edited. To change them, please cancel the product and relist.
             </p>
             <form onSubmit={handleEditSubmit} className="space-y-5">
-              <div><label className="text-sm font-bold text-gray-700 mb-2 block">Product Name</label><input type="text" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors" value={editFormData.product_name} onChange={e => setEditFormData({...editFormData, product_name: e.target.value})} /></div>
+              <div><label className="text-sm font-bold text-gray-700 mb-2 block">Product Name</label><input type="text" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors text-sm" value={editFormData.product_name} onChange={e => setEditFormData({...editFormData, product_name: e.target.value})} /></div>
               
-              <div><label className="text-sm font-bold text-gray-700 mb-2 block">Product Link</label><input type="url" required pattern="https?://.+" title="Must be a valid HTTP/HTTPS URL" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors" value={editFormData.product_link} onChange={e => setEditFormData({...editFormData, product_link: e.target.value})} /></div>
+              <div><label className="text-sm font-bold text-gray-700 mb-2 block">Product Link</label><input type="url" required pattern="https?://.+" title="Must be a valid HTTP/HTTPS URL" className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors text-sm" value={editFormData.product_link} onChange={e => setEditFormData({...editFormData, product_link: e.target.value})} /></div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><label className="text-sm font-bold text-gray-700 mb-2 block">Store Name</label><input type="text" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors" value={editFormData.store_name} onChange={e => setEditFormData({...editFormData, store_name: e.target.value})} /></div>
-                <div><label className="text-sm font-bold text-gray-700 mb-2 block">Search Keyword</label><input type="text" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors" value={editFormData.search_keyword} onChange={e => setEditFormData({...editFormData, search_keyword: e.target.value})} /></div>
+                <div><label className="text-sm font-bold text-gray-700 mb-2 block">Store Name</label><input type="text" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors text-sm" value={editFormData.store_name} onChange={e => setEditFormData({...editFormData, store_name: e.target.value})} /></div>
+                <div><label className="text-sm font-bold text-gray-700 mb-2 block">Search Keyword</label><input type="text" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors text-sm" value={editFormData.search_keyword} onChange={e => setEditFormData({...editFormData, search_keyword: e.target.value})} /></div>
               </div>
-              <div><label className="text-sm font-bold text-gray-700 mb-2 block">Instructions for Buyer</label><textarea required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl h-28 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors resize-none" value={editFormData.instructions} onChange={e => setEditFormData({...editFormData, instructions: e.target.value})}></textarea></div>
-              <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                <button type="button" onClick={() => setShowEditModal(false)} className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Cancel</button>
-                <button type="submit" disabled={isEditing} className="px-6 py-3 bg-[#0066ff] text-white rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors">
+              <div><label className="text-sm font-bold text-gray-700 mb-2 block">Instructions for Buyer</label><textarea required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl h-28 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors resize-none text-sm" value={editFormData.instructions} onChange={e => setEditFormData({...editFormData, instructions: e.target.value})}></textarea></div>
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
+                <button type="button" onClick={() => setShowEditModal(false)} className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">Cancel</button>
+                <button type="submit" disabled={isEditing} className="w-full sm:w-auto px-6 py-3 bg-[#0066ff] text-white rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors">
                   {isEditing ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
@@ -1405,10 +1447,10 @@ export default function SellerDashboard() {
       {/* 🎧 CREATE TICKET MODAL */}
       {showCreateTicketModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                <Headset size={24} className="text-[#0066ff]"/> Create Support Ticket
+                <Headset size={24} className="text-[#0066ff]"/> Create Ticket
               </h3>
               <button onClick={() => setShowCreateTicketModal(false)} className="text-gray-400 hover:text-red-500 bg-gray-50 p-1.5 rounded-full"><X size={20} /></button>
             </div>
@@ -1437,13 +1479,13 @@ export default function SellerDashboard() {
 
       {/* 💬 VIEW & REPLY TICKET MODAL */}
       {showTicketViewModal && selectedTicket && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-2 sm:p-4 animate-fade-in">
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
             {/* Header */}
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
+            <div className="p-4 sm:p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
                <div>
-                  <h3 className="font-black text-gray-800 text-lg line-clamp-1 pr-4">{selectedTicket.subject}</h3>
+                  <h3 className="font-black text-gray-800 text-base sm:text-lg line-clamp-1 pr-4">{selectedTicket.subject}</h3>
                   <span className={`px-2.5 py-0.5 mt-1.5 inline-block rounded border text-[9px] font-black uppercase tracking-wider shadow-sm ${
                      selectedTicket.status === 'open' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
                      selectedTicket.status === 'answered' ? 'bg-green-100 text-green-700 border-green-200' :
@@ -1456,11 +1498,11 @@ export default function SellerDashboard() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/30 relative custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-gray-50/30 relative custom-scrollbar">
                
                {/* Main Ticket Message (User) */}
                <div className="flex flex-col items-end">
-                  <div className="max-w-[85%] bg-[#0066ff] text-white p-4 rounded-2xl rounded-tr-sm shadow-md text-sm break-words leading-relaxed">
+                  <div className="max-w-[85%] bg-[#0066ff] text-white p-3 sm:p-4 rounded-2xl rounded-tr-sm shadow-md text-sm break-words leading-relaxed">
                      {selectedTicket.message}
                   </div>
                   <span className="text-[10px] text-gray-400 mt-1.5 font-semibold px-1">{new Date(selectedTicket.created_at).toLocaleString()}</span>
@@ -1471,7 +1513,7 @@ export default function SellerDashboard() {
                ) : (
                  ticketReplies.map(reply => (
                    <div key={reply.id} className={`flex flex-col ${reply.user_role === 'admin' ? 'items-start' : 'items-end'}`}>
-                      <div className={`max-w-[85%] p-4 rounded-2xl shadow-sm text-sm break-words leading-relaxed ${
+                      <div className={`max-w-[85%] p-3 sm:p-4 rounded-2xl shadow-sm text-sm break-words leading-relaxed ${
                         reply.user_role === 'admin' 
                           ? 'bg-white text-gray-800 rounded-tl-sm border border-gray-200 shadow-md' 
                           : 'bg-[#0066ff] text-white rounded-tr-sm shadow-md'
@@ -1493,7 +1535,7 @@ export default function SellerDashboard() {
                     This ticket is permanently closed.
                   </div>
                ) : (
-                  <form onSubmit={handleReplyTicket} className="flex gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-200 focus-within:border-[#0066ff] focus-within:bg-white transition-all shadow-sm">
+                  <form onSubmit={handleReplyTicket} className="flex gap-2 sm:gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-200 focus-within:border-[#0066ff] focus-within:bg-white transition-all shadow-sm">
                     <div className="flex-1 relative">
                       <input 
                          type="text" 
@@ -1502,10 +1544,10 @@ export default function SellerDashboard() {
                          value={replyMessage}
                          onChange={e => setReplyMessage(e.target.value)}
                          placeholder="Type your reply here..." 
-                         className="w-full py-3 px-4 bg-transparent text-sm outline-none font-medium"
+                         className="w-full py-2 sm:py-3 px-3 sm:px-4 bg-transparent text-sm outline-none font-medium"
                       />
                     </div>
-                    <button type="submit" disabled={isSubmittingTicket} className="bg-[#0066ff] text-white p-3 rounded-xl shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center shrink-0">
+                    <button type="submit" disabled={isSubmittingTicket} className="bg-[#0066ff] text-white p-2.5 sm:p-3 rounded-xl shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center shrink-0">
                        <Send size={20} className={isSubmittingTicket ? 'animate-pulse' : ''} />
                     </button>
                   </form>
