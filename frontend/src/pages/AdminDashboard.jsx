@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
-  const [profileContextProduct, setProfileContextProduct] = useState(null); // NEW: To track product context for dual currency deductions
+  const [profileContextProduct, setProfileContextProduct] = useState(null); 
   const [userAppStats, setUserAppStats] = useState({ listed: 0, active: 0, success: 0, failed: 0 });
   const [selectedUserApps, setSelectedUserApps] = useState([]); 
   const [sellerProductsList, setSellerProductsList] = useState([]); 
@@ -88,8 +88,12 @@ export default function AdminDashboard() {
 
   const [adminBlogs, setAdminBlogs] = useState([]);
   const [newBlog, setNewBlog] = useState({ title: '', content: '', is_published: true });
- const [blogImage, setBlogImage] = useState(null);
+  const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
+
+  // Full Image Lightbox States for Admin View Details
+  const [showFullImageModal, setShowFullImageModal] = useState(false);
+  const [fullImageUrl, setFullImageUrl] = useState('');
 
   // Helper for Dual Currency Calculation
   const getConvertedPrice = (amount, country, platform) => {
@@ -126,6 +130,17 @@ export default function AdminDashboard() {
     if (tab) setActiveTab(tab);
     else setActiveTab('overview');
   }, [location.search]);
+
+  // Prevent background scrolling when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = showProductModal || showRefundModal || showAppDetailsModal || showUserProfileModal || showAppealModal || showApproveWithdrawalModal || showTrxDetailsModal || showTicketViewModal || showFullImageModal;
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showProductModal, showRefundModal, showAppDetailsModal, showUserProfileModal, showAppealModal, showApproveWithdrawalModal, showTrxDetailsModal, showTicketViewModal, showFullImageModal]);
 
   // 🔥 FETCH ALL SAVED CONFIGURATIONS
   const fetchAllFeeConfigs = async () => {
@@ -838,7 +853,7 @@ export default function AdminDashboard() {
       
       <div className="max-w-7xl mx-auto p-4 md:p-6 -mt-6">
 
-        <div className="bg-white p-2 rounded-xl shadow-sm border mb-6 flex overflow-x-auto gap-2 scrollbar-hide">
+        <div className="bg-white p-2 rounded-xl shadow-sm border mb-6 flex overflow-x-auto gap-2 scrollbar-hide hide-scrollbar">
           {[
             { id: 'overview', icon: <BarChart3 size={16} />, label: 'Overview' },
             { id: 'all-buyers', icon: <Users size={16} />, label: 'Buyers' },
@@ -874,7 +889,7 @@ export default function AdminDashboard() {
         {(activeTab === 'all-buyers' || activeTab === 'all-sellers') && (
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden animate-fade-in-up">
             <div className="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
-              <h3 className="font-bold text-gray-700 capitalize flex items-center gap-2">
+              <h3 className="font-bold text-gray-700 capitalize flex items-center gap-2 w-full md:w-auto">
                 <Users size={20} className={activeTab === 'all-buyers' ? "text-blue-600" : "text-orange-600"}/> 
                 Manage {activeTab.replace('all-', '')}s
               </h3>
@@ -922,7 +937,7 @@ export default function AdminDashboard() {
                         </button>
                         <button
                           onClick={() => toggleUserStatus(user.id, { is_frozen: !user.is_frozen })}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 ${user.is_frozen ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-600 border-blue-100'}`}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex flex-1 items-center justify-center gap-1 ${user.is_frozen ? 'bg-blue-500 text-white border-blue-500' : 'bg-blue-50 text-blue-600 border-blue-100'}`}
                         >
                           {user.is_frozen ? (
                             <>
@@ -936,7 +951,7 @@ export default function AdminDashboard() {
                         </button>
                         <button
                           onClick={() => toggleUserStatus(user.id, { is_active: !user.is_active })}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 ${!user.is_active ? 'bg-green-500 text-white border-green-500' : 'bg-red-50 text-red-600 border-red-100'}`}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex flex-1 items-center justify-center gap-1 ${!user.is_active ? 'bg-green-500 text-white border-green-500' : 'bg-red-50 text-red-600 border-red-100'}`}
                         >
                           {user.is_active ? (
                             <>
@@ -978,7 +993,7 @@ export default function AdminDashboard() {
                           href={`https://ipinfo.io/${user.last_ip}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#0066ff] text-xs font-bold"
+                          className="text-[#0066ff] text-xs font-bold block mt-1"
                         >
                           {user.last_ip}
                         </a>
@@ -1063,7 +1078,7 @@ export default function AdminDashboard() {
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div className="space-y-8 animate-fade-in-up">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
                 <p className="text-gray-500 font-bold uppercase text-xs">Total Users</p>
                 <p className="text-3xl font-black text-gray-800 mt-2">{stats.totalUsers}</p>
@@ -1083,7 +1098,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
-              <div className="p-5 border-b flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
+              <div className="p-5 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50">
                 <div className="flex items-center gap-3">
                   <div className="bg-indigo-600 p-2 rounded-lg text-white">
                     <BarChart3 size={22} />
@@ -1093,17 +1108,17 @@ export default function AdminDashboard() {
                     <p className="text-xs text-gray-500">Performance overview by selected month</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border shadow-sm">
+                <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border shadow-sm w-full sm:w-auto">
                   <Calendar size={18} className="text-gray-400 ml-2" />
                   <input 
                     type="month" 
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="p-1.5 text-sm font-bold text-gray-700 outline-none cursor-pointer"
+                    className="p-1.5 text-sm font-bold text-gray-700 outline-none cursor-pointer w-full"
                   />
                 </div>
               </div>
-              <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                 <div className="bg-blue-50/50 border border-blue-100 p-5 rounded-2xl flex flex-col items-center justify-center text-center">
                   <p className="text-blue-600 font-bold text-xs uppercase mb-1">Monthly Total Orders</p>
                   <p className="text-4xl font-black text-blue-800">{monthlyReport.total_orders}</p>
@@ -1127,7 +1142,7 @@ export default function AdminDashboard() {
         {/* SETTINGS TAB (DYNAMIC FEES) */}
         {activeTab === 'settings' && (
           <div className="space-y-8 animate-fade-in-up mt-6 max-w-5xl mx-auto">
-            <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
               <h3 className="font-bold text-xl text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                 <Settings size={22} className="text-[#0066ff]" /> Dynamic Tariffs & Fee Configuration
               </h3>
@@ -1136,7 +1151,7 @@ export default function AdminDashboard() {
               </p>
 
               <form onSubmit={handleSaveFeeConfig} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                   <div>
                     <label className="block text-xs font-black uppercase text-gray-600 mb-1">Target Country</label>
                     <input type="text" required placeholder="e.g. USA, India, Bangladesh..." value={feeConfig.country} onChange={(e) => handleFeeSelectorChange('country', e.target.value)} onBlur={handleFeeBlur} className="w-full p-2.5 bg-white border rounded-lg font-bold text-sm text-gray-800 outline-none focus:border-[#0066ff]"/>
@@ -1152,22 +1167,22 @@ export default function AdminDashboard() {
                     <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center text-sm font-bold text-[#0066ff]">Fetching active configurations...</div>
                   )}
                   
-                  <div className="col-span-full mb-2 bg-gray-50 border p-4 rounded-xl">
-                    <div className="flex justify-between items-center mb-4">
+                  <div className="col-span-full mb-2 bg-gray-50 border p-4 rounded-xl overflow-x-auto">
+                    <div className="flex justify-between items-center mb-4 min-w-[300px]">
                       <div>
                         <label className="block text-sm font-bold text-gray-800">Dynamic Tier-Based Platform Charge</label>
                         <p className="text-[10px] text-gray-500">Set fixed fees based on the product price range.</p>
                       </div>
-                      <button type="button" onClick={handleAddTier} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors">+ Add Tier</button>
+                      <button type="button" onClick={handleAddTier} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors shrink-0">+ Add Tier</button>
                     </div>
                     
                     {feeConfig.platform_charge.map((tier, index) => (
-                      <div key={index} className="flex flex-wrap md:flex-nowrap gap-3 mb-3 items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                        <div className="flex-1"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price ($)</label><input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" /></div>
-                        <div className="flex-1"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price ($)</label><input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" /></div>
-                        <div className="flex-1"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee ($)</label><input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" /></div>
+                      <div key={index} className="flex flex-col sm:flex-row gap-3 mb-3 sm:items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm min-w-[300px]">
+                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price ($)</label><input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" /></div>
+                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price ($)</label><input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" /></div>
+                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee ($)</label><input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" /></div>
                         {feeConfig.platform_charge.length > 1 && (
-                          <div className="pb-1"><button type="button" onClick={() => handleRemoveTier(index)} className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors" title="Remove Tier"><Trash2 size={16} /></button></div>
+                          <div className="pb-1 mt-2 sm:mt-0"><button type="button" onClick={() => handleRemoveTier(index)} className="p-2 w-full sm:w-auto bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors flex justify-center" title="Remove Tier"><Trash2 size={16} /></button></div>
                         )}
                       </div>
                     ))}
@@ -1196,7 +1211,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="col-span-full mb-2 bg-amber-50 border border-amber-100 p-4 rounded-xl">
+                <div className="col-span-full mb-2 bg-amber-50 border border-amber-100 p-4 rounded-xl overflow-x-auto">
                   <VerificationFieldsGuide variant="platform" />
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
                     <div>
@@ -1206,12 +1221,12 @@ export default function AdminDashboard() {
                     <button type="button" onClick={handleAddVerificationField} className="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-200 shrink-0">+ Add Field</button>
                   </div>
                   {feeConfig.verification_fields.map((field, index) => (
-                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 mb-3 bg-white p-3 rounded-lg border items-end">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-3 bg-white p-3 rounded-lg border items-end min-w-[300px]">
                       <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="account_name" /></div>
                       <div className="sm:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Amazon Account Name" /></div>
                       <div><label className="text-[10px] font-bold text-gray-500">Type</label><select value={field.type} onChange={(e) => handleVerificationFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded text-sm"><option value="text">Text</option><option value="email">Email</option><option value="url">URL</option><option value="tel">Phone</option></select></div>
                       <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm" placeholder="Example for buyer..." /></div>
-                      <div className="flex items-center gap-2 pb-2">
+                      <div className="flex items-center justify-between lg:justify-start gap-2 pb-1">
                         <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={!!field.required} onChange={(e) => handleVerificationFieldChange(index, 'required', e.target.checked)} /> Required</label>
                         {feeConfig.verification_fields.length > 1 && (
                           <button type="button" onClick={() => handleRemoveVerificationField(index)} className="p-2 bg-red-50 text-red-600 rounded-lg"><Trash2 size={14} /></button>
@@ -1223,7 +1238,7 @@ export default function AdminDashboard() {
                     type="button"
                     onClick={savePlatformVerificationFields}
                     disabled={!feeConfig.country || !feeConfig.platform}
-                    className="w-full sm:w-auto bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-amber-700 disabled:opacity-50"
+                    className="w-full sm:w-auto bg-amber-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-amber-700 disabled:opacity-50 mt-2"
                   >
                     Save Verification Fields (this Country + Platform)
                   </button>
@@ -1235,7 +1250,7 @@ export default function AdminDashboard() {
               </form>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
               <h3 className="font-bold text-xl text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
                 <ShieldCheck size={22} className="text-green-600" /> Global Buyer Verification Fields
               </h3>
@@ -1244,15 +1259,15 @@ export default function AdminDashboard() {
               {verificationConfigLoading ? (
                 <p className="text-sm text-gray-500">Loading...</p>
               ) : (
-                <>
-                  <div className="space-y-3 mb-4">
+                <div className="overflow-x-auto">
+                  <div className="space-y-3 mb-4 min-w-[300px]">
                     {globalVerificationFields.map((field, index) => (
-                      <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 bg-gray-50 p-3 rounded-lg border items-end">
+                      <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 bg-gray-50 p-3 rounded-lg border items-end">
                         <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleGlobalVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="paypal_account" /></div>
                         <div className="sm:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleGlobalVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="PayPal Email Address" /></div>
                         <div><label className="text-[10px] font-bold text-gray-500">Type</label><select value={field.type} onChange={(e) => handleGlobalVerificationFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded text-sm bg-white"><option value="text">Text</option><option value="email">Email</option><option value="url">URL</option><option value="tel">Phone</option></select></div>
                         <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleGlobalVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="yourname@email.com" /></div>
-                        <div className="flex items-center gap-2 pb-2">
+                        <div className="flex items-center justify-between lg:justify-start gap-2 pb-1">
                           <label className="flex items-center gap-1 text-xs font-bold"><input type="checkbox" checked={!!field.required} onChange={(e) => handleGlobalVerificationFieldChange(index, 'required', e.target.checked)} /> Required</label>
                           <button type="button" onClick={() => handleRemoveGlobalVerificationField(index)} className="p-2 bg-red-50 text-red-600 rounded-lg"><Trash2 size={14} /></button>
                         </div>
@@ -1260,10 +1275,10 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <button type="button" onClick={handleAddGlobalVerificationField} className="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold">+ Add Global Field</button>
-                    <button type="button" onClick={saveGlobalVerificationFields} className="bg-green-600 text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700">Save Global Fields</button>
+                    <button type="button" onClick={handleAddGlobalVerificationField} className="bg-gray-100 w-full sm:w-auto text-gray-700 px-4 py-2.5 rounded-xl text-sm font-bold">+ Add Global Field</button>
+                    <button type="button" onClick={saveGlobalVerificationFields} className="bg-green-600 w-full sm:w-auto text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-green-700">Save Global Fields</button>
                   </div>
-                </>
+                </div>
               )}
             </div>
 
@@ -1291,8 +1306,8 @@ export default function AdminDashboard() {
                       title={`${conf.country} — ${conf.platform}`}
                       actions={
                         <>
-                          <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] bg-blue-50 p-2 rounded-lg text-xs font-bold flex items-center gap-1"><Edit size={14}/> Edit</button>
-                          <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 bg-red-50 p-2 rounded-lg text-xs font-bold flex items-center gap-1"><Trash2 size={14}/> Delete</button>
+                          <button onClick={() => handleEditFeeClick(conf)} className="text-[#0066ff] bg-blue-50 p-2 rounded-lg text-xs font-bold flex flex-1 items-center justify-center gap-1"><Edit size={14}/> Edit</button>
+                          <button onClick={() => handleDeleteFeeConfig(conf.country, conf.platform)} className="text-red-500 bg-red-50 p-2 rounded-lg text-xs font-bold flex flex-1 items-center justify-center gap-1"><Trash2 size={14}/> Delete</button>
                         </>
                       }
                     >
@@ -1356,15 +1371,13 @@ export default function AdminDashboard() {
               </ResponsiveTableShell>
             </div>
 
-        {/* Payment Receiving Accounts & Methods Manager */}
+            {/* Payment Receiving Accounts & Methods Manager */}
             <div className="mt-8">
                <PaymentMethodsManager />
             </div>
           </div>
         )}
 
-        {/* OTHER ADMIN TABS IMPLEMENTATIONS... (Applications, Products, Appeals, Tickets, Announcements, Blogs) */}
-        
         {/* APPEALS TAB */}
         {activeTab === 'appeals' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
@@ -1567,27 +1580,27 @@ export default function AdminDashboard() {
               <h3 className="font-bold text-gray-700">Pending User Verifications</h3>
               <span className="bg-pink-100 text-pink-800 text-xs px-3 py-1 rounded-full font-bold">{verifications.length} Requests</span>
             </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {verifications.length > 0 ? verifications.map(v => (
-                <div key={v.id} className="bg-white border rounded-xl shadow-sm hover:shadow-md p-5 transition-shadow">
+                <div key={v.id} className="bg-white border rounded-xl shadow-sm hover:shadow-md p-4 sm:p-5 transition-shadow">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl shrink-0">
                       {v.name ? v.name.charAt(0).toUpperCase() : 'U'}
                     </div>
-                    <div>
-                      <h4 className="font-bold text-gray-800">{v.name}</h4>
-                      <p className="text-xs text-gray-500">{v.email}</p>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-gray-800 truncate">{v.name}</h4>
+                      <p className="text-xs text-gray-500 truncate">{v.email}</p>
                     </div>
                   </div>
                   <div className="space-y-3 text-sm mb-5">
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Amazon Location & Account</p>
-                      <p className="font-medium text-gray-700">{v.amazon_location || 'N/A'} - {v.amazon_account || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">{v.amazon_location || 'N/A'} - {v.amazon_account || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Amazon Profile Link</p>
                       {v.amazon_profile_url ? (
-                        <a href={v.amazon_profile_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate block">
+                        <a href={v.amazon_profile_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate block max-w-full">
                           View Profile ↗
                         </a>
                       ) : (
@@ -1596,8 +1609,8 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Payment & Contacts</p>
-                      <p className="font-medium text-gray-700">PayPal: {v.paypal_account || 'N/A'}</p>
-                      <p className="font-medium text-gray-700">WA: {v.whatsapp_account || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">PayPal: {v.paypal_account || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">WA: {v.whatsapp_account || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -1620,7 +1633,7 @@ export default function AdminDashboard() {
         {activeTab === 'products' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b"><h3 className="font-bold text-gray-700">Pending Product Approvals</h3></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 p-4 sm:p-6">
               {pendingProducts.map(p => (
                 <div key={p.id} className="border rounded-lg p-4 shadow-sm hover:shadow-md bg-gray-50 flex flex-col justify-between">
                   <div>
@@ -1628,7 +1641,7 @@ export default function AdminDashboard() {
                     <h4 className="font-bold text-gray-800 truncate">{p.product_name || p.store_name}</h4>
                     <div className="flex justify-between text-sm mt-2"><span className="text-gray-600">Price: <b className="text-black">${p.price}</b></span><span className="text-gray-600">Reward: <b className="text-green-600">${p.reward}</b></span></div>
                     <p className="text-xs text-gray-500 mt-2 truncate">Platform: {p.platform} | Qty: {p.required_orders}</p>
-                    <div className="mt-3 bg-blue-50 p-2 rounded border border-blue-100">
+                    <div className="mt-3 bg-blue-50 p-2 rounded border border-blue-100 overflow-hidden">
                       <p className="text-xs text-blue-800 font-bold truncate">👤 {p.seller_name || 'N/A'}</p>
                       <p className="text-xs text-blue-600 truncate">✉️ {p.seller_email || 'N/A'} (ID: #{p.seller_id})</p>
                     </div>
@@ -1647,11 +1660,11 @@ export default function AdminDashboard() {
         {/* ALL PRODUCTS TAB */}
         {activeTab === 'all-products' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
-            <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
+            <div className="p-4 bg-gray-50 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h3 className="font-bold text-gray-700">All Listed Products</h3>
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Search product..." className="pl-9 pr-4 py-1.5 border rounded-full text-sm focus:outline-none focus:border-blue-500" />
+                <input type="text" placeholder="Search product..." className="w-full sm:w-auto pl-9 pr-4 py-1.5 border rounded-full text-sm focus:outline-none focus:border-blue-500" />
               </div>
             </div>
             <ResponsiveTableShell
@@ -1698,15 +1711,15 @@ export default function AdminDashboard() {
                   {allProducts.map(p => (
                     <tr key={p.id} className="border-b hover:bg-gray-50">
                       <td className="p-4 flex items-center gap-3">
-                        <img src={p.image_url} alt="Product" className="w-12 h-12 rounded object-contain bg-white border p-1" />
-                        <div>
+                        <img src={p.image_url} alt="Product" className="w-12 h-12 rounded object-contain bg-white border p-1 shrink-0" />
+                        <div className="min-w-0">
                           <p className="font-bold text-gray-800 w-48 truncate">{p.product_name || p.store_name}</p>
                           <p className="text-xs text-gray-500">Platform: {p.platform}</p>
                         </div>
                       </td>
                       <td className="p-4">
-                        <p className="font-bold text-gray-700">{p.seller_name}</p>
-                        <p className="text-xs text-gray-500">{p.seller_email}</p>
+                        <p className="font-bold text-gray-700 truncate max-w-[150px]">{p.seller_name}</p>
+                        <p className="text-xs text-gray-500 truncate max-w-[150px]">{p.seller_email}</p>
                       </td>
                       <td className="p-4">
                         <p className="text-gray-700">Price: <span className="font-bold">${p.price}</span></p>
@@ -1716,7 +1729,7 @@ export default function AdminDashboard() {
                         {renderStatusBadge(p.status)}
                       </td>
                       <td className="p-4 text-right">
-                        <button onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }} className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors">
+                        <button onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }} className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors flex items-center justify-center ml-auto">
                           <Eye size={20} />
                         </button>
                       </td>
@@ -1801,8 +1814,8 @@ export default function AdminDashboard() {
                         )}
                       </td>
                       <td className="p-4 flex items-center gap-3">
-                        <img src={app.image_url} alt="Product" className="w-10 h-10 rounded object-contain bg-white border" />
-                        <div>
+                        <img src={app.image_url} alt="Product" className="w-10 h-10 rounded object-contain bg-white border shrink-0" />
+                        <div className="min-w-0">
                           <p className="font-bold text-gray-800 w-48 truncate">{app.product_name}</p>
                           <p className="text-xs text-green-600 font-bold">Reward: ${app.reward}</p>
                         </div>
@@ -1864,7 +1877,7 @@ export default function AdminDashboard() {
                       <td className="p-4 font-semibold">{d.email}</td>
                       <td className="p-4 text-green-600 font-bold">${d.amount}</td>
                       <td className="p-4"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">{d.payment_method}</span></td>
-                      <td className="p-4 font-mono text-gray-500">{d.transaction_id}</td>
+                      <td className="p-4 font-mono text-gray-500 break-all">{d.transaction_id}</td>
                       <td className="p-4 text-right gap-2 flex justify-end">
                         <button onClick={() => approveDeposit(d.id)} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 font-semibold text-xs mr-2">Approve</button>
                         <button onClick={() => rejectDeposit(d.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 font-semibold text-xs">Reject</button>
@@ -1910,7 +1923,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="p-4 text-red-600 font-bold">${w.amount}</td>
                       <td className="p-4"><span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-bold">{w.payment_method}</span></td>
-                      <td className="p-4 text-gray-600 max-w-xs truncate">{w.account_details}</td>
+                      <td className="p-4 text-gray-600 max-w-[200px] break-all text-xs">{w.account_details}</td>
                       <td className="p-4 text-right gap-2 flex justify-end">
                         <button onClick={() => { setWithdrawalToApprove(w); setShowApproveWithdrawalModal(true); }} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 font-semibold text-xs mr-2">Mark Paid</button>
                         <button onClick={() => rejectWithdrawal(w.id)} className="bg-gray-800 text-white px-3 py-1 rounded hover:bg-gray-900 font-semibold text-xs">Reject & Refund</button>
@@ -1928,10 +1941,10 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
               <h3 className="font-bold text-gray-700">Transaction History</h3>
-              <div className="flex flex-wrap gap-2 bg-gray-200 p-1 rounded-lg">
-                <button onClick={() => setSubTabHistory('withdrawals')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'withdrawals' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Withdrawals</button>
-                <button onClick={() => setSubTabHistory('deposits')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'deposits' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Deposits</button>
-                <button onClick={() => setSubTabHistory('refunds')} className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'refunds' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Product Refunds</button>
+              <div className="flex flex-wrap gap-2 bg-gray-200 p-1 rounded-lg w-full md:w-auto">
+                <button onClick={() => setSubTabHistory('withdrawals')} className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'withdrawals' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Withdrawals</button>
+                <button onClick={() => setSubTabHistory('deposits')} className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'deposits' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Deposits</button>
+                <button onClick={() => setSubTabHistory('refunds')} className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'refunds' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Product Refunds</button>
               </div>
             </div>
             <ResponsiveTableShell
@@ -1981,7 +1994,7 @@ export default function AdminDashboard() {
                       >
                         <AdminField label="Amount"><span className="text-green-600 font-bold">${d.amount}</span></AdminField>
                         <AdminField label="Method">{d.payment_method}</AdminField>
-                        <AdminField label="Trx">{d.transaction_id}</AdminField>
+                        <AdminField label="Trx"><span className="break-all text-[10px]">{d.transaction_id}</span></AdminField>
                         <AdminField label="Date">{new Date(d.created_at).toLocaleDateString()}</AdminField>
                         <AdminField label="Status">{renderStatusBadge(d.status)}</AdminField>
                       </AdminMobileCard>
@@ -2022,7 +2035,7 @@ export default function AdminDashboard() {
                       <td className="p-4 text-gray-600 text-xs">{new Date(w.created_at).toLocaleDateString()}</td>
                       <td className="p-4 text-right flex flex-col items-end gap-1">
                         {renderStatusBadge(w.status)}
-                        <button onClick={() => openTrxDetails(w, 'withdrawal')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 mt-1"><Eye size={12}/> View Details</button>
+                        <button onClick={() => openTrxDetails(w, 'withdrawal')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center justify-end gap-1 mt-1"><Eye size={12}/> View Details</button>
                       </td>
                     </tr>
                   ))}
@@ -2030,11 +2043,11 @@ export default function AdminDashboard() {
                     <tr key={d.id} className="border-b hover:bg-gray-50">
                       <td className="p-4"><p className="font-bold text-gray-700">{d.name}</p><p className="text-xs text-gray-500">{d.email}</p></td>
                       <td className="p-4 text-green-600 font-bold">${d.amount}</td>
-                      <td className="p-4"><p className="font-bold text-gray-700">{d.payment_method}</p><p className="text-xs text-gray-500 font-mono">{d.transaction_id}</p></td>
+                      <td className="p-4"><p className="font-bold text-gray-700">{d.payment_method}</p><p className="text-xs text-gray-500 font-mono break-all">{d.transaction_id}</p></td>
                       <td className="p-4 text-gray-600 text-xs">{new Date(d.created_at).toLocaleDateString()}</td>
                       <td className="p-4 text-right flex flex-col items-end gap-1">
                         {renderStatusBadge(d.status)}
-                        <button onClick={() => openTrxDetails(d, 'deposit')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 mt-1"><Eye size={12}/> View Details</button>
+                        <button onClick={() => openTrxDetails(d, 'deposit')} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center justify-end gap-1 mt-1"><Eye size={12}/> View Details</button>
                       </td>
                     </tr>
                   ))}
@@ -2055,14 +2068,14 @@ export default function AdminDashboard() {
         {/* ANNOUNCEMENTS TAB */}
         {activeTab === 'announcements' && (
           <div className="space-y-6 animate-fade-in-up mt-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border">
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
               <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
                 <Megaphone size={20} className="text-[#0066ff]"/> Create New Announcement
               </h3>
               <form onSubmit={handleCreateAnnouncement} className="space-y-4">
-                <input required type="text" placeholder="Announcement Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff]" value={newAnnouncement.title} onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})} />
-                <textarea required placeholder="Write your message here..." className="w-full p-3 border rounded-xl h-24 outline-none focus:border-[#0066ff]" value={newAnnouncement.message} onChange={e => setNewAnnouncement({...newAnnouncement, message: e.target.value})}></textarea>
-                <button type="submit" disabled={isPublishing} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
+                <input required type="text" placeholder="Announcement Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newAnnouncement.title} onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})} />
+                <textarea required placeholder="Write your message here..." className="w-full p-3 border rounded-xl h-24 outline-none focus:border-[#0066ff] text-sm" value={newAnnouncement.message} onChange={e => setNewAnnouncement({...newAnnouncement, message: e.target.value})}></textarea>
+                <button type="submit" disabled={isPublishing} className="w-full sm:w-auto bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
                   {isPublishing ? 'Publishing...' : 'Publish Announcement'}
                 </button>
               </form>
@@ -2081,7 +2094,7 @@ export default function AdminDashboard() {
                       <p className="text-sm text-gray-500 mt-1 break-words">{a.message}</p>
                       <p className="text-[10px] text-gray-400 mt-2">{new Date(a.created_at).toLocaleString()}</p>
                     </div>
-                    <button onClick={() => handleDeleteAnnouncement(a.id)} className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1 shrink-0">
+                    <button onClick={() => handleDeleteAnnouncement(a.id)} className="w-full md:w-auto bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-1 shrink-0">
                       <Trash2 size={16} /> Delete
                     </button>
                   </div>
@@ -2095,27 +2108,27 @@ export default function AdminDashboard() {
         {/* BLOGS TAB */}
         {activeTab === 'blogs' && (
           <div className="space-y-6 animate-fade-in-up mt-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border">
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
               <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
                 <FileText size={20} className="text-[#0066ff]"/> Publish New Blog Post
               </h3>
               <form onSubmit={handleCreateBlog} className="space-y-4">
-                <input required type="text" placeholder="Blog Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff]" value={newBlog.title} onChange={e => setNewBlog({...newBlog, title: e.target.value})} />
+                <input required type="text" placeholder="Blog Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.title} onChange={e => setNewBlog({...newBlog, title: e.target.value})} />
                 
                 <div className="flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Feature Image (Optional)</label>
                     <input type="file" accept="image/*" id="blog-image-upload" className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" onChange={e => setBlogImage(e.target.files[0])} />
                   </div>
-                  <div className="flex items-center gap-2 md:mt-6">
+                  <div className="flex items-center gap-2 md:mt-6 pt-2 md:pt-0">
                     <input type="checkbox" id="publish" className="w-4 h-4 cursor-pointer" checked={newBlog.is_published} onChange={e => setNewBlog({...newBlog, is_published: e.target.checked})} />
                     <label htmlFor="publish" className="text-sm font-bold text-gray-700 cursor-pointer">Publish Immediately</label>
                   </div>
                 </div>
 
-                <textarea required placeholder="Write the blog content here (Supports HTML/Text)..." className="w-full p-3 border rounded-xl h-40 outline-none focus:border-[#0066ff]" value={newBlog.content} onChange={e => setNewBlog({...newBlog, content: e.target.value})}></textarea>
+                <textarea required placeholder="Write the blog content here (Supports HTML/Text)..." className="w-full p-3 border rounded-xl h-40 outline-none focus:border-[#0066ff] text-sm" value={newBlog.content} onChange={e => setNewBlog({...newBlog, content: e.target.value})}></textarea>
                 
-                <button type="submit" disabled={isPublishingBlog} className="bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                <button type="submit" disabled={isPublishingBlog} className="w-full sm:w-auto bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
                   {isPublishingBlog ? 'Publishing...' : <><FileText size={18} /> Publish Blog</>}
                 </button>
               </form>
@@ -2130,19 +2143,19 @@ export default function AdminDashboard() {
                 {adminBlogs.map(blog => (
                   <div key={blog.id} className="p-4 hover:bg-gray-50 flex flex-col md:flex-row items-start md:items-center gap-4">
                     {blog.image_url ? (
-                      <img src={blog.image_url} alt="blog" className="w-20 h-14 object-cover rounded-lg border bg-gray-100 shrink-0" />
+                      <img src={blog.image_url} alt="blog" className="w-full md:w-20 h-40 md:h-14 object-cover rounded-lg border bg-gray-100 shrink-0" />
                     ) : (
-                      <div className="w-20 h-14 bg-gray-100 rounded-lg border flex items-center justify-center text-gray-400 shrink-0"><ImageIcon size={20} /></div>
+                      <div className="w-full md:w-20 h-40 md:h-14 bg-gray-100 rounded-lg border flex items-center justify-center text-gray-400 shrink-0"><ImageIcon size={24} /></div>
                     )}
-                    <div className="flex-1 min-w-0"> 
+                    <div className="flex-1 min-w-0 w-full"> 
                       <h4 className="font-bold text-gray-800 truncate">{blog.title}</h4>
-                      <p className="text-xs text-gray-500 line-clamp-1">{blog.content.substring(0, 100)}...</p>
+                      <p className="text-xs text-gray-500 line-clamp-2 mt-1 md:line-clamp-1">{blog.content.substring(0, 100)}...</p>
                       <div className="flex items-center gap-2 mt-2">
                         <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${blog.is_published ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{blog.is_published ? 'Published' : 'Draft'}</span>
                         <span className="text-[10px] text-gray-400">{new Date(blog.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <button onClick={() => handleDeleteBlog(blog.id)} className="bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors flex items-center gap-1 shrink-0">
+                    <button onClick={() => handleDeleteBlog(blog.id)} className="w-full md:w-auto bg-white border border-red-200 text-red-600 px-3 py-2 md:py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-1 shrink-0">
                       <Trash2 size={14} /> Delete
                     </button>
                   </div>
@@ -2153,63 +2166,10 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* ADMIN TICKET CHAT MODAL */}
-        {showTicketViewModal && selectedTicket && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-slide-up">
-              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                 <div>
-                    <h3 className="font-bold text-gray-800 text-sm pr-2">Ticket: {selectedTicket.subject}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-0.5 inline-block rounded text-[10px] font-bold uppercase tracking-wider ${selectedTicket.status === 'open' ? 'bg-yellow-100 text-yellow-700' : selectedTicket.status === 'answered' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>Status: {selectedTicket.status}</span>
-                      <span className="text-[10px] text-gray-500 font-bold uppercase bg-white border px-1.5 py-0.5 rounded">User: {selectedTicket.user_name}</span>
-                    </div>
-                 </div>
-                 <button onClick={() => setShowTicketViewModal(false)} className="text-gray-400 hover:text-red-500 bg-white shadow-sm rounded-full p-1 border border-gray-200 shrink-0"><X size={20} /></button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white relative">
-                 <div className="flex flex-col items-start">
-                    <div className="max-w-[85%] bg-gray-100 border border-gray-200 text-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm text-sm">{selectedTicket.message}</div>
-                    <span className="text-[10px] text-gray-400 mt-1 font-bold">{selectedTicket.user_name} • {new Date(selectedTicket.created_at).toLocaleString()}</span>
-                 </div>
-                 {repliesLoading ? (
-                   <div className="text-center text-xs text-gray-400 py-4 animate-pulse">Loading replies...</div>
-                 ) : (
-                   ticketReplies.map(reply => (
-                     <div key={reply.id} className={`flex flex-col ${reply.user_role === 'admin' ? 'items-end' : 'items-start'}`}>
-                        <div className={`max-w-[85%] p-3 rounded-2xl shadow-sm text-sm ${reply.user_role === 'admin' ? 'bg-[#0066ff] text-white rounded-tr-sm' : 'bg-gray-100 border border-gray-200 text-gray-800 rounded-tl-sm'}`}>
-                           {reply.message}
-                        </div>
-                        <span className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                           {reply.user_role === 'admin' ? <span className="font-bold text-[#0066ff]">You (Admin)</span> : <span className="font-bold">{reply.user_name}</span>} • {new Date(reply.created_at).toLocaleString()}
-                        </span>
-                     </div>
-                   ))
-                 )}
-              </div>
-
-              <div className="p-3 border-t border-gray-100 bg-gray-50 flex flex-col gap-2">
-                 {selectedTicket.status === 'closed' ? (
-                    <div className="text-center py-2 text-sm font-bold text-gray-500 bg-gray-200 rounded-xl border border-gray-300">This ticket is closed and resolved.</div>
-                 ) : (
-                    <>
-                      <form onSubmit={handleReplyTicket} className="flex gap-2">
-                        <input type="text" required value={replyMessage} onChange={e => setReplyMessage(e.target.value)} placeholder="Type your reply to the user..." className="flex-1 p-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#0066ff] focus:ring-1 focus:ring-[#0066ff] transition-all" />
-                        <button type="submit" disabled={isSubmittingTicket} className="bg-[#0066ff] text-white p-3 rounded-xl shadow-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"><Send size={18} className={isSubmittingTicket ? 'animate-pulse' : ''} /></button>
-                      </form>
-                      <button onClick={() => handleCloseTicket(selectedTicket.id)} className="w-full mt-2 text-xs font-bold text-gray-500 bg-white border border-gray-300 py-2 rounded-lg hover:bg-gray-100 transition-colors">Mark Ticket as Resolved & Close</button>
-                    </>
-                 )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* APPROVE WITHDRAWAL MODAL */}
         {showApproveWithdrawalModal && withdrawalToApprove && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in-up">
               <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2"><Wallet className="text-green-500" /> Confirm Payment Sent</h3>
               <p className="text-sm text-gray-600 mb-4">You are marking a withdrawal of <b className="text-red-600">${withdrawalToApprove.amount}</b> to <b className="text-gray-800">{withdrawalToApprove.name}</b> as Paid.</p>
               
@@ -2247,19 +2207,19 @@ export default function AdminDashboard() {
               <form onSubmit={submitWithdrawalApproval} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Transaction ID (Required)</label>
-                  <input required type="text" className="w-full p-2 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm" value={withdrawalProof.transaction_id} onChange={e => setWithdrawalProof({...withdrawalProof, transaction_id: e.target.value})} placeholder="e.g., TRX123456789" />
+                  <input required type="text" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm bg-gray-50" value={withdrawalProof.transaction_id} onChange={e => setWithdrawalProof({...withdrawalProof, transaction_id: e.target.value})} placeholder="e.g., TRX123456789" />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional / Required)</label>
-                  <input type="file" accept="image/*" onChange={handleWithdrawalImageUpload} className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" />
+                  <input type="file" accept="image/*" onChange={handleWithdrawalImageUpload} className="w-full p-2 border bg-gray-50 rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" />
                   {isUploadingWithdrawalProof && <p className="text-xs text-green-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
                   {withdrawalProof.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <button type="button" onClick={() => { setShowApproveWithdrawalModal(false); setWithdrawalToApprove(null); }} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
-                  <button type="submit" disabled={isUploadingWithdrawalProof} className="px-4 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow-md disabled:opacity-50">Mark Paid & Notify User</button>
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+                  <button type="button" onClick={() => { setShowApproveWithdrawalModal(false); setWithdrawalToApprove(null); }} className="w-full sm:w-auto px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
+                  <button type="submit" disabled={isUploadingWithdrawalProof} className="w-full sm:w-auto px-4 py-2.5 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow-md disabled:opacity-50">Mark Paid & Notify User</button>
                 </div>
               </form>
             </div>
@@ -2268,25 +2228,29 @@ export default function AdminDashboard() {
 
         {/* TRANSACTION DETAILS MODAL */}
         {showTrxDetailsModal && selectedTrx && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm animate-fade-in-up">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto animate-fade-in-up">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 capitalize"><Wallet size={20} className={trxType === 'deposit' ? 'text-green-500' : 'text-red-500'}/> {trxType} Details</h3>
-                <button onClick={() => setShowTrxDetailsModal(false)} className="text-gray-400 hover:text-red-500"><X size={20} /></button>
+                <button onClick={() => setShowTrxDetailsModal(false)} className="text-gray-400 hover:text-red-500 bg-gray-50 rounded-full p-1"><X size={20} /></button>
               </div>
               
               <div className="space-y-3 text-sm text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <p className="flex justify-between"><span className="font-bold text-gray-500">User:</span> <span className="font-semibold">{selectedTrx.name || selectedTrx.email}</span></p>
+                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">User:</span> <span className="font-semibold">{selectedTrx.name || selectedTrx.email}</span></p>
                 <div className="w-full h-px bg-gray-200"></div>
-                <p className="flex justify-between"><span className="font-bold text-gray-500">Amount:</span> <span className={`font-black text-lg ${trxType === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>${Number(selectedTrx.amount).toFixed(2)}</span></p>
+                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Amount:</span> <span className={`font-black text-lg ${trxType === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>${Number(selectedTrx.amount).toFixed(2)}</span></p>
                 <div className="w-full h-px bg-gray-200"></div>
-                <p className="flex justify-between"><span className="font-bold text-gray-500">Method:</span> <span className="font-semibold">{selectedTrx.payment_method}</span></p>
+                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Method:</span> <span className="font-bold bg-white px-2 py-0.5 rounded border border-gray-100 shadow-sm">{selectedTrx.payment_method}</span></p>
                 <div className="w-full h-px bg-gray-200"></div>
                 
-               {trxType === 'withdrawal' && (
-                  <div className="bg-white p-3 border border-gray-100 rounded-xl shadow-sm">
-                    <span className="font-bold text-gray-400 block text-[10px] uppercase tracking-wider mb-1.5">To Account:</span>
-                    {selectedTrx.is_crypto || selectedTrx.crypto_address ? (
+               {/* Account / Wallet Details Section */}
+               {(selectedTrx.account_details || selectedTrx.crypto_address) && (
+                  <div className="bg-white p-3 border border-gray-100 rounded-xl shadow-sm mt-2">
+                    <span className="font-bold text-gray-400 block text-[10px] uppercase tracking-wider mb-1.5">
+                      {trxType === 'deposit' ? 'From Account / Wallet:' : 'To Account:'}
+                    </span>
+                    
+                    {selectedTrx.crypto_address ? (
                       <div className="space-y-1 text-xs text-gray-700">
                         <p><span className="font-semibold">Address:</span> <span className="font-mono break-all font-medium text-gray-800">{selectedTrx.crypto_address}</span></p>
                         {selectedTrx.crypto_network && <p><span className="font-semibold">Network:</span> {selectedTrx.crypto_network}</p>}
@@ -2298,28 +2262,49 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
+                {/* Payment Proof Section */}
                 {(selectedTrx.transaction_id || selectedTrx.screenshot_url) && (
-                  <div className="bg-blue-50 border border-blue-100 p-3 rounded mt-2">
-                    <p className="font-bold text-blue-800 text-xs mb-2 uppercase border-b border-blue-200 pb-1">Payment Proof</p>
-                    {selectedTrx.transaction_id && <p className="text-xs mb-2"><span className="font-semibold">Trx ID:</span> <span className="font-mono bg-white px-1 border rounded">{selectedTrx.transaction_id}</span></p>}
-                    {selectedTrx.screenshot_url && <a href={selectedTrx.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#0066ff] font-bold hover:underline text-xs bg-white px-2 py-1 rounded border border-blue-200 w-max"><ImageIcon size={14} /> View Screenshot</a>}
+                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mt-3 shadow-sm">
+                    <p className="font-black text-blue-800 text-[10px] uppercase tracking-wider mb-3 flex items-center gap-1"><ShieldCheck size={14}/> Payment Proof</p>
+                    
+                    {selectedTrx.transaction_id && (
+                       <div className="mb-3">
+                         <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Trx ID:</p>
+                         <p className="font-mono bg-white px-2 py-1.5 border border-blue-200 rounded font-bold text-gray-800 break-all">{selectedTrx.transaction_id}</p>
+                       </div>
+                    )}
+                    
+                    {selectedTrx.screenshot_url && (
+                       <div>
+                         <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Screenshot:</p>
+                         <img 
+                           src={selectedTrx.screenshot_url} 
+                           alt="Proof" 
+                           onClick={() => {
+                             setFullImageUrl(selectedTrx.screenshot_url);
+                             setShowFullImageModal(true);
+                           }}
+                           className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity" 
+                         />
+                       </div>
+                    )}
                   </div>
                 )}
                 
                 <div className="w-full h-px bg-gray-200"></div>
-                <p className="flex justify-between"><span className="font-bold text-gray-500">Date:</span> <span>{new Date(selectedTrx.created_at).toLocaleString()}</span></p>
+                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Date:</span> <span className="font-medium text-right">{new Date(selectedTrx.created_at).toLocaleString()}</span></p>
                 <div className="w-full h-px bg-gray-200"></div>
                 <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Status:</span> {renderStatusBadge(selectedTrx.status)}</p>
               </div>
-              <div className="mt-6"><button onClick={() => setShowTrxDetailsModal(false)} className="w-full bg-gray-200 text-gray-800 font-bold py-2.5 rounded-xl hover:bg-gray-300 transition-colors">Close</button></div>
+              <div className="mt-6"><button onClick={() => setShowTrxDetailsModal(false)} className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl hover:bg-black shadow-md transition-colors">Close</button></div>
             </div>
           </div>
         )}
 
         {/* APPEAL DETAILS MODAL */}
         {showAppealModal && selectedAppeal && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in-up">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
                 <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Scale size={24} className="text-indigo-500"/> Appeal Details</h3>
                 <button onClick={() => setShowAppealModal(false)} className="text-gray-500 hover:text-red-500"><X size={24} /></button>
@@ -2327,10 +2312,10 @@ export default function AdminDashboard() {
 
               <div className="space-y-4">
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 relative">
-                  <button onClick={() => fetchAndShowUserProfile(selectedAppeal.user_id)} className="absolute top-4 right-4 text-[#0066ff] text-xs font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-100 px-2 py-1 rounded"><Eye size={14} /> View Profile</button>
-                  <p className="font-bold text-gray-800 text-lg">{selectedAppeal.name}</p>
-                  <p className="text-sm text-gray-500">{selectedAppeal.email}</p>
-                  <div className="flex gap-2 mt-2"><span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-bold uppercase border border-gray-300">{selectedAppeal.role}</span>{renderStatusBadge(selectedAppeal.status)}</div>
+                  <button onClick={() => fetchAndShowUserProfile(selectedAppeal.user_id)} className="mt-2 sm:mt-0 sm:absolute top-4 right-4 text-[#0066ff] text-xs font-bold hover:underline flex items-center justify-center gap-1 bg-blue-50 border border-blue-100 px-2 py-1 rounded w-full sm:w-auto"><Eye size={14} /> View Profile</button>
+                  <p className="font-bold text-gray-800 text-lg mt-2 sm:mt-0">{selectedAppeal.name}</p>
+                  <p className="text-sm text-gray-500 break-all">{selectedAppeal.email}</p>
+                  <div className="flex flex-wrap gap-2 mt-2"><span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-bold uppercase border border-gray-300">{selectedAppeal.role}</span>{renderStatusBadge(selectedAppeal.status)}</div>
                 </div>
 
                 <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
@@ -2341,24 +2326,24 @@ export default function AdminDashboard() {
                 {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type === 'order_dispute' && (
                   <div className="mt-4">
                     <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-1"><AlertTriangle size={16} className="text-orange-500"/> Admin Decision Comment</label>
-                    <textarea className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-20 text-sm" placeholder="Explain why you are favoring the buyer or seller. This will be sent to the user..." value={disputeComment} onChange={(e) => setDisputeComment(e.target.value)}></textarea>
+                    <textarea className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-24 text-sm bg-gray-50" placeholder="Explain why you are favoring the buyer or seller. This will be sent to the user..." value={disputeComment} onChange={(e) => setDisputeComment(e.target.value)}></textarea>
                     <p className="text-[10px] text-gray-500 mt-1">Required to resolve the dispute.</p>
                   </div>
                 )}
               </div>
               
-              <div className="mt-6 flex flex-wrap justify-end gap-2 pt-4 border-t border-gray-200">
-                <button onClick={() => setShowAppealModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close</button>
+              <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onClick={() => setShowAppealModal(false)} className="w-full sm:w-auto px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close</button>
                 {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type !== 'order_dispute' && (
                   <>
-                    <button onClick={() => { rejectAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors">Reject</button>
-                    <button onClick={() => { approveAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-colors">Approve & Unban</button>
+                    <button onClick={() => { rejectAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm transition-colors">Reject</button>
+                    <button onClick={() => { approveAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm transition-colors">Approve & Unban</button>
                   </>
                 )}
                 {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type === 'order_dispute' && (
                   <>
-                    <button onClick={() => handleDisputeFavorSeller(selectedAppeal.id, selectedAppeal.application_id)} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-bold shadow-sm text-xs">Favor Seller (Reject Order)</button>
-                    <button onClick={() => handleDisputeFavorBuyer(selectedAppeal.id, selectedAppeal.application_id)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm text-xs">Favor Buyer (Go to Refund)</button>
+                    <button onClick={() => handleDisputeFavorSeller(selectedAppeal.id, selectedAppeal.application_id)} className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm text-xs text-center">Favor Seller <span className="block text-[10px] font-normal opacity-80">(Reject Order)</span></button>
+                    <button onClick={() => handleDisputeFavorBuyer(selectedAppeal.id, selectedAppeal.application_id)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm text-xs text-center">Favor Buyer <span className="block text-[10px] font-normal opacity-80">(Go to Refund)</span></button>
                   </>
                 )}
               </div>
@@ -2368,8 +2353,8 @@ export default function AdminDashboard() {
 
         {/* USER PROFILE MODAL */}
         {showUserProfileModal && selectedUserProfile && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in-up">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
                 <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><User size={24} className="text-blue-500"/> User Profile</h3>
                 <button onClick={() => setShowUserProfileModal(false)} className="text-gray-500 hover:text-red-500"><X size={24} /></button>
@@ -2378,8 +2363,8 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <p className="font-bold text-gray-800 text-lg">{selectedUserProfile.name}</p>
-                  <p className="text-sm text-gray-500">{selectedUserProfile.email}</p>
-                  <div className="flex gap-2 mt-2">
+                  <p className="text-sm text-gray-500 break-all">{selectedUserProfile.email}</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
                     <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-bold uppercase">{selectedUserProfile.role}</span>
                     <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-bold uppercase">Trust Score: {selectedUserProfile.trust_score || '5.0'}</span>
                     <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-bold uppercase">${Number(selectedUserProfile.wallet_balance || 0).toFixed(2)}</span>
@@ -2387,7 +2372,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {selectedUserProfile.role === 'buyer' && (
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div onClick={() => setProfileViewMode(profileViewMode === 'pending' ? 'details' : 'pending')} className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'pending' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : 'bg-blue-50 border-blue-100'}`}>
                       <Clock size={18} className="text-blue-500 mb-1" />
                       <p className="text-xl font-black text-blue-700 leading-none">{userAppStats.active}</p>
@@ -2407,7 +2392,7 @@ export default function AdminDashboard() {
                 )}
 
                 {selectedUserProfile.role === 'seller' && (
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div onClick={() => setProfileViewMode(profileViewMode === 'listed' ? 'details' : 'listed')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'listed' ? 'bg-purple-100 border-purple-300 ring-2 ring-purple-500' : 'bg-purple-50 border-purple-100'}`}>
                       <Package size={16} className="text-purple-500 mb-1" />
                       <p className="text-lg font-black text-purple-700 leading-none">{userAppStats.listed}</p>
@@ -2432,27 +2417,31 @@ export default function AdminDashboard() {
                 )}
 
                 {profileViewMode === 'details' ? (
-                  <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2 text-sm">
-                    <p><span className="font-bold text-gray-700 w-32 inline-block">Amazon Acc:</span> {selectedUserProfile.amazon_account || 'N/A'}</p>
-                    <p><span className="font-bold text-gray-700 w-32 inline-block">Amazon Loc:</span> {selectedUserProfile.amazon_location || 'N/A'}</p>
-                    <p><span className="font-bold text-gray-700 w-32 inline-block">PayPal Account:</span> {selectedUserProfile.paypal_account || 'N/A'}</p>
-                    <p><span className="font-bold text-gray-700 w-32 inline-block">WhatsApp:</span> {selectedUserProfile.whatsapp_account || 'N/A'}</p>
-                    <p><span className="font-bold text-gray-700 w-32 inline-block">Facebook:</span> {selectedUserProfile.facebook_account || 'N/A'}</p>
-                    <p><span className="font-bold text-gray-700 w-32 inline-block">Telegram:</span> {selectedUserProfile.telegram_account || 'N/A'}</p>
-                    <p><span className="font-bold text-gray-700 w-32 inline-block">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
+                  <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2 text-sm overflow-x-auto">
+                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Acc:</span> <span className="break-all">{selectedUserProfile.amazon_account || 'N/A'}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Loc:</span> <span className="break-all">{selectedUserProfile.amazon_location || 'N/A'}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">PayPal Account:</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WhatsApp:</span> <span className="break-all">{selectedUserProfile.whatsapp_account || 'N/A'}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Facebook:</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Telegram:</span> <span className="break-all">{selectedUserProfile.telegram_account || 'N/A'}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
                     
                     {selectedUserProfile.last_ip && (
-                      <div className="mt-2 border-t border-indigo-100 pt-2 space-y-1.5">
-                        <p className="flex items-center"><span className="font-bold text-gray-700 w-32 inline-block">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">🌍 {selectedUserProfile.ip_location || 'Unknown'}</span></p>
-                        <p className="flex items-center"><span className="font-bold text-gray-700 w-32 inline-block">Last Login IP:</span><span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded mr-2 text-xs">{selectedUserProfile.last_ip}</span>
-                          {selectedUserProfile.last_ip !== 'Unknown' && (
-                            <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 inline-flex bg-blue-50 border border-blue-200 px-2 py-1 rounded"><MapPin size={12} /> Track Map</a>
-                          )}
-                        </p>
+                      <div className="mt-2 border-t border-indigo-100 pt-2 space-y-2">
+                        <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max">🌍 {selectedUserProfile.ip_location || 'Unknown'}</span></p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
+                          <span className="font-bold text-gray-700 w-32 shrink-0">Last Login IP:</span>
+                          <div className="flex items-center flex-wrap gap-2">
+                            <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">{selectedUserProfile.last_ip}</span>
+                            {selectedUserProfile.last_ip !== 'Unknown' && (
+                              <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> Track Map</a>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
                     {selectedUserProfile.amazon_profile_url && (
-                      <div className="mt-3"><a href={selectedUserProfile.amazon_profile_url} target="_blank" rel="noreferrer" className="block text-center bg-white border border-indigo-200 text-indigo-600 py-2 rounded-lg font-bold hover:bg-indigo-100">Open Amazon Profile ↗</a></div>
+                      <div className="mt-4"><a href={selectedUserProfile.amazon_profile_url} target="_blank" rel="noreferrer" className="block w-full text-center bg-white border border-indigo-200 text-indigo-600 py-2.5 rounded-lg font-bold hover:bg-indigo-100 transition-colors">Open Amazon Profile ↗</a></div>
                     )}
                   </div>
                 ) : profileViewMode === 'listed' ? (
@@ -2460,10 +2449,10 @@ export default function AdminDashboard() {
                      <div className="flex justify-between items-center mb-3 sticky top-0 bg-gray-50 pb-2 border-b"><h4 className="font-bold text-gray-700 capitalize flex items-center gap-1"><Package size={16} className="text-purple-500"/> Listed Products</h4><button onClick={() => setProfileViewMode('details')} className="text-xs text-blue-600 hover:underline font-bold">Back to Details</button></div>
                      <div className="space-y-2">
                        {sellerProductsList.map(p => (
-                          <div key={p.id} onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }} className="flex gap-3 bg-white p-2 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
-                             {p.image_url ? (<img src={p.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400">No Img</div>)}
-                             <div className="flex-1 min-w-0"><p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{p.product_name || p.store_name}</p><p className="text-[10px] text-gray-500 font-semibold mt-0.5">Price: ${p.price} | Target: {p.required_orders}</p></div>
-                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 ${p.status === 'approved' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'stopped' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
+                          <div key={p.id} onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }} className="flex gap-3 bg-white p-2.5 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
+                             {p.image_url ? (<img src={p.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5 shrink-0" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Img</div>)}
+                             <div className="flex-1 min-w-0"><p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{p.product_name || p.store_name}</p><p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Price: ${p.price} | Target: {p.required_orders}</p></div>
+                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 hidden sm:block ${p.status === 'approved' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'stopped' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
                           </div>
                        ))}
                        {sellerProductsList.length === 0 && <div className="text-center py-6 text-gray-400 text-xs font-semibold">No listed products found.</div>}
@@ -2487,13 +2476,13 @@ export default function AdminDashboard() {
                            if(profileViewMode === 'failed') return app.status === 'rejected';
                            return false;
                        }).map(app => (
-                          <div key={app.id} onClick={() => { setSelectedAppDetails(app); setShowAppDetailsModal(true); }} className="flex gap-3 bg-white p-2 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
-                             {app.image_url ? (<img src={app.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400">No Img</div>)}
+                          <div key={app.id} onClick={() => { setSelectedAppDetails(app); setShowAppDetailsModal(true); }} className="flex gap-3 bg-white p-2.5 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
+                             {app.image_url ? (<img src={app.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5 shrink-0" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Img</div>)}
                              <div className="flex-1 min-w-0">
                                <p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{app.product_name}</p>
-                               {selectedUserProfile.role === 'seller' ? (<p className="text-[10px] text-gray-500 font-semibold mt-0.5">Buyer: {app.buyer_email}</p>) : (<p className="text-[10px] text-gray-500 font-semibold mt-0.5">Reward: <span className="text-green-600 font-bold">${app.reward}</span></p>)}
+                               {selectedUserProfile.role === 'seller' ? (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Buyer: {app.buyer_email}</p>) : (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Reward: <span className="text-green-600 font-bold">${app.reward}</span></p>)}
                              </div>
-                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 ${app.status === 'completed' ? 'bg-green-100 text-green-700' : app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{app.status.replace('_', ' ')}</span>
+                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 hidden sm:block ${app.status === 'completed' ? 'bg-green-100 text-green-700' : app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{app.status.replace('_', ' ')}</span>
                           </div>
                        ))}
                        {selectedUserApps.filter(app => {
@@ -2506,39 +2495,39 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
-              <div className="mt-6 flex justify-end pt-4 border-t"><button onClick={() => setShowUserProfileModal(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300">Close Profile</button></div>
+              <div className="mt-6 flex justify-end pt-4 border-t"><button onClick={() => setShowUserProfileModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300">Close Profile</button></div>
             </div>
           </div>
         )}
 
         {/* PRODUCT DETAILS MODAL */}
         {showProductModal && selectedProductDetails && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
-            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl overflow-y-auto max-h-[90vh]">
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl overflow-y-auto max-h-[90vh] animate-fade-in-up">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-2xl font-bold text-gray-800">Review Product Details</h3>
-                <button onClick={() => setShowProductModal(false)} className="text-gray-500 hover:text-red-500 transition-colors"><X size={24} /></button>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Review Product Details</h3>
+                <button onClick={() => setShowProductModal(false)} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-100 rounded-full p-1"><X size={24} /></button>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-1">
-                   <img src={selectedProductDetails.image_url} alt="Product" className="w-full h-48 object-contain bg-white rounded-lg border shadow-sm p-2" />
+                   <img src={selectedProductDetails.image_url} alt="Product" className="w-full h-48 md:h-56 object-contain bg-white rounded-xl border border-gray-200 shadow-sm p-2 cursor-pointer hover:opacity-90" onClick={() => { setFullImageUrl(selectedProductDetails.image_url); setShowFullImageModal(true); }}/>
                    
                    <div className="mt-4 bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm">
-                      <p className="text-xs text-gray-500 uppercase font-bold mb-2">Total Deposit Deducted</p>
+                      <p className="text-[10px] sm:text-xs text-gray-500 uppercase font-bold mb-2 tracking-wider">Total Deposit Deducted</p>
                       
                       {/* USD & Local Currency Display */}
                       <div className="flex flex-col gap-1 mb-4">
-                         <p className="text-2xl font-black text-yellow-700">
-                            ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)} <span className="text-sm font-bold text-gray-500">USD</span>
+                         <p className="text-xl sm:text-2xl font-black text-yellow-700">
+                            ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)} <span className="text-xs sm:text-sm font-bold text-gray-500">USD</span>
                          </p>
-                         <p className="text-sm font-bold text-gray-600 bg-yellow-100/50 w-max px-2 py-0.5 rounded border border-yellow-200">
+                         <p className="text-[10px] sm:text-sm font-bold text-gray-600 bg-yellow-100/50 w-max px-2 py-0.5 rounded border border-yellow-200">
                             ~ {getConvertedPrice(selectedProductDetails.total_deposit, selectedProductDetails.country, selectedProductDetails.platform)} <span className="text-[10px] uppercase">Local ({selectedProductDetails.country || 'N/A'})</span>
                          </p>
                       </div>
 
                       {/* Seller Balance Deduction Math */}
-                      <div className="space-y-2 text-xs font-semibold bg-white p-3 rounded-lg border border-yellow-100">
+                      <div className="space-y-2 text-[10px] sm:text-xs font-semibold bg-white p-3 rounded-lg border border-yellow-100">
                          <div className="flex justify-between text-gray-600">
                             <span>Previous Balance:</span>
                             <span>${(parseFloat(selectedProductDetails.seller_wallet_balance || 0) + parseFloat(selectedProductDetails.total_deposit || 0)).toFixed(2)}</span>
@@ -2556,54 +2545,62 @@ export default function AdminDashboard() {
                    </div>
                 </div>
                 
-                <div className="md:col-span-2 space-y-3 text-sm">
-                  <div className="bg-gray-100 p-2 rounded border mb-3 flex items-center gap-2">
-                    <span className="text-xl">👤</span>
-                    <div>
-                      <p className="font-bold text-gray-800">{selectedProductDetails.seller_name || 'N/A'}</p>
-                      <p className="text-xs text-gray-500">{selectedProductDetails.seller_email || 'N/A'} (ID: #{selectedProductDetails.seller_id})</p>
+                <div className="md:col-span-2 space-y-3 sm:space-y-4 text-sm">
+                  <div className="bg-gray-100 p-3 rounded-xl border border-gray-200 mb-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-2">
+                    <span className="text-2xl hidden sm:block">👤</span>
+                    <div className="w-full sm:w-auto">
+                      <p className="font-bold text-gray-800 text-base">{selectedProductDetails.seller_name || 'N/A'}</p>
+                      <p className="text-xs text-gray-500 truncate">{selectedProductDetails.seller_email || 'N/A'} (ID: #{selectedProductDetails.seller_id})</p>
                     </div>
-                    <button onClick={() => { setShowProductModal(false); fetchAndShowUserProfile(selectedProductDetails.seller_id); }} className="ml-auto bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1">
+                    <button onClick={() => { setShowProductModal(false); fetchAndShowUserProfile(selectedProductDetails.seller_id); }} className="sm:ml-auto w-full sm:w-auto bg-blue-50 border border-blue-200 text-blue-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-1">
                       <Eye size={14} /> View Profile
                     </button>
                   </div>
 
-                  <p><span className="font-semibold text-gray-500 w-24 inline-block">Product:</span> <span className="font-bold text-gray-800">{selectedProductDetails.product_name}</span></p>
-                  <p><span className="font-semibold text-gray-500 w-24 inline-block">Store Name:</span> {selectedProductDetails.store_name}</p>
-                  <p><span className="font-semibold text-gray-500 w-24 inline-block">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold">{selectedProductDetails.search_keyword}</span></p>
-                  <p><span className="font-semibold text-gray-500 w-24 inline-block">Category:</span> <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase">{selectedProductDetails.category || 'General'}</span></p>
-                  <p><span className="font-semibold text-gray-500 w-24 inline-block">Platform:</span> {selectedProductDetails.platform} ({selectedProductDetails.country})</p>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm">
-                    <span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Financials:</span> 
-                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                       Price: <b>${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold ml-1">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
-                    </span>
-                    <span className="hidden sm:inline text-gray-300">|</span>
-                    <span className="bg-green-50 px-2 py-1 rounded border border-green-100">
-                       Reward: <b className="text-green-600">${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold ml-1">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
-                    </span>
+                  <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm space-y-2">
+                    <p className="flex flex-col sm:flex-row sm:items-start"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block mb-1 sm:mb-0">Product:</span> <span className="font-bold text-gray-800 leading-tight">{selectedProductDetails.product_name}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Store Name:</span> <span className="text-gray-700">{selectedProductDetails.store_name}</span></p>
+                    <p className="flex flex-col sm:flex-row items-start sm:items-center"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold w-max">{selectedProductDetails.search_keyword}</span></p>
+                    <p className="flex flex-col sm:flex-row items-start sm:items-center"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Category:</span> <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase w-max">{selectedProductDetails.category || 'General'}</span></p>
+                    <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Platform:</span> <span className="text-gray-800 font-semibold">{selectedProductDetails.platform} ({selectedProductDetails.country})</span></p>
                   </div>
-                  <p><span className="font-semibold text-gray-500 w-24 inline-block">Status:</span> {renderStatusBadge(selectedProductDetails.status)}</p>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-sm">
+                    <span className="font-semibold text-gray-500 w-24 shrink-0 hidden sm:inline-block">Financials:</span> 
+                    <div className="flex gap-2">
+                      <span className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
+                         <span className="text-xs text-gray-500">Price:</span> <b>${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
+                      </span>
+                      <span className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
+                         <span className="text-xs text-green-700">Reward:</span> <b className="text-green-600">${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
+                      </span>
+                    </div>
+                  </div>
+                  <p className="flex items-center gap-2"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Status:</span> {renderStatusBadge(selectedProductDetails.status)}</p>
                   
-                  <div className="flex flex-wrap items-center gap-4 bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 mt-2">
-                    <p className="text-sm"><span className="font-semibold text-gray-500 mr-2">Target Qty:</span> <b className="text-gray-800">{selectedProductDetails.required_orders}</b></p>
-                    <div className="w-px h-4 bg-blue-200 hidden sm:block"></div>
-                    <p className="text-sm"><span className="font-semibold text-gray-500 mr-2">Available Qty:</span> <b className="text-[#0066ff] text-lg">{Math.max(0, selectedProductDetails.required_orders - (selectedProductDetails.application_count || 0))}</b></p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-blue-50/50 p-3 sm:p-4 rounded-xl border border-blue-100 mt-2">
+                    <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
+                      <span className="font-semibold text-gray-500 mr-2">Target Qty:</span> <b className="text-gray-800 text-lg bg-white px-3 py-0.5 border rounded">{selectedProductDetails.required_orders}</b>
+                    </div>
+                    <div className="w-full h-px sm:w-px sm:h-6 bg-blue-200"></div>
+                    <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
+                      <span className="font-semibold text-gray-500 mr-2">Available Qty:</span> <b className="text-[#0066ff] text-lg bg-blue-100 px-3 py-0.5 border border-blue-200 rounded">{Math.max(0, selectedProductDetails.required_orders - (selectedProductDetails.application_count || 0))}</b>
+                    </div>
                   </div>
                   
-                  <div className="mt-2"><span className="font-semibold text-gray-500 block mb-1">Product Link:</span><a href={selectedProductDetails.product_link?.startsWith('http') ? selectedProductDetails.product_link : `https://${selectedProductDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all bg-gray-50 p-2 block rounded border">{selectedProductDetails.product_link}</a></div>
-                  <div className="mt-2"><span className="font-semibold text-gray-500 block mb-1">Seller Instructions:</span><p className="bg-gray-100 p-3 rounded text-gray-800 whitespace-pre-wrap border">{selectedProductDetails.instructions}</p></div>
+                  <div className="mt-4"><span className="font-semibold text-gray-500 block mb-1">Product Link:</span><a href={selectedProductDetails.product_link?.startsWith('http') ? selectedProductDetails.product_link : `https://${selectedProductDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all bg-gray-50 p-3 block rounded-xl border border-gray-200">{selectedProductDetails.product_link}</a></div>
+                  <div className="mt-4"><span className="font-semibold text-gray-500 block mb-1">Seller Instructions:</span><p className="bg-indigo-50/50 p-4 rounded-xl text-gray-800 whitespace-pre-wrap border border-indigo-100 leading-relaxed text-sm">{selectedProductDetails.instructions}</p></div>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-3 pt-4 border-t">
-                <button onClick={() => setShowProductModal(false)} className="px-5 py-2 bg-gray-200 text-gray-800 rounded font-semibold hover:bg-gray-300 mr-auto">Close</button>
+              <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3 pt-5 border-t border-gray-200">
+                <button onClick={() => setShowProductModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close Details</button>
                 {selectedProductDetails.status === 'pending' && (
-                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="px-5 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 shadow-md">Reject & Refund</button><button onClick={() => approveProduct(selectedProductDetails.id)} className="px-5 py-2 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 shadow-md">Approve Product</button></>
+                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 shadow-md transition-colors">Reject & Refund</button><button onClick={() => approveProduct(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-md transition-colors">Approve Product</button></>
                 )}
-                {selectedProductDetails.status === 'approved' && (<button onClick={() => stopProductAction(selectedProductDetails.id)} className="px-5 py-2 bg-yellow-500 text-white rounded font-bold hover:bg-yellow-600 shadow-md">Stop Product</button>)}
+                {selectedProductDetails.status === 'approved' && (<button onClick={() => stopProductAction(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-500 text-white rounded-lg font-bold hover:bg-yellow-600 shadow-md transition-colors">Stop Product</button>)}
                 {selectedProductDetails.status === 'stopped' && (
-                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="px-5 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 shadow-md">Delete & Refund</button><button onClick={() => resumeProductAction(selectedProductDetails.id)} className="px-5 py-2 bg-green-500 text-white rounded font-bold hover:bg-green-600 shadow-md">Resume Product</button></>
+                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 shadow-md transition-colors">Delete & Refund</button><button onClick={() => resumeProductAction(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow-md transition-colors">Resume Product</button></>
                 )}
               </div>
             </div>
@@ -2612,103 +2609,132 @@ export default function AdminDashboard() {
 
         {/* APPLICATION DETAILS MODAL */}
         {showAppDetailsModal && selectedAppDetails && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
-            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-2xl overflow-y-auto max-h-[90vh] flex flex-col">
-              <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-2xl font-bold text-gray-800">Application & Order Details</h3>
-                <button onClick={() => setShowAppDetailsModal(false)} className="text-gray-500 hover:text-red-500 transition-colors"><X size={24} /></button>
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl overflow-y-auto max-h-[90vh] flex flex-col animate-fade-in-up">
+              <div className="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Application & Order Details</h3>
+                <button onClick={() => setShowAppDetailsModal(false)} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-100 rounded-full p-1"><X size={24} /></button>
               </div>
 
               <div className="mb-4 flex flex-wrap gap-2">
-                 <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded font-bold uppercase text-sm border border-purple-200">Status: {selectedAppDetails.status.replace('_', ' ')}</span>
-                 {selectedAppDetails.category && (<span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded font-bold uppercase text-sm border border-yellow-300">Task: {selectedAppDetails.category}</span>)}
+                 <span className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-lg font-bold uppercase text-[10px] tracking-wider border border-purple-200">Status: {selectedAppDetails.status.replace('_', ' ')}</span>
+                 {selectedAppDetails.category && (<span className="bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-lg font-bold uppercase text-[10px] tracking-wider border border-yellow-300">Task: {selectedAppDetails.category}</span>)}
               </div>
 
               {selectedAppDetails.status === 'disputed' && (
-                <div className="bg-pink-100 text-pink-800 p-4 rounded-xl border border-pink-200 mb-4 font-bold text-center flex flex-col items-center justify-center gap-2">
-                  <AlertTriangle size={24}/>This order is currently under dispute. Please resolve it from the "User Appeals" tab.
+                <div className="bg-pink-100 text-pink-800 p-4 rounded-xl border border-pink-300 mb-4 font-bold text-center flex flex-col items-center justify-center gap-2 shadow-sm">
+                  <AlertTriangle size={28} className="text-pink-600"/>
+                  <p>This order is currently under dispute.</p>
+                  <p className="text-xs font-medium">Please resolve it from the "User Appeals" tab.</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
                 <div className="space-y-4">
-                   <div className="bg-gray-50 p-4 rounded-lg border">
-                     <h4 className="font-bold text-gray-700 mb-2 border-b pb-1">Product Info</h4>
-                     <img src={selectedAppDetails.image_url} alt="Product" className="w-16 h-16 object-contain bg-white border rounded mb-2" />
-                     <p className="text-sm font-semibold text-gray-800">{selectedAppDetails.product_name}</p>
-                     <p className="text-xs text-gray-500 mt-1 mb-2">Product Reward: <span className="text-green-600 font-bold">${selectedAppDetails.reward}</span></p>
+                   <div className="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200">
+                     <h4 className="font-bold text-gray-700 mb-3 border-b pb-2 flex items-center gap-2"><Package size={18}/> Product Info</h4>
+                     <div className="flex gap-4">
+                       <img src={selectedAppDetails.image_url} alt="Product" className="w-20 h-20 object-contain bg-white border rounded-lg p-1 cursor-pointer hover:opacity-80" onClick={() => { setFullImageUrl(selectedAppDetails.image_url); setShowFullImageModal(true); }}/>
+                       <div>
+                         <p className="text-sm font-bold text-gray-800 line-clamp-2">{selectedAppDetails.product_name}</p>
+                         <p className="text-xs text-gray-500 mt-2 bg-green-50 w-max px-2 py-1 rounded border border-green-100">Reward: <span className="text-green-600 font-black">${selectedAppDetails.reward}</span></p>
+                       </div>
+                     </div>
 
-                     <div className="space-y-1.5 text-xs pt-3 border-t border-gray-200">
-                        {selectedAppDetails.store_name && <p><span className="font-semibold text-gray-500 w-16 inline-block">Store:</span> <span className="font-bold">{selectedAppDetails.store_name}</span></p>}
-                        {selectedAppDetails.platform && <p><span className="font-semibold text-gray-500 w-16 inline-block">Platform:</span> <span className="font-bold">{selectedAppDetails.platform} {selectedAppDetails.country && `(${selectedAppDetails.country})`}</span></p>}
-                        {selectedAppDetails.search_keyword && <p><span className="font-semibold text-gray-500 w-16 inline-block">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-mono font-bold">{selectedAppDetails.search_keyword}</span></p>}
-                        {selectedAppDetails.product_link && <p className="flex items-start gap-1"><span className="font-semibold text-gray-500 w-16 shrink-0 inline-block">Link:</span> <a href={selectedAppDetails.product_link?.startsWith('http') ? selectedAppDetails.product_link : `https://${selectedAppDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">Click Here ↗</a></p>}
+                     <div className="space-y-2 text-xs pt-4 mt-4 border-t border-gray-200">
+                        {selectedAppDetails.store_name && <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 sm:w-20 shrink-0">Store:</span> <span className="font-bold text-gray-800">{selectedAppDetails.store_name}</span></p>}
+                        {selectedAppDetails.platform && <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 sm:w-20 shrink-0">Platform:</span> <span className="font-bold text-gray-800">{selectedAppDetails.platform} {selectedAppDetails.country && `(${selectedAppDetails.country})`}</span></p>}
+                        {selectedAppDetails.search_keyword && <p className="flex flex-col sm:flex-row sm:items-center"><span className="font-semibold text-gray-500 sm:w-20 shrink-0 mb-1 sm:mb-0">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold w-max">{selectedAppDetails.search_keyword}</span></p>}
+                        {selectedAppDetails.product_link && <p className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-0 mt-2"><span className="font-semibold text-gray-500 sm:w-20 shrink-0">Link:</span> <a href={selectedAppDetails.product_link?.startsWith('http') ? selectedAppDetails.product_link : `https://${selectedAppDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline break-all bg-white px-2 py-1 border rounded block w-full">Open Link ↗</a></p>}
                      </div>
                      {selectedAppDetails.instructions && (
-                        <div className="mt-3 bg-white p-2.5 rounded-lg border border-gray-200 text-xs">
-                          <span className="font-bold text-gray-500 block mb-1">Seller Instructions:</span><p className="text-gray-700 italic">{selectedAppDetails.instructions}</p>
+                        <div className="mt-4 bg-white p-3 rounded-lg border border-gray-200 text-xs">
+                          <span className="font-bold text-gray-500 block mb-1">Seller Instructions:</span><p className="text-gray-700 italic leading-relaxed">{selectedAppDetails.instructions}</p>
                         </div>
                      )}
                    </div>
 
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 relative">
-                       <h4 className="font-bold text-blue-800 mb-2 border-b border-blue-200 pb-1 flex items-center justify-between">Buyer<span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded">⭐ {selectedAppDetails.trust_score ? parseFloat(selectedAppDetails.trust_score).toFixed(1) : '5.0'}</span></h4>
-                       <p className="text-sm font-semibold truncate">{selectedAppDetails.buyer_name}</p>
-                       <p className="text-xs text-gray-600 truncate">{selectedAppDetails.buyer_email}</p>
-                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.user_id); }} className="mt-3 w-full bg-white border border-blue-200 text-blue-600 py-1.5 rounded text-xs font-bold hover:bg-blue-100">Buyer Profile</button>
+                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm relative">
+                       <h4 className="font-bold text-blue-800 mb-2 border-b border-blue-200 pb-1.5 flex items-center justify-between">Buyer<span className="text-[10px] bg-blue-100 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-black tracking-wider">⭐ {selectedAppDetails.trust_score ? parseFloat(selectedAppDetails.trust_score).toFixed(1) : '5.0'}</span></h4>
+                       <p className="text-sm font-bold text-gray-800 truncate" title={selectedAppDetails.buyer_name}>{selectedAppDetails.buyer_name}</p>
+                       <p className="text-xs text-gray-600 truncate mt-0.5" title={selectedAppDetails.buyer_email}>{selectedAppDetails.buyer_email}</p>
+                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.user_id); }} className="mt-3 w-full bg-white border border-blue-200 text-blue-600 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm">View Buyer Profile</button>
                      </div>
-                     <div className="bg-purple-50 p-4 rounded-lg border border-purple-100 relative">
-                       <h4 className="font-bold text-purple-800 mb-2 border-b border-purple-200 pb-1">Seller</h4>
-                       <p className="text-sm font-semibold truncate">{selectedAppDetails.seller_name || 'N/A'}</p>
-                       <p className="text-xs text-gray-600 truncate">{selectedAppDetails.seller_email || 'N/A'}</p>
-                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.seller_id); }} disabled={!selectedAppDetails.seller_id} className="mt-3 w-full bg-white border border-purple-200 text-purple-600 py-1.5 rounded text-xs font-bold hover:bg-purple-100 disabled:opacity-50">Seller Profile</button>
+                     <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 shadow-sm relative">
+                       <h4 className="font-bold text-purple-800 mb-2 border-b border-purple-200 pb-1.5">Seller</h4>
+                       <p className="text-sm font-bold text-gray-800 truncate" title={selectedAppDetails.seller_name || 'N/A'}>{selectedAppDetails.seller_name || 'N/A'}</p>
+                       <p className="text-xs text-gray-600 truncate mt-0.5" title={selectedAppDetails.seller_email || 'N/A'}>{selectedAppDetails.seller_email || 'N/A'}</p>
+                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.seller_id); }} disabled={!selectedAppDetails.seller_id} className="mt-3 w-full bg-white border border-purple-200 text-purple-600 py-2 rounded-lg text-xs font-bold hover:bg-purple-100 disabled:opacity-50 transition-colors shadow-sm">View Seller Profile</button>
                      </div>
                    </div>
                 </div>
 
                 <div className="space-y-4">
                    {(selectedAppDetails.status === 'order_submitted' || selectedAppDetails.status === 'order_approved' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && selectedAppDetails.order_number && (
-                     <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                       <h4 className="font-bold text-indigo-800 mb-2 border-b border-indigo-200 pb-1">Order Submission</h4>
-                       <p className="text-sm"><span className="font-semibold text-gray-600">Order No:</span> {selectedAppDetails.order_number || 'N/A'}</p>
-                       {selectedAppDetails.screenshot_url && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot 1:</span> <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
-                       {selectedAppDetails.screenshot_url_2 && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot 2:</span> <a href={selectedAppDetails.screenshot_url_2} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
-                       {selectedAppDetails.order_comment && (<div className="mt-3 text-sm bg-white p-2 rounded border border-indigo-100"><span className="font-semibold text-gray-600 text-xs block mb-1">Buyer Comment:</span><p className="text-gray-700 italic">{selectedAppDetails.order_comment}</p></div>)}
+                     <div className="bg-indigo-50 p-4 sm:p-5 rounded-xl border border-indigo-200 shadow-sm">
+                       <h4 className="font-bold text-indigo-800 mb-3 border-b border-indigo-200 pb-2 flex items-center gap-2"><ImageIcon size={18}/> Order Submission</h4>
+                       <p className="text-sm flex flex-col sm:flex-row sm:items-center"><span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Order No:</span> <span className="font-mono font-bold bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">{selectedAppDetails.order_number || 'N/A'}</span></p>
+                       
+                       <div className="mt-3 flex flex-wrap gap-2">
+                         {selectedAppDetails.screenshot_url && (
+                            <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[#0066ff] font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-indigo-100 shadow-sm transition-all hover:shadow-md">
+                              <ImageIcon size={14} /> View Proof 1
+                            </a>
+                         )}
+                         {selectedAppDetails.screenshot_url_2 && (
+                            <a href={selectedAppDetails.screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[#0066ff] font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-indigo-100 shadow-sm transition-all hover:shadow-md">
+                              <ImageIcon size={14} /> View Proof 2
+                            </a>
+                         )}
+                       </div>
+
+                       {selectedAppDetails.order_comment && (<div className="mt-4 text-sm bg-white p-3 rounded-lg border border-indigo-100"><span className="font-bold text-indigo-800 text-xs block mb-1">Buyer Comment:</span><p className="text-gray-700 italic leading-relaxed">{selectedAppDetails.order_comment}</p></div>)}
                      </div>
                    )}
 
                    {(selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && (selectedAppDetails.review_link || selectedAppDetails.review_screenshot_url || selectedAppDetails.review_screenshot_url_2) && (
-                     <div className="bg-pink-50 p-4 rounded-lg border border-pink-100">
-                       <h4 className="font-bold text-pink-800 mb-2 border-b border-pink-200 pb-1">Review Submission</h4>
-                       {selectedAppDetails.review_link && (<p className="text-sm mb-2"><span className="font-semibold text-gray-600">Review Link:</span> <a href={selectedAppDetails.review_link} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">Click to Open</a></p>)}
-                       {selectedAppDetails.review_screenshot_url && (<p className="text-sm"><span className="font-semibold text-gray-600">Screenshot 1:</span> <a href={selectedAppDetails.review_screenshot_url} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
-                       {selectedAppDetails.review_screenshot_url_2 && (<p className="text-sm mt-1"><span className="font-semibold text-gray-600">Screenshot 2:</span> <a href={selectedAppDetails.review_screenshot_url_2} target="_blank" rel="noreferrer" className="text-blue-600 underline hover:text-blue-800 break-all">View Image Link</a></p>)}
+                     <div className="bg-pink-50 p-4 sm:p-5 rounded-xl border border-pink-200 shadow-sm">
+                       <h4 className="font-bold text-pink-800 mb-3 border-b border-pink-200 pb-2 flex items-center gap-2"><Star size={18}/> Review Submission</h4>
+                       {selectedAppDetails.review_link && (<p className="text-sm mb-3 flex flex-col sm:flex-row sm:items-start"><span className="font-semibold text-gray-600 sm:w-24 shrink-0 mb-1 sm:mb-0">Review Link:</span> <a href={selectedAppDetails.review_link} target="_blank" rel="noreferrer" className="text-[#0066ff] font-bold hover:underline break-all bg-white px-2 py-1 border border-pink-100 rounded inline-block w-full sm:w-auto">Open Review ↗</a></p>)}
+                       
+                       <div className="mt-2 flex flex-wrap gap-2">
+                         {selectedAppDetails.review_screenshot_url && (
+                            <a href={selectedAppDetails.review_screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-700 font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-pink-100 shadow-sm transition-all hover:shadow-md">
+                              <ImageIcon size={14} /> View Review Proof 1
+                            </a>
+                         )}
+                         {selectedAppDetails.review_screenshot_url_2 && (
+                            <a href={selectedAppDetails.review_screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-700 font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-pink-100 shadow-sm transition-all hover:shadow-md">
+                              <ImageIcon size={14} /> View Review Proof 2
+                            </a>
+                         )}
+                       </div>
                      </div>
                    )}
                 </div>
               </div>
 
               {/* ACTION BUTTONS */}
-              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-200 bg-gray-50 -mx-6 -mb-6 p-4 rounded-b-xl flex-wrap">
-                <button onClick={() => setShowAppDetailsModal(false)} className="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close</button>
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-200 bg-gray-50 -mx-6 -mb-6 p-4 sm:p-5 rounded-b-2xl flex-col sm:flex-row flex-wrap">
+                <button onClick={() => setShowAppDetailsModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-colors mr-auto">Close Details</button>
                 {selectedAppDetails.status === 'pending' && (
                   <>
-                    <button onClick={() => actionApplication(selectedAppDetails.id, 'reject')} className="bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-600 shadow-md">Reject Apply</button>
-                    {selectedAppDetails.category === 'Pre-Pay' ? (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-orange-600 shadow-md">Approve & Pay (External)</button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve')} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-blue-700 shadow-md">Approve Apply</button>)}
+                    <button onClick={() => actionApplication(selectedAppDetails.id, 'reject')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Apply</button>
+                    {selectedAppDetails.category === 'Pre-Pay' ? (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="w-full sm:w-auto bg-orange-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-orange-600 shadow-md transition-colors text-center">Approve & Pay <span className="block text-[9px] opacity-80">(External)</span></button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve')} className="w-full sm:w-auto bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-md transition-colors">Approve Apply</button>)}
                   </>
                 )}
                 {selectedAppDetails.status === 'order_submitted' && (
                   <>
-                    <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-order')} className="bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-600 shadow-md">Reject Order</button>
-                    {selectedAppDetails.category === 'No Review' ? (<button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 shadow-md">Forward to Seller</button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 shadow-md">Approve Order</button>)}
+                    <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-order')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Order</button>
+                    {selectedAppDetails.category === 'No Review' ? (<button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Forward to Seller</button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Approve Order</button>)}
                   </>
                 )}
-                {selectedAppDetails.status === 'forwarded_to_seller' && (<div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg font-bold w-full md:w-auto text-center border border-yellow-200">Waiting for Seller Verification</div>)}
+                {selectedAppDetails.status === 'forwarded_to_seller' && (<div className="bg-yellow-100 text-yellow-800 px-6 py-2.5 rounded-xl font-bold w-full md:w-auto text-center border border-yellow-200">Waiting for Seller Verification</div>)}
                 {selectedAppDetails.status === 'review_submitted' && (
-                  <><button onClick={() => actionApplication(selectedAppDetails.id, 'reject-review')} className="bg-red-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-red-600 shadow-md">Reject Review</button><button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-600 shadow-md">Forward to Seller</button><button onClick={() => actionApplication(selectedAppDetails.id, 'approve-review')} className="bg-pink-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-pink-700 shadow-md">Force Approve (Admin)</button></>
+                  <><button onClick={() => actionApplication(selectedAppDetails.id, 'reject-review')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Review</button><button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="w-full sm:w-auto bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-600 shadow-md transition-colors">Forward to Seller</button><button onClick={() => actionApplication(selectedAppDetails.id, 'approve-review')} className="w-full sm:w-auto bg-pink-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-pink-700 shadow-md transition-colors text-center">Force Approve <span className="block text-[9px] opacity-80">(Admin bypass)</span></button></>
                 )}
-                {selectedAppDetails.status === 'pending_refund' && (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-orange-600 shadow-md">Process Refund</button>)}
+                {selectedAppDetails.status === 'pending_refund' && (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="w-full sm:w-auto bg-green-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-600 shadow-md transition-colors flex items-center justify-center gap-1"><CheckCircle size={16}/> Process Refund</button>)}
               </div>
             </div>
           </div>
@@ -2716,29 +2742,32 @@ export default function AdminDashboard() {
 
         {/* DYNAMIC REFUND / PAYMENT MODAL */}
         {showRefundModal && selectedAppDetails && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
-            <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md animate-fade-in-up">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Pre-Pay (External)' : 'Confirm Refund Payment'}</h3>
-              <div className={`border p-3 rounded-lg mb-4 ${selectedAppDetails.category === 'Pre-Pay' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Wallet className={selectedAppDetails.category === 'Pre-Pay' ? 'text-orange-500' : 'text-green-500'}/>
+                {selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Pre-Pay (External)' : 'Confirm Refund Payment'}
+              </h3>
+              <div className={`border p-4 rounded-xl mb-6 shadow-sm ${selectedAppDetails.category === 'Pre-Pay' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
                  {selectedAppDetails.category === 'Pre-Pay' ? (
-                   <p className="text-sm text-orange-800 font-semibold leading-relaxed">You are marking this Pre-Pay application as paid. Send the funds directly to the buyer's external account (e.g. PayPal) and submit the proof below. <strong className="font-black text-red-600">Funds will NOT be added to the system wallet.</strong></p>
+                   <p className="text-sm text-orange-800 font-semibold leading-relaxed">You are marking this Pre-Pay application as paid. Send the funds directly to the buyer's external account (e.g. PayPal) and submit the proof below. <strong className="font-black text-red-600 block mt-2 bg-red-100 px-2 py-1 rounded">Funds will NOT be added to the system wallet.</strong></p>
                  ) : (
                    <p className="text-sm text-green-800 font-semibold leading-relaxed">Funds (Product Price + Reward) will be added directly to the buyer's wallet. The buyer will be notified that they can withdraw this balance at any time.</p>
                  )}
               </div>
               <form onSubmit={submitRefund} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{selectedAppDetails.category === 'Pre-Pay' ? 'Transaction ID (Optional)' : 'Admin Order Number'}</label>
-                  <input type="text" className="w-full p-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={refundData.orderNumber} onChange={e => setRefundData({...refundData, orderNumber: e.target.value})} placeholder={selectedAppDetails.category === 'Pre-Pay' ? 'Enter Trx ID...' : 'Enter Order Number...'} />
+                  <label className="block text-sm font-bold text-gray-700 mb-1">{selectedAppDetails.category === 'Pre-Pay' ? 'Transaction ID (Optional)' : 'Admin Order / Ref Number'}</label>
+                  <input type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none transition-all" value={refundData.orderNumber} onChange={e => setRefundData({...refundData, orderNumber: e.target.value})} placeholder={selectedAppDetails.category === 'Pre-Pay' ? 'Enter Trx ID...' : 'e.g. REF-12345...'} />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional / Required)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional)</label>
                   <input 
                     type="file" 
                     accept="image/*" 
                     onChange={handleRefundImageUpload} 
-                    className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
+                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#0066ff] file:text-white hover:file:bg-blue-700 cursor-pointer transition-all" 
                   />
                   {isUploadingRefundProof && <p className="text-xs text-blue-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
                   {refundData.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
@@ -2746,16 +2775,46 @@ export default function AdminDashboard() {
 
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Admin Comment (Optional)</label>
-                  <textarea className="w-full p-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none h-20" value={refundData.comment} onChange={e => setRefundData({...refundData, comment: e.target.value})} placeholder="Great job..." />
+                  <textarea className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none h-20 resize-none transition-all" value={refundData.comment} onChange={e => setRefundData({...refundData, comment: e.target.value})} placeholder="Message to the buyer..." />
                 </div>
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <button type="button" onClick={() => setShowRefundModal(false)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
-                  <button type="submit" disabled={isUploadingRefundProof} className="px-4 py-2 bg-orange-500 text-white rounded-lg font-bold hover:bg-orange-600 shadow-md disabled:opacity-50">{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Payment' : 'Send Refund'}</button>
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-5 border-t border-gray-100">
+                  <button type="button" onClick={() => setShowRefundModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-colors">Cancel</button>
+                  <button type="submit" disabled={isUploadingRefundProof} className={`w-full sm:w-auto px-6 py-2.5 text-white rounded-xl font-bold shadow-md disabled:opacity-50 transition-colors ${selectedAppDetails.category === 'Pre-Pay' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'}`}>{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm External Payment' : 'Send Wallet Refund'}</button>
                 </div>
               </form>
             </div>
           </div>
         )}
+
+      {/* FULL IMAGE LIGHTBOX FOR ADMIN */}
+      {showFullImageModal && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in"
+          onClick={() => setShowFullImageModal(false)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white hover:text-red-500 bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-colors"
+            onClick={() => setShowFullImageModal(false)}
+          >
+            <X size={32}/>
+          </button>
+          <img 
+            src={fullImageUrl} 
+            alt="Full Proof" 
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/20 cursor-default" 
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+        .animate-fade-in-up { animation: fadeInUp 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `}} />
 
       </div>
     </div>
