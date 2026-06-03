@@ -1132,9 +1132,9 @@ export default function SellerDashboard() {
                 <div className="space-y-4 mb-5 animate-fade-in">
                   <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl">
                     <p className="text-xs text-[#0066ff] font-bold uppercase tracking-wider mb-2">Send Payment To:</p>
-                    <p className="font-mono text-base font-black text-gray-800 break-all bg-white p-2 rounded border shadow-sm">
-                      {paymentSettings.find(s => s.method_name === selectedDepositMethod.name)?.account_details || selectedDepositMethod.example_address || 'Details will be provided by admin'}
-                    </p>
+                    <div className="font-mono text-sm font-black text-gray-800 break-words bg-white p-3 rounded border shadow-sm whitespace-pre-wrap leading-relaxed">
+                      {paymentSettings.find(s => s.method_name === selectedDepositMethod.name)?.account_details || selectedDepositMethod.description || 'Details will be provided by admin'}
+                    </div>
                   </div>
 
                   {selectedDepositMethod.requires_account_details && (
