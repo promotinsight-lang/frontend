@@ -1130,11 +1130,19 @@ export default function SellerDashboard() {
 
               {selectedDepositMethod && (
                 <div className="space-y-4 mb-5 animate-fade-in">
-                  <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl">
+                 <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl">
                     <p className="text-xs text-[#0066ff] font-bold uppercase tracking-wider mb-2">Send Payment To:</p>
                     <div className="font-mono text-sm font-black text-gray-800 break-words bg-white p-3 rounded border shadow-sm whitespace-pre-wrap leading-relaxed">
                       {paymentSettings.find(s => s.method_name === selectedDepositMethod.name)?.account_details || selectedDepositMethod.description || 'Details will be provided by admin'}
                     </div>
+                    
+                    {/* 🔥 NEW: Show QR Code if available */}
+                    {selectedDepositMethod.qr_code_url && (
+                      <div className="mt-4 flex flex-col items-center bg-white p-3 rounded-lg border border-blue-100 shadow-sm">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Scan QR Code to Pay</p>
+                        <img src={selectedDepositMethod.qr_code_url} alt="Payment QR Code" className="w-32 h-32 object-contain border p-1 rounded-md" />
+                      </div>
+                    )}
                   </div>
 
                   {selectedDepositMethod.requires_account_details && (

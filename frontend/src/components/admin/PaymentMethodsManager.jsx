@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, ChevronDown, ChevronUp, Network, DollarSign } from 'lucide-react';
+import { Edit, Trash2, Plus, ChevronDown, ChevronUp, Network, DollarSign, X } from 'lucide-react';
 
 const API_BASE = 'https://backend-6aiq.onrender.com';
 
@@ -10,6 +10,7 @@ export default function PaymentMethodsManager() {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [showNewNetwork, setShowNewNetwork] = useState({});
+  const [isUploadingQR, setIsUploadingQR] = useState(false);
 
   const token = localStorage.getItem('token');
   const getAuthHeaders = () => ({
@@ -88,6 +89,31 @@ export default function PaymentMethodsManager() {
     }
   };
 
+  const handleQrUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploadingQR(true);
+    try {
+      const cloudData = new FormData();
+      cloudData.append("file", file);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST",
+        body: cloudData,
+      });
+      const cloudJson = await res.json();
+      if (cloudJson.secure_url) {
+        setEditData(prev => ({ ...prev, qr_code_url: cloudJson.secure_url }));
+      }
+    } catch (error) {
+      alert("QR Code upload failed!");
+    } finally {
+      setIsUploadingQR(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border p-6">
       <h3 className="font-bold text-xl text-gray-800 mb-6 border-b pb-2 flex items-center gap-2">
@@ -134,7 +160,32 @@ export default function PaymentMethodsManager() {
                         onChange={(e) => setEditData({...editData, description: e.target.value})}
                         className="w-full p-2 border rounded text-sm h-20 outline-none"
                       />
-                      <div className="flex gap-2">
+                      
+                      {/* 🔥 NEW: QR Code Upload Section */}
+                      <div className="bg-white p-3 rounded border">
+                        <label className="block text-xs font-bold text-gray-700 mb-2">Payment QR Code (Optional)</label>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={handleQrUpload} 
+                          className="w-full text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                        />
+                        {isUploadingQR && <p className="text-[10px] text-blue-600 mt-1 animate-pulse font-bold">Uploading QR Code...</p>}
+                        {editData.qr_code_url && (
+                          <div className="mt-2 relative inline-block">
+                            <img src={editData.qr_code_url} alt="QR Code" className="w-20 h-20 object-contain border rounded shadow-sm" />
+                            <button 
+                              onClick={() => setEditData({...editData, qr_code_url: null})} 
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600"
+                              title="Remove QR Code"
+                            >
+                              <X size={12}/>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
                         <button 
                           onClick={() => handleUpdate(method.id)}
                           className="flex-1 bg-[#0066ff] text-white py-2 rounded font-bold text-sm"
@@ -153,6 +204,12 @@ export default function PaymentMethodsManager() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="text-sm text-gray-600"><span className="font-bold">Receiving Details:</span> {method.description || 'No description provided'}</p>
+                        {method.qr_code_url && (
+                          <div className="mt-2">
+                            <p className="text-[10px] font-bold text-gray-500 uppercase">Attached QR Code:</p>
+                            <img src={method.qr_code_url} alt="QR Code" className="w-16 h-16 object-contain border rounded mt-1 shadow-sm" />
+                          </div>
+                        )}
                       </div>
                       <button 
                         onClick={() => { setEditingId(method.id); setEditData(method); }}
