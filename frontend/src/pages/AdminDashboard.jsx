@@ -11,6 +11,16 @@ import { ResponsiveTableShell, AdminMobileCard, AdminField } from '../components
 import VerificationFieldsGuide from '../components/admin/VerificationFieldsGuide';
 import PaymentMethodsManager from '../components/admin/PaymentMethodsManager';
 
+// --- ৮টি মডাল ইম্পোর্ট (Imports) ---
+import FullImageModal from '../components/admin/FullImageModal';
+import RefundModal from '../components/admin/RefundModal';
+import ApproveWithdrawalModal from '../components/admin/ApproveWithdrawalModal';
+import TrxDetailsModal from '../components/admin/TrxDetailsModal';
+import AppealDetailsModal from '../components/admin/AppealDetailsModal';
+import UserProfileModal from '../components/admin/UserProfileModal';
+import ProductDetailsModal from '../components/admin/ProductDetailsModal';
+import AppDetailsModal from '../components/admin/AppDetailsModal';
+
 const API_BASE = 'https://backend-6aiq.onrender.com';
 
 export default function AdminDashboard() {
@@ -43,11 +53,9 @@ export default function AdminDashboard() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
   
-  // Refund Modal States
+  // Refund Modal States (ক্লিন করা হয়েছে)
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundAppId, setRefundAppId] = useState(null);
-  const [refundData, setRefundData] = useState({ orderNumber: '', screenshot_url: '', comment: '' });
-  const [isUploadingRefundProof, setIsUploadingRefundProof] = useState(false);
 
   const [showAppDetailsModal, setShowAppDetailsModal] = useState(false);
   const [selectedAppDetails, setSelectedAppDetails] = useState(null);
@@ -62,13 +70,10 @@ export default function AdminDashboard() {
 
   const [showAppealModal, setShowAppealModal] = useState(false);
   const [selectedAppeal, setSelectedAppeal] = useState(null);
-  const [disputeComment, setDisputeComment] = useState('');
 
-  // Withdrawal Modal States
+  // Withdrawal Modal States (ক্লিন করা হয়েছে)
   const [showApproveWithdrawalModal, setShowApproveWithdrawalModal] = useState(false);
   const [withdrawalToApprove, setWithdrawalToApprove] = useState(null);
-  const [withdrawalProof, setWithdrawalProof] = useState({ transaction_id: '', screenshot_url: '' });
-  const [isUploadingWithdrawalProof, setIsUploadingWithdrawalProof] = useState(false);
 
   const [showTrxDetailsModal, setShowTrxDetailsModal] = useState(false);
   const [selectedTrx, setSelectedTrx] = useState(null);
@@ -145,7 +150,7 @@ export default function AdminDashboard() {
   // 🔥 FETCH ALL SAVED CONFIGURATIONS
   const fetchAllFeeConfigs = async () => {
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { 
+      const res = await fetch(`${API_BASE}/api/config/fees/all`, { 
         headers: getAuthHeaders(), credentials: 'include' 
       });
       const data = await res.json();
@@ -158,7 +163,7 @@ export default function AdminDashboard() {
     if (!country.trim() || !platform.trim()) return;
     setFeeLoading(true);
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees?country=${country}&platform=${platform}`, { 
+      const res = await fetch(`${API_BASE}/api/config/fees?country=${country}&platform=${platform}`, { 
         headers: getAuthHeaders(), credentials: 'include' 
       });
       const data = await res.json();
@@ -412,14 +417,14 @@ export default function AdminDashboard() {
 
   const handleDeleteFeeConfig = async (country, platform) => {
     if (window.confirm(`Are you sure you want to delete the fee configuration for ${country} - ${platform}?`)) {
-        const success = await handleAction(`https://backend-6aiq.onrender.com/api/config/fees/${encodeURIComponent(country)}/${encodeURIComponent(platform)}`, 'DELETE');
+        const success = await handleAction(`${API_BASE}/api/config/fees/${encodeURIComponent(country)}/${encodeURIComponent(platform)}`, 'DELETE');
         if (success) fetchAllFeeConfigs();
     }
   };
 
   const fetchMonthlyReport = async () => {
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/admin/monthly-stats?month=${selectedMonth}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/monthly-stats?month=${selectedMonth}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setMonthlyReport(data.data);
     } catch (err) { }
@@ -427,7 +432,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/stats', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/stats`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setStats(data.data);
     } catch (err) {}
@@ -435,7 +440,7 @@ export default function AdminDashboard() {
 
   const fetchDeposits = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/deposits', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/deposits`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setDeposits(data.data.filter(d => d.status === 'pending')); setHistoryDeposits(data.data); }
     } catch (err) {}
@@ -443,7 +448,7 @@ export default function AdminDashboard() {
 
   const fetchWithdrawals = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/withdrawals/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/withdrawals/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setWithdrawals(data.data.filter(w => w.status === 'pending')); setHistoryWithdrawals(data.data); }
     } catch (err) {}
@@ -451,7 +456,7 @@ export default function AdminDashboard() {
 
   const fetchRefunds = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/products/refunds/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/products/refunds/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setHistoryRefunds(data.data); 
     } catch (err) {}
@@ -459,7 +464,7 @@ export default function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/products', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/products`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setAllProducts(data.data); setPendingProducts(data.data.filter(p => p.status === 'pending')); }
     } catch (err) {}
@@ -467,7 +472,7 @@ export default function AdminDashboard() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/users/payment-settings', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/users/payment-settings`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setPaymentSettings(data.data);
     } catch (err) {}
@@ -475,7 +480,7 @@ export default function AdminDashboard() {
 
   const fetchApplications = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/applications/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setApplications(data.data);
     } catch (err) {}
@@ -483,7 +488,7 @@ export default function AdminDashboard() {
 
   const fetchVerifications = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/verifications', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/verifications`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setVerifications(data.data.filter(v => v.verification_status === 'pending'));
     } catch (err) {}
@@ -491,7 +496,7 @@ export default function AdminDashboard() {
 
   const fetchUsers = async (role) => {
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/users/admin/role/${role}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/users/admin/role/${role}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setUsersList(data.data);
     } catch (err) {}
@@ -499,7 +504,7 @@ export default function AdminDashboard() {
 
   const fetchAppeals = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/admin/appeals', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/admin/appeals`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAppeals(data.data);
     } catch (err) {}
@@ -507,7 +512,7 @@ export default function AdminDashboard() {
 
   const fetchSupportTickets = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/support/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/support/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setSupportTickets(data.data);
     } catch (err) {}
@@ -515,7 +520,7 @@ export default function AdminDashboard() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/announcements/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/announcements/admin/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAnnouncements(data.data);
     } catch (err) {}
@@ -523,7 +528,7 @@ export default function AdminDashboard() {
 
   const fetchAdminBlogs = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/blogs/admin/all', { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/blogs/admin/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAdminBlogs(data.data);
     } catch (err) {}
@@ -531,7 +536,7 @@ export default function AdminDashboard() {
 
   const fetchAndShowUserProfile = async (userId) => {
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/users/admin/user/${userId}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/users/admin/user/${userId}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       
       if (data.success) {
@@ -539,7 +544,7 @@ export default function AdminDashboard() {
         setProfileViewMode('details'); 
         
         try {
-          const appRes = await fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers: getAuthHeaders(), credentials: 'include' });
+          const appRes = await fetch(`${API_BASE}/api/applications/all`, { headers: getAuthHeaders(), credentials: 'include' });
           const appData = await appRes.json();
           
           if (appData.success) {
@@ -551,7 +556,7 @@ export default function AdminDashboard() {
                  const failed = userApps.filter(a => a.status === 'rejected').length;
                  setUserAppStats({ listed: 0, active, success, failed });
              } else if (data.data.role === 'seller') {
-                 const prodRes = await fetch('https://backend-6aiq.onrender.com/api/products', { headers: getAuthHeaders(), credentials: 'include' });
+                 const prodRes = await fetch(`${API_BASE}/api/products`, { headers: getAuthHeaders(), credentials: 'include' });
                  const prodData = await prodRes.json();
                  let sProducts = [];
                  if (prodData.success) sProducts = prodData.data.filter(p => p.seller_email === data.data.email);
@@ -601,73 +606,22 @@ export default function AdminDashboard() {
     } catch (err) { alert('Connection Error.'); return false; }
   };
 
-  const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
-  const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
+  const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`${API_BASE}/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
+  const rejectDeposit = async (id) => { if(window.confirm('Reject Deposit?')) { if(await handleAction(`${API_BASE}/api/admin/deposits/${id}/reject`)) fetchDeposits(); } };
   
-  const handleWithdrawalImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsUploadingWithdrawalProof(true);
-    try {
-      const cloudData = new FormData();
-      cloudData.append("file", file);
-      cloudData.append("upload_preset", "promot_insight_preset");
-      cloudData.append("cloud_name", "dtlkf5smb");
+  const rejectWithdrawal = async (id) => { if(window.confirm('Reject Withdrawal and Refund Wallet?')) { if(await handleAction(`${API_BASE}/api/withdrawals/${id}/reject`)) fetchWithdrawals(); } };
+  const approveProduct = async (id) => { if(window.confirm('Approve product?')) { if(await handleAction(`${API_BASE}/api/products/${id}/approve`)) { fetchProducts(); setShowProductModal(false); } } };
+  const rejectProduct = async (id) => { if(window.confirm('Reject product and refund?')) { if(await handleAction(`${API_BASE}/api/products/${id}/reject`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
+  const stopProductAction = async (id) => { if(window.confirm('Stop this product? It will appear as Sold Out.')) { if(await handleAction(`${API_BASE}/api/products/${id}/stop`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
+  const resumeProductAction = async (id) => { if(window.confirm('Resume this product? It will be live and available again.')) { if(await handleAction(`${API_BASE}/api/products/${id}/resume`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
+  const verifyUser = async (id, status) => { if(window.confirm(`Mark user as ${status}?`)) { if(await handleAction(`${API_BASE}/api/admin/verify-user/${id}`, 'PATCH', { status })) fetchVerifications(); } };
 
-      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
-        method: "POST",
-        body: cloudData,
-      });
-      const cloudJson = await res.json();
-      if (!cloudJson.secure_url) throw new Error("Upload failed");
-
-      setWithdrawalProof(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      alert("Image upload failed! Please try again.");
-    } finally {
-      setIsUploadingWithdrawalProof(false);
-    }
-  };
-
-  const submitWithdrawalApproval = async (e) => {
-    e.preventDefault();
-    if(await handleAction(`https://backend-6aiq.onrender.com/api/withdrawals/${withdrawalToApprove.id}/approve`, 'PATCH', withdrawalProof)) {
-      setShowApproveWithdrawalModal(false); setWithdrawalToApprove(null); setWithdrawalProof({ transaction_id: '', screenshot_url: '' }); fetchWithdrawals();
-    }
-  };
-
-  const rejectWithdrawal = async (id) => { if(window.confirm('Reject Withdrawal and Refund Wallet?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/withdrawals/${id}/reject`)) fetchWithdrawals(); } };
-  const approveProduct = async (id) => { if(window.confirm('Approve product?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/approve`)) { fetchProducts(); setShowProductModal(false); } } };
-  const rejectProduct = async (id) => { if(window.confirm('Reject product and refund?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/reject`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
-  const stopProductAction = async (id) => { if(window.confirm('Stop this product? It will appear as Sold Out.')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/stop`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
-  const resumeProductAction = async (id) => { if(window.confirm('Resume this product? It will be live and available again.')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/products/${id}/resume`, 'PATCH')) { fetchProducts(); setShowProductModal(false); } } };
-  const verifyUser = async (id, status) => { if(window.confirm(`Mark user as ${status}?`)) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/verify-user/${id}`, 'PATCH', { status })) fetchVerifications(); } };
-
-  const approveAppeal = async (id) => { if(window.confirm('Approve this appeal and reactivate the account?')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/appeals/${id}/approve`)) fetchAppeals(); } };
-  const rejectAppeal = async (id) => { if(window.confirm('Reject this appeal? The account will remain disabled.')) { if(await handleAction(`https://backend-6aiq.onrender.com/api/admin/appeals/${id}/reject`)) fetchAppeals(); } };
-
-  const handleDisputeFavorSeller = async (appealId, applicationId) => {
-    if (!disputeComment) return alert("Please enter an Admin Comment explaining your decision.");
-    if(window.confirm('Favor Seller? This will reject the buyer\'s order and refund the seller.')) { 
-      if(await handleAction(`https://backend-6aiq.onrender.com/api/appeals/dispute/${appealId}/favor-seller`, 'PATCH', { application_id: applicationId, admin_comment: disputeComment })) {
-        fetchAppeals(); setShowAppealModal(false); setDisputeComment('');
-      }
-    }
-  };
-
-  const handleDisputeFavorBuyer = async (appealId, applicationId) => {
-    if (!disputeComment) return alert("Please enter an Admin Comment explaining your decision.");
-    if(window.confirm('Favor Buyer? This will move the order to Pending Refund.')) { 
-      if(await handleAction(`https://backend-6aiq.onrender.com/api/appeals/dispute/${appealId}/favor-buyer`, 'PATCH', { application_id: applicationId, admin_comment: disputeComment })) {
-        fetchAppeals(); setShowAppealModal(false); setDisputeComment('');
-      }
-    }
-  };
+  const approveAppeal = async (id) => { if(window.confirm('Approve this appeal and reactivate the account?')) { if(await handleAction(`${API_BASE}/api/admin/appeals/${id}/approve`)) fetchAppeals(); } };
+  const rejectAppeal = async (id) => { if(window.confirm('Reject this appeal? The account will remain disabled.')) { if(await handleAction(`${API_BASE}/api/admin/appeals/${id}/reject`)) fetchAppeals(); } };
 
   const actionApplication = async (appId, actionType) => {
     if(window.confirm(`Proceed to ${actionType.replace('-', ' ')}?`)) {
-      if(await handleAction(`https://backend-6aiq.onrender.com/api/applications/${appId}/${actionType}`)) {
+      if(await handleAction(`${API_BASE}/api/applications/${appId}/${actionType}`)) {
          fetchApplications(); setShowAppDetailsModal(false);
       }
     }
@@ -675,71 +629,45 @@ export default function AdminDashboard() {
 
   const deleteApplication = async (appId) => {
     if(window.confirm('Are you sure you want to permanently clear this rejected application record?')) {
-      if(await handleAction(`https://backend-6aiq.onrender.com/api/applications/${appId}/delete`, 'DELETE')) {
+      if(await handleAction(`${API_BASE}/api/applications/${appId}/delete`, 'DELETE')) {
          fetchApplications(); setShowAppDetailsModal(false);
       }
     }
   };
 
-  const handleRefundImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsUploadingRefundProof(true);
-    try {
-      const cloudData = new FormData();
-      cloudData.append("file", file);
-      cloudData.append("upload_preset", "promot_insight_preset");
-      cloudData.append("cloud_name", "dtlkf5smb");
-
-      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
-        method: "POST",
-        body: cloudData,
-      });
-      const cloudJson = await res.json();
-      if (!cloudJson.secure_url) throw new Error("Upload failed");
-
-      setRefundData(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      alert("Image upload failed! Please try again.");
-    } finally {
-      setIsUploadingRefundProof(false);
-    }
-  };
-
-  const submitRefund = async (e) => {
-    e.preventDefault();
-    if(await handleAction(`https://backend-6aiq.onrender.com/api/applications/${refundAppId}/confirm-refund`, 'PATCH', {
+  // Submit Refund (Updated to accept refundData from modal)
+  const submitRefund = async (refundData) => {
+    if(await handleAction(`${API_BASE}/api/applications/${refundAppId}/confirm-refund`, 'PATCH', {
       refund_order_number: refundData.orderNumber, 
       refund_screenshot_url: refundData.screenshot_url || refundData.orderNumber,
       refund_comment: refundData.comment
     })) {
-      setShowRefundModal(false); setShowAppDetailsModal(false); setRefundData({ orderNumber: '', screenshot_url: '', comment: '' }); fetchApplications();
+      setShowRefundModal(false); setShowAppDetailsModal(false); fetchApplications();
     }
   };
 
   const toggleUserStatus = async (id, payload) => {
     if(window.confirm('Are you sure you want to change this user\'s status?')) {
-      if(await handleAction(`https://backend-6aiq.onrender.com/api/users/admin/status/${id}`, 'PATCH', payload)) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
+      if(await handleAction(`${API_BASE}/api/users/admin/status/${id}`, 'PATCH', payload)) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
     }
   };
 
   const updateTrust = async (id, oldScore) => {
     const score = prompt("Enter new Trust Score (0.0 - 5.0):", oldScore || "5.0");
     if (score !== null && !isNaN(score)) {
-      if(await handleAction(`https://backend-6aiq.onrender.com/api/users/${id}/trust-score`, 'PATCH', { trust_score: parseFloat(score) })) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
+      if(await handleAction(`${API_BASE}/api/users/${id}/trust-score`, 'PATCH', { trust_score: parseFloat(score) })) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
     }
   };
 
   const updateSetting = async (id, newDetails) => {
     if (!newDetails) return alert("Account details cannot be empty");
-    if (await handleAction(`https://backend-6aiq.onrender.com/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) fetchSettings();
+    if (await handleAction(`${API_BASE}/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) fetchSettings();
   };
 
   const openTicketView = async (ticket) => {
     setSelectedTicket(ticket); setShowTicketViewModal(true); setRepliesLoading(true);
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${ticket.id}`, { headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/support/${ticket.id}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if(res.ok) { setTicketReplies(data.data.replies || []); setSelectedTicket(data.data.ticket); }
     } catch (err) {} finally { setRepliesLoading(false); }
@@ -750,7 +678,7 @@ export default function AdminDashboard() {
     if(!replyMessage.trim()) return;
     setIsSubmittingTicket(true);
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${selectedTicket.id}/reply`, { method: 'POST', headers: getAuthHeaders(), credentials: 'include', body: JSON.stringify({ message: replyMessage }) });
+      const res = await fetch(`${API_BASE}/api/support/${selectedTicket.id}/reply`, { method: 'POST', headers: getAuthHeaders(), credentials: 'include', body: JSON.stringify({ message: replyMessage }) });
       const data = await res.json();
       if(res.ok) { setTicketReplies([...ticketReplies, data.data]); setReplyMessage(''); fetchSupportTickets(); setSelectedTicket(prev => ({...prev, status: 'answered'})); }
     } catch (err) {} finally { setIsSubmittingTicket(false); }
@@ -759,21 +687,21 @@ export default function AdminDashboard() {
   const handleCloseTicket = async (ticketId) => {
     if(!window.confirm("Are you sure you want to close this ticket? It will be marked as resolved.")) return;
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${ticketId}/close`, { method: 'PATCH', headers: getAuthHeaders(), credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/support/${ticketId}/close`, { method: 'PATCH', headers: getAuthHeaders(), credentials: 'include' });
       if(res.ok) { alert("Ticket closed successfully"); setShowTicketViewModal(false); fetchSupportTickets(); }
     } catch(err) {}
   };
 
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault(); setIsPublishing(true);
-    const success = await handleAction('https://backend-6aiq.onrender.com/api/announcements', 'POST', newAnnouncement);
+    const success = await handleAction(`${API_BASE}/api/announcements`, 'POST', newAnnouncement);
     if (success) { setNewAnnouncement({ title: '', message: '' }); fetchAnnouncements(); }
     setIsPublishing(false);
   };
 
   const handleDeleteAnnouncement = async (id) => {
     if (window.confirm("Delete this announcement?")) {
-      const success = await handleAction(`https://backend-6aiq.onrender.com/api/announcements/${id}`, 'DELETE');
+      const success = await handleAction(`${API_BASE}/api/announcements/${id}`, 'DELETE');
       if (success) fetchAnnouncements();
     }
   };
@@ -786,7 +714,7 @@ export default function AdminDashboard() {
     formData.append("title", newBlog.title); formData.append("content", newBlog.content); formData.append("is_published", newBlog.is_published);
     if (blogImage) formData.append("image", blogImage); 
     try {
-      const res = await fetch("https://backend-6aiq.onrender.com/api/blogs", { method: "POST", headers: getAuthHeaders(), body: formData });
+      const res = await fetch(`${API_BASE}/api/blogs`, { method: "POST", headers: getAuthHeaders(), body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
         alert("Blog published successfully!"); setNewBlog({ title: '', content: '', is_published: true }); setBlogImage(null);
@@ -798,7 +726,7 @@ export default function AdminDashboard() {
 
   const handleDeleteBlog = async (id) => {
     if (window.confirm("Are you sure you want to delete this blog post?")) {
-      const success = await handleAction(`https://backend-6aiq.onrender.com/api/blogs/${id}`, 'DELETE');
+      const success = await handleAction(`${API_BASE}/api/blogs/${id}`, 'DELETE');
       if (success) fetchAdminBlogs();
     }
   };
@@ -1404,7 +1332,6 @@ export default function AdminDashboard() {
                       onClick={() => {
                         setSelectedAppeal(appeal);
                         setShowAppealModal(true);
-                        setDisputeComment('');
                       }}
                       className="w-full bg-[#0066ff] text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
                     >
@@ -1461,7 +1388,7 @@ export default function AdminDashboard() {
                         )}
                         <p className="line-clamp-2 text-xs mb-2 text-gray-500 italic">"{appeal.reason}"</p>
                         <button 
-                          onClick={() => { setSelectedAppeal(appeal); setShowAppealModal(true); setDisputeComment(''); }}
+                          onClick={() => { setSelectedAppeal(appeal); setShowAppealModal(true); }}
                           className="text-[#0066ff] text-xs font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-lg w-max"
                         >
                           <Eye size={14} /> Resolve Issue
@@ -2166,646 +2093,140 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* APPROVE WITHDRAWAL MODAL */}
+        {/* 1. APPROVE WITHDRAWAL MODAL */}
         {showApproveWithdrawalModal && withdrawalToApprove && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in-up">
-              <h3 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2"><Wallet className="text-green-500" /> Confirm Payment Sent</h3>
-              <p className="text-sm text-gray-600 mb-4">You are marking a withdrawal of <b className="text-red-600">${withdrawalToApprove.amount}</b> to <b className="text-gray-800">{withdrawalToApprove.name}</b> as Paid.</p>
-              
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
-                <p className="text-xs text-gray-500 font-bold uppercase mb-1">Transfer To:</p>
-                <p className="font-semibold text-sm">{withdrawalToApprove.payment_method}</p>
-                {withdrawalToApprove.is_crypto || withdrawalToApprove.crypto_address ? (
-                  <div className="mt-2 space-y-1 bg-white p-2 border rounded">
-                    <p className="text-xs"><span className="font-bold text-gray-500">Address:</span> <span className="font-mono break-all">{withdrawalToApprove.crypto_address}</span></p>
-                    {withdrawalToApprove.crypto_network && <p className="text-xs"><span className="font-bold text-gray-500">Network:</span> {withdrawalToApprove.crypto_network}</p>}
-                    {withdrawalToApprove.crypto_memo && <p className="text-xs"><span className="font-bold text-gray-500">Memo/Tag:</span> {withdrawalToApprove.crypto_memo}</p>}
-                  </div>
-                ) : (
-                  <p className="font-mono text-sm break-all bg-white p-1 mt-1 border rounded">{withdrawalToApprove.account_details}</p>
-                )}
-                
-                {/* 🔥 Show User's Uploaded QR Code */}
-                {withdrawalToApprove.qr_code_url && (
-                  <div className="mt-3 bg-white p-2 border rounded">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">User's Receiving QR Code:</p>
-                    <img 
-                      src={withdrawalToApprove.qr_code_url} 
-                      alt="User QR Code" 
-                      className="w-20 h-20 object-contain border p-1 rounded cursor-pointer hover:opacity-80 transition-opacity shadow-sm" 
-                      onClick={() => { 
-                        setFullImageUrl(withdrawalToApprove.qr_code_url); 
-                        setShowFullImageModal(true); 
-                      }}
-                      title="Click to view full screen"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <form onSubmit={submitWithdrawalApproval} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Transaction ID (Required)</label>
-                  <input required type="text" className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm bg-gray-50" value={withdrawalProof.transaction_id} onChange={e => setWithdrawalProof({...withdrawalProof, transaction_id: e.target.value})} placeholder="e.g., TRX123456789" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional / Required)</label>
-                  <input type="file" accept="image/*" onChange={handleWithdrawalImageUpload} className="w-full p-2 border bg-gray-50 rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" />
-                  {isUploadingWithdrawalProof && <p className="text-xs text-green-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
-                  {withdrawalProof.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
-                </div>
-
-                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
-                  <button type="button" onClick={() => { setShowApproveWithdrawalModal(false); setWithdrawalToApprove(null); }} className="w-full sm:w-auto px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300">Cancel</button>
-                  <button type="submit" disabled={isUploadingWithdrawalProof} className="w-full sm:w-auto px-4 py-2.5 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow-md disabled:opacity-50">Mark Paid & Notify User</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* TRANSACTION DETAILS MODAL */}
-        {showTrxDetailsModal && selectedTrx && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto animate-fade-in-up">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 capitalize"><Wallet size={20} className={trxType === 'deposit' ? 'text-green-500' : 'text-red-500'}/> {trxType} Details</h3>
-                <button onClick={() => setShowTrxDetailsModal(false)} className="text-gray-400 hover:text-red-500 bg-gray-50 rounded-full p-1"><X size={20} /></button>
-              </div>
-              
-              <div className="space-y-3 text-sm text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">User:</span> <span className="font-semibold">{selectedTrx.name || selectedTrx.email}</span></p>
-                <div className="w-full h-px bg-gray-200"></div>
-                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Amount:</span> <span className={`font-black text-lg ${trxType === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>${Number(selectedTrx.amount).toFixed(2)}</span></p>
-                <div className="w-full h-px bg-gray-200"></div>
-                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Method:</span> <span className="font-bold bg-white px-2 py-0.5 rounded border border-gray-100 shadow-sm">{selectedTrx.payment_method}</span></p>
-                <div className="w-full h-px bg-gray-200"></div>
-                
-               {/* Account / Wallet Details Section */}
-               {(selectedTrx.account_details || selectedTrx.crypto_address) && (
-                  <div className="bg-white p-3 border border-gray-100 rounded-xl shadow-sm mt-2">
-                    <span className="font-bold text-gray-400 block text-[10px] uppercase tracking-wider mb-1.5">
-                      {trxType === 'deposit' ? 'From Account / Wallet:' : 'To Account:'}
-                    </span>
-                    
-                    {selectedTrx.crypto_address ? (
-                      <div className="space-y-1 text-xs text-gray-700">
-                        <p><span className="font-semibold">Address:</span> <span className="font-mono break-all font-medium text-gray-800">{selectedTrx.crypto_address}</span></p>
-                        {selectedTrx.crypto_network && <p><span className="font-semibold">Network:</span> {selectedTrx.crypto_network}</p>}
-                        {selectedTrx.crypto_memo && <p><span className="font-semibold">Memo:</span> {selectedTrx.crypto_memo}</p>}
-                      </div>
-                    ) : (
-                      <span className="font-mono text-sm font-medium break-all">{selectedTrx.account_details}</span>
-                    )}
-                  </div>
-                )}
-
-                {/* Payment Proof Section */}
-                {(selectedTrx.transaction_id || selectedTrx.screenshot_url) && (
-                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mt-3 shadow-sm">
-                    <p className="font-black text-blue-800 text-[10px] uppercase tracking-wider mb-3 flex items-center gap-1"><ShieldCheck size={14}/> Payment Proof</p>
-                    
-                    {selectedTrx.transaction_id && (
-                       <div className="mb-3">
-                         <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Trx ID:</p>
-                         <p className="font-mono bg-white px-2 py-1.5 border border-blue-200 rounded font-bold text-gray-800 break-all">{selectedTrx.transaction_id}</p>
-                       </div>
-                    )}
-                    
-                    {selectedTrx.screenshot_url && (
-                       <div>
-                         <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Screenshot:</p>
-                         <img 
-                           src={selectedTrx.screenshot_url} 
-                           alt="Proof" 
-                           onClick={() => {
-                             setFullImageUrl(selectedTrx.screenshot_url);
-                             setShowFullImageModal(true);
-                           }}
-                           className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity" 
-                         />
-                       </div>
-                    )}
-                  </div>
-                )}
-                
-                <div className="w-full h-px bg-gray-200"></div>
-                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Date:</span> <span className="font-medium text-right">{new Date(selectedTrx.created_at).toLocaleString()}</span></p>
-                <div className="w-full h-px bg-gray-200"></div>
-                <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Status:</span> {renderStatusBadge(selectedTrx.status)}</p>
-              </div>
-              <div className="mt-6"><button onClick={() => setShowTrxDetailsModal(false)} className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl hover:bg-black shadow-md transition-colors">Close</button></div>
-            </div>
-          </div>
-        )}
-
-        {/* APPEAL DETAILS MODAL */}
-        {showAppealModal && selectedAppeal && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in-up">
-              <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Scale size={24} className="text-indigo-500"/> Appeal Details</h3>
-                <button onClick={() => setShowAppealModal(false)} className="text-gray-500 hover:text-red-500"><X size={24} /></button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 relative">
-                  <button onClick={() => fetchAndShowUserProfile(selectedAppeal.user_id)} className="mt-2 sm:mt-0 sm:absolute top-4 right-4 text-[#0066ff] text-xs font-bold hover:underline flex items-center justify-center gap-1 bg-blue-50 border border-blue-100 px-2 py-1 rounded w-full sm:w-auto"><Eye size={14} /> View Profile</button>
-                  <p className="font-bold text-gray-800 text-lg mt-2 sm:mt-0">{selectedAppeal.name}</p>
-                  <p className="text-sm text-gray-500 break-all">{selectedAppeal.email}</p>
-                  <div className="flex flex-wrap gap-2 mt-2"><span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-bold uppercase border border-gray-300">{selectedAppeal.role}</span>{renderStatusBadge(selectedAppeal.status)}</div>
-                </div>
-
-                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                  <p className="font-bold text-indigo-800 mb-2 text-sm">{selectedAppeal.appeal_type === 'order_dispute' ? 'Seller Reason for Rejecting Review:' : 'Appeal Message:'}</p>
-                  <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto bg-white p-3 rounded-lg border border-indigo-50">{selectedAppeal.reason}</div>
-                </div>
-
-                {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type === 'order_dispute' && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-bold text-gray-700 mb-1 flex items-center gap-1"><AlertTriangle size={16} className="text-orange-500"/> Admin Decision Comment</label>
-                    <textarea className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-24 text-sm bg-gray-50" placeholder="Explain why you are favoring the buyer or seller. This will be sent to the user..." value={disputeComment} onChange={(e) => setDisputeComment(e.target.value)}></textarea>
-                    <p className="text-[10px] text-gray-500 mt-1">Required to resolve the dispute.</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="mt-6 flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-gray-200">
-                <button onClick={() => setShowAppealModal(false)} className="w-full sm:w-auto px-4 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close</button>
-                {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type !== 'order_dispute' && (
-                  <>
-                    <button onClick={() => { rejectAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm transition-colors">Reject</button>
-                    <button onClick={() => { approveAppeal(selectedAppeal.id); setShowAppealModal(false); }} className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm transition-colors">Approve & Unban</button>
-                  </>
-                )}
-                {selectedAppeal.status === 'pending' && selectedAppeal.appeal_type === 'order_dispute' && (
-                  <>
-                    <button onClick={() => handleDisputeFavorSeller(selectedAppeal.id, selectedAppeal.application_id)} className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm text-xs text-center">Favor Seller <span className="block text-[10px] font-normal opacity-80">(Reject Order)</span></button>
-                    <button onClick={() => handleDisputeFavorBuyer(selectedAppeal.id, selectedAppeal.application_id)} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-bold shadow-sm text-xs text-center">Favor Buyer <span className="block text-[10px] font-normal opacity-80">(Go to Refund)</span></button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* USER PROFILE MODAL */}
-        {showUserProfileModal && selectedUserProfile && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in-up">
-              <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><User size={24} className="text-blue-500"/> User Profile</h3>
-                <button onClick={() => setShowUserProfileModal(false)} className="text-gray-500 hover:text-red-500"><X size={24} /></button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <p className="font-bold text-gray-800 text-lg">{selectedUserProfile.name}</p>
-                  <p className="text-sm text-gray-500 break-all">{selectedUserProfile.email}</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-bold uppercase">{selectedUserProfile.role}</span>
-                    <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-bold uppercase">Trust Score: {selectedUserProfile.trust_score || '5.0'}</span>
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-bold uppercase">${Number(selectedUserProfile.wallet_balance || 0).toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {selectedUserProfile.role === 'buyer' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div onClick={() => setProfileViewMode(profileViewMode === 'pending' ? 'details' : 'pending')} className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'pending' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : 'bg-blue-50 border-blue-100'}`}>
-                      <Clock size={18} className="text-blue-500 mb-1" />
-                      <p className="text-xl font-black text-blue-700 leading-none">{userAppStats.active}</p>
-                      <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">Pending</p>
-                    </div>
-                    <div onClick={() => setProfileViewMode(profileViewMode === 'success' ? 'details' : 'success')} className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'success' ? 'bg-green-100 border-green-300 ring-2 ring-green-500' : 'bg-green-50 border-green-100'}`}>
-                      <CheckCircle size={18} className="text-green-500 mb-1" />
-                      <p className="text-xl font-black text-green-700 leading-none">{userAppStats.success}</p>
-                      <p className="text-[10px] font-bold text-green-500 uppercase mt-1">Success</p>
-                    </div>
-                    <div onClick={() => setProfileViewMode(profileViewMode === 'failed' ? 'details' : 'failed')} className={`border rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'failed' ? 'bg-red-100 border-red-300 ring-2 ring-red-500' : 'bg-red-50 border-red-100'}`}>
-                      <XCircle size={18} className="text-red-500 mb-1" />
-                      <p className="text-xl font-black text-red-700 leading-none">{userAppStats.failed}</p>
-                      <p className="text-[10px] font-bold text-red-500 uppercase mt-1">Failed</p>
-                    </div>
-                  </div>
-                )}
-
-                {selectedUserProfile.role === 'seller' && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div onClick={() => setProfileViewMode(profileViewMode === 'listed' ? 'details' : 'listed')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'listed' ? 'bg-purple-100 border-purple-300 ring-2 ring-purple-500' : 'bg-purple-50 border-purple-100'}`}>
-                      <Package size={16} className="text-purple-500 mb-1" />
-                      <p className="text-lg font-black text-purple-700 leading-none">{userAppStats.listed}</p>
-                      <p className="text-[9px] font-bold text-purple-500 uppercase mt-1">Listed</p>
-                    </div>
-                    <div onClick={() => setProfileViewMode(profileViewMode === 'pending' ? 'details' : 'pending')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'pending' ? 'bg-blue-100 border-blue-300 ring-2 ring-blue-500' : 'bg-blue-50 border-blue-100'}`}>
-                      <Clock size={16} className="text-blue-500 mb-1" />
-                      <p className="text-lg font-black text-blue-700 leading-none">{userAppStats.active}</p>
-                      <p className="text-[9px] font-bold text-blue-500 uppercase mt-1">Pending</p>
-                    </div>
-                    <div onClick={() => setProfileViewMode(profileViewMode === 'success' ? 'details' : 'success')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'success' ? 'bg-green-100 border-green-300 ring-2 ring-green-500' : 'bg-green-50 border-green-100'}`}>
-                      <CheckCircle size={16} className="text-green-500 mb-1" />
-                      <p className="text-lg font-black text-green-700 leading-none">{userAppStats.success}</p>
-                      <p className="text-[9px] font-bold text-green-500 uppercase mt-1">Success</p>
-                    </div>
-                    <div onClick={() => setProfileViewMode(profileViewMode === 'failed' ? 'details' : 'failed')} className={`border rounded-xl p-2 text-center flex flex-col items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all ${profileViewMode === 'failed' ? 'bg-red-100 border-red-300 ring-2 ring-red-500' : 'bg-red-50 border-red-100'}`}>
-                      <AlertTriangle size={16} className="text-red-500 mb-1" />
-                      <p className="text-lg font-black text-red-700 leading-none">{userAppStats.failed}</p>
-                      <p className="text-[9px] font-bold text-red-500 uppercase mt-1">Issues</p>
-                    </div>
-                  </div>
-                )}
-
-                {profileViewMode === 'details' ? (
-                  <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2 text-sm overflow-x-auto">
-                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Acc:</span> <span className="break-all">{selectedUserProfile.amazon_account || 'N/A'}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Loc:</span> <span className="break-all">{selectedUserProfile.amazon_location || 'N/A'}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">PayPal Account:</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WhatsApp:</span> <span className="break-all">{selectedUserProfile.whatsapp_account || 'N/A'}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Facebook:</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Telegram:</span> <span className="break-all">{selectedUserProfile.telegram_account || 'N/A'}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
-                    
-                    {selectedUserProfile.last_ip && (
-                      <div className="mt-2 border-t border-indigo-100 pt-2 space-y-2">
-                        <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max">🌍 {selectedUserProfile.ip_location || 'Unknown'}</span></p>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
-                          <span className="font-bold text-gray-700 w-32 shrink-0">Last Login IP:</span>
-                          <div className="flex items-center flex-wrap gap-2">
-                            <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">{selectedUserProfile.last_ip}</span>
-                            {selectedUserProfile.last_ip !== 'Unknown' && (
-                              <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> Track Map</a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {selectedUserProfile.amazon_profile_url && (
-                      <div className="mt-4"><a href={selectedUserProfile.amazon_profile_url} target="_blank" rel="noreferrer" className="block w-full text-center bg-white border border-indigo-200 text-indigo-600 py-2.5 rounded-lg font-bold hover:bg-indigo-100 transition-colors">Open Amazon Profile ↗</a></div>
-                    )}
-                  </div>
-                ) : profileViewMode === 'listed' ? (
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 max-h-60 overflow-y-auto">
-                     <div className="flex justify-between items-center mb-3 sticky top-0 bg-gray-50 pb-2 border-b"><h4 className="font-bold text-gray-700 capitalize flex items-center gap-1"><Package size={16} className="text-purple-500"/> Listed Products</h4><button onClick={() => setProfileViewMode('details')} className="text-xs text-blue-600 hover:underline font-bold">Back to Details</button></div>
-                     <div className="space-y-2">
-                       {sellerProductsList.map(p => (
-                          <div key={p.id} onClick={() => { setSelectedProductDetails(p); setShowProductModal(true); }} className="flex gap-3 bg-white p-2.5 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
-                             {p.image_url ? (<img src={p.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5 shrink-0" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Img</div>)}
-                             <div className="flex-1 min-w-0"><p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{p.product_name || p.store_name}</p><p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Price: ${p.price} | Target: {p.required_orders}</p></div>
-                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 hidden sm:block ${p.status === 'approved' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'stopped' ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
-                          </div>
-                       ))}
-                       {sellerProductsList.length === 0 && <div className="text-center py-6 text-gray-400 text-xs font-semibold">No listed products found.</div>}
-                     </div>
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 max-h-60 overflow-y-auto">
-                     <div className="flex justify-between items-center mb-3 sticky top-0 bg-gray-50 pb-2 border-b">
-                       <h4 className="font-bold text-gray-700 capitalize flex items-center gap-1">
-                         {profileViewMode === 'pending' && <Clock size={16} className="text-blue-500"/>}
-                         {profileViewMode === 'success' && <CheckCircle size={16} className="text-green-500"/>}
-                         {profileViewMode === 'failed' && <AlertTriangle size={16} className="text-red-500"/>}
-                         {profileViewMode} Orders
-                       </h4>
-                       <button onClick={() => setProfileViewMode('details')} className="text-xs text-blue-600 hover:underline font-bold">Back to Details</button>
-                     </div>
-                     <div className="space-y-2">
-                       {selectedUserApps.filter(app => {
-                           if(profileViewMode === 'pending') return !['completed', 'rejected'].includes(app.status);
-                           if(profileViewMode === 'success') return app.status === 'completed';
-                           if(profileViewMode === 'failed') return app.status === 'rejected';
-                           return false;
-                       }).map(app => (
-                          <div key={app.id} onClick={() => { setSelectedAppDetails(app); setShowAppDetailsModal(true); }} className="flex gap-3 bg-white p-2.5 rounded-lg border border-gray-200 items-center shadow-sm cursor-pointer hover:border-blue-300 hover:shadow-md transition-all group">
-                             {app.image_url ? (<img src={app.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5 shrink-0" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Img</div>)}
-                             <div className="flex-1 min-w-0">
-                               <p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{app.product_name}</p>
-                               {selectedUserProfile.role === 'seller' ? (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Buyer: {app.buyer_email}</p>) : (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Reward: <span className="text-green-600 font-bold">${app.reward}</span></p>)}
-                             </div>
-                             <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 hidden sm:block ${app.status === 'completed' ? 'bg-green-100 text-green-700' : app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{app.status.replace('_', ' ')}</span>
-                          </div>
-                       ))}
-                       {selectedUserApps.filter(app => {
-                           if(profileViewMode === 'pending') return !['completed', 'rejected'].includes(app.status);
-                           if(profileViewMode === 'success') return app.status === 'completed';
-                           if(profileViewMode === 'failed') return app.status === 'rejected';
-                           return false;
-                       }).length === 0 && <div className="text-center py-6 text-gray-400 text-xs font-semibold">No {profileViewMode} orders found.</div>}
-                     </div>
-                  </div>
-                )}
-              </div>
-              <div className="mt-6 flex justify-end pt-4 border-t"><button onClick={() => setShowUserProfileModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300">Close Profile</button></div>
-            </div>
-          </div>
-        )}
-
-        {/* PRODUCT DETAILS MODAL */}
-        {showProductModal && selectedProductDetails && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl overflow-y-auto max-h-[90vh] animate-fade-in-up">
-              <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Review Product Details</h3>
-                <button onClick={() => setShowProductModal(false)} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-100 rounded-full p-1"><X size={24} /></button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1">
-                   <img src={selectedProductDetails.image_url} alt="Product" className="w-full h-48 md:h-56 object-contain bg-white rounded-xl border border-gray-200 shadow-sm p-2 cursor-pointer hover:opacity-90" onClick={() => { setFullImageUrl(selectedProductDetails.image_url); setShowFullImageModal(true); }}/>
-                   
-                   <div className="mt-4 bg-yellow-50 p-4 rounded-xl border border-yellow-200 shadow-sm">
-                      <p className="text-[10px] sm:text-xs text-gray-500 uppercase font-bold mb-2 tracking-wider">Total Deposit Deducted</p>
-                      
-                      {/* USD & Local Currency Display */}
-                      <div className="flex flex-col gap-1 mb-4">
-                         <p className="text-xl sm:text-2xl font-black text-yellow-700">
-                            ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)} <span className="text-xs sm:text-sm font-bold text-gray-500">USD</span>
-                         </p>
-                         <p className="text-[10px] sm:text-sm font-bold text-gray-600 bg-yellow-100/50 w-max px-2 py-0.5 rounded border border-yellow-200">
-                            ~ {getConvertedPrice(selectedProductDetails.total_deposit, selectedProductDetails.country, selectedProductDetails.platform)} <span className="text-[10px] uppercase">Local ({selectedProductDetails.country || 'N/A'})</span>
-                         </p>
-                      </div>
-
-                      {/* Seller Balance Deduction Math */}
-                      <div className="space-y-2 text-[10px] sm:text-xs font-semibold bg-white p-3 rounded-lg border border-yellow-100">
-                         <div className="flex justify-between text-gray-600">
-                            <span>Previous Balance:</span>
-                            <span>${(parseFloat(selectedProductDetails.seller_wallet_balance || 0) + parseFloat(selectedProductDetails.total_deposit || 0)).toFixed(2)}</span>
-                         </div>
-                         <div className="flex justify-between text-red-500 border-b border-gray-100 pb-2">
-                            <span>Deducted (This Product):</span>
-                            <span>- ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)}</span>
-                         </div>
-                         <div className="flex justify-between text-green-700 pt-1 font-bold">
-                            <span>Remaining Balance:</span>
-                            <span>${parseFloat(selectedProductDetails.seller_wallet_balance || 0).toFixed(2)}</span>
-                         </div>
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-3 text-center italic">Safely held by system</p>
-                   </div>
-                </div>
-                
-                <div className="md:col-span-2 space-y-3 sm:space-y-4 text-sm">
-                  <div className="bg-gray-100 p-3 rounded-xl border border-gray-200 mb-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-2">
-                    <span className="text-2xl hidden sm:block">👤</span>
-                    <div className="w-full sm:w-auto">
-                      <p className="font-bold text-gray-800 text-base">{selectedProductDetails.seller_name || 'N/A'}</p>
-                      <p className="text-xs text-gray-500 truncate">{selectedProductDetails.seller_email || 'N/A'} (ID: #{selectedProductDetails.seller_id})</p>
-                    </div>
-                    <button onClick={() => { setShowProductModal(false); fetchAndShowUserProfile(selectedProductDetails.seller_id); }} className="sm:ml-auto w-full sm:w-auto bg-blue-50 border border-blue-200 text-blue-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-1">
-                      <Eye size={14} /> View Profile
-                    </button>
-                  </div>
-
-                  <div className="bg-white border border-gray-100 p-4 rounded-xl shadow-sm space-y-2">
-                    <p className="flex flex-col sm:flex-row sm:items-start"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block mb-1 sm:mb-0">Product:</span> <span className="font-bold text-gray-800 leading-tight">{selectedProductDetails.product_name}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Store Name:</span> <span className="text-gray-700">{selectedProductDetails.store_name}</span></p>
-                    <p className="flex flex-col sm:flex-row items-start sm:items-center"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold w-max">{selectedProductDetails.search_keyword}</span></p>
-                    <p className="flex flex-col sm:flex-row items-start sm:items-center"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Category:</span> <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase w-max">{selectedProductDetails.category || 'General'}</span></p>
-                    <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Platform:</span> <span className="text-gray-800 font-semibold">{selectedProductDetails.platform} ({selectedProductDetails.country})</span></p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-sm">
-                    <span className="font-semibold text-gray-500 w-24 shrink-0 hidden sm:inline-block">Financials:</span> 
-                    <div className="flex gap-2">
-                      <span className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
-                         <span className="text-xs text-gray-500">Price:</span> <b>${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
-                      </span>
-                      <span className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
-                         <span className="text-xs text-green-700">Reward:</span> <b className="text-green-600">${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
-                      </span>
-                    </div>
-                  </div>
-                  <p className="flex items-center gap-2"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Status:</span> {renderStatusBadge(selectedProductDetails.status)}</p>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-blue-50/50 p-3 sm:p-4 rounded-xl border border-blue-100 mt-2">
-                    <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
-                      <span className="font-semibold text-gray-500 mr-2">Target Qty:</span> <b className="text-gray-800 text-lg bg-white px-3 py-0.5 border rounded">{selectedProductDetails.required_orders}</b>
-                    </div>
-                    <div className="w-full h-px sm:w-px sm:h-6 bg-blue-200"></div>
-                    <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto">
-                      <span className="font-semibold text-gray-500 mr-2">Available Qty:</span> <b className="text-[#0066ff] text-lg bg-blue-100 px-3 py-0.5 border border-blue-200 rounded">{Math.max(0, selectedProductDetails.required_orders - (selectedProductDetails.application_count || 0))}</b>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4"><span className="font-semibold text-gray-500 block mb-1">Product Link:</span><a href={selectedProductDetails.product_link?.startsWith('http') ? selectedProductDetails.product_link : `https://${selectedProductDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all bg-gray-50 p-3 block rounded-xl border border-gray-200">{selectedProductDetails.product_link}</a></div>
-                  <div className="mt-4"><span className="font-semibold text-gray-500 block mb-1">Seller Instructions:</span><p className="bg-indigo-50/50 p-4 rounded-xl text-gray-800 whitespace-pre-wrap border border-indigo-100 leading-relaxed text-sm">{selectedProductDetails.instructions}</p></div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3 pt-5 border-t border-gray-200">
-                <button onClick={() => setShowProductModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-bold hover:bg-gray-300 transition-colors mr-auto">Close Details</button>
-                {selectedProductDetails.status === 'pending' && (
-                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 shadow-md transition-colors">Reject & Refund</button><button onClick={() => approveProduct(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-md transition-colors">Approve Product</button></>
-                )}
-                {selectedProductDetails.status === 'approved' && (<button onClick={() => stopProductAction(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-yellow-500 text-white rounded-lg font-bold hover:bg-yellow-600 shadow-md transition-colors">Stop Product</button>)}
-                {selectedProductDetails.status === 'stopped' && (
-                  <><button onClick={() => rejectProduct(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 shadow-md transition-colors">Delete & Refund</button><button onClick={() => resumeProductAction(selectedProductDetails.id)} className="w-full sm:w-auto px-6 py-2.5 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow-md transition-colors">Resume Product</button></>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* APPLICATION DETAILS MODAL */}
-        {showAppDetailsModal && selectedAppDetails && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl overflow-y-auto max-h-[90vh] flex flex-col animate-fade-in-up">
-              <div className="flex justify-between items-center mb-4 border-b pb-3">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Application & Order Details</h3>
-                <button onClick={() => setShowAppDetailsModal(false)} className="text-gray-500 hover:text-red-500 transition-colors bg-gray-100 rounded-full p-1"><X size={24} /></button>
-              </div>
-
-              <div className="mb-4 flex flex-wrap gap-2">
-                 <span className="bg-purple-100 text-purple-800 px-3 py-1.5 rounded-lg font-bold uppercase text-[10px] tracking-wider border border-purple-200">Status: {selectedAppDetails.status.replace('_', ' ')}</span>
-                 {selectedAppDetails.category && (<span className="bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-lg font-bold uppercase text-[10px] tracking-wider border border-yellow-300">Task: {selectedAppDetails.category}</span>)}
-              </div>
-
-              {selectedAppDetails.status === 'disputed' && (
-                <div className="bg-pink-100 text-pink-800 p-4 rounded-xl border border-pink-300 mb-4 font-bold text-center flex flex-col items-center justify-center gap-2 shadow-sm">
-                  <AlertTriangle size={28} className="text-pink-600"/>
-                  <p>This order is currently under dispute.</p>
-                  <p className="text-xs font-medium">Please resolve it from the "User Appeals" tab.</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-                <div className="space-y-4">
-                   <div className="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200">
-                     <h4 className="font-bold text-gray-700 mb-3 border-b pb-2 flex items-center gap-2"><Package size={18}/> Product Info</h4>
-                     <div className="flex gap-4">
-                       <img src={selectedAppDetails.image_url} alt="Product" className="w-20 h-20 object-contain bg-white border rounded-lg p-1 cursor-pointer hover:opacity-80" onClick={() => { setFullImageUrl(selectedAppDetails.image_url); setShowFullImageModal(true); }}/>
-                       <div>
-                         <p className="text-sm font-bold text-gray-800 line-clamp-2">{selectedAppDetails.product_name}</p>
-                         <p className="text-xs text-gray-500 mt-2 bg-green-50 w-max px-2 py-1 rounded border border-green-100">Reward: <span className="text-green-600 font-black">${selectedAppDetails.reward}</span></p>
-                       </div>
-                     </div>
-
-                     <div className="space-y-2 text-xs pt-4 mt-4 border-t border-gray-200">
-                        {selectedAppDetails.store_name && <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 sm:w-20 shrink-0">Store:</span> <span className="font-bold text-gray-800">{selectedAppDetails.store_name}</span></p>}
-                        {selectedAppDetails.platform && <p className="flex flex-col sm:flex-row"><span className="font-semibold text-gray-500 sm:w-20 shrink-0">Platform:</span> <span className="font-bold text-gray-800">{selectedAppDetails.platform} {selectedAppDetails.country && `(${selectedAppDetails.country})`}</span></p>}
-                        {selectedAppDetails.search_keyword && <p className="flex flex-col sm:flex-row sm:items-center"><span className="font-semibold text-gray-500 sm:w-20 shrink-0 mb-1 sm:mb-0">Keyword:</span> <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold w-max">{selectedAppDetails.search_keyword}</span></p>}
-                        {selectedAppDetails.product_link && <p className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-0 mt-2"><span className="font-semibold text-gray-500 sm:w-20 shrink-0">Link:</span> <a href={selectedAppDetails.product_link?.startsWith('http') ? selectedAppDetails.product_link : `https://${selectedAppDetails.product_link}`} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline break-all bg-white px-2 py-1 border rounded block w-full">Open Link ↗</a></p>}
-                     </div>
-                     {selectedAppDetails.instructions && (
-                        <div className="mt-4 bg-white p-3 rounded-lg border border-gray-200 text-xs">
-                          <span className="font-bold text-gray-500 block mb-1">Seller Instructions:</span><p className="text-gray-700 italic leading-relaxed">{selectedAppDetails.instructions}</p>
-                        </div>
-                     )}
-                   </div>
-
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm relative">
-                       <h4 className="font-bold text-blue-800 mb-2 border-b border-blue-200 pb-1.5 flex items-center justify-between">Buyer<span className="text-[10px] bg-blue-100 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-black tracking-wider">⭐ {selectedAppDetails.trust_score ? parseFloat(selectedAppDetails.trust_score).toFixed(1) : '5.0'}</span></h4>
-                       <p className="text-sm font-bold text-gray-800 truncate" title={selectedAppDetails.buyer_name}>{selectedAppDetails.buyer_name}</p>
-                       <p className="text-xs text-gray-600 truncate mt-0.5" title={selectedAppDetails.buyer_email}>{selectedAppDetails.buyer_email}</p>
-                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.user_id); }} className="mt-3 w-full bg-white border border-blue-200 text-blue-600 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm">View Buyer Profile</button>
-                     </div>
-                     <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 shadow-sm relative">
-                       <h4 className="font-bold text-purple-800 mb-2 border-b border-purple-200 pb-1.5">Seller</h4>
-                       <p className="text-sm font-bold text-gray-800 truncate" title={selectedAppDetails.seller_name || 'N/A'}>{selectedAppDetails.seller_name || 'N/A'}</p>
-                       <p className="text-xs text-gray-600 truncate mt-0.5" title={selectedAppDetails.seller_email || 'N/A'}>{selectedAppDetails.seller_email || 'N/A'}</p>
-                       <button onClick={() => { setShowAppDetailsModal(false); fetchAndShowUserProfile(selectedAppDetails.seller_id); }} disabled={!selectedAppDetails.seller_id} className="mt-3 w-full bg-white border border-purple-200 text-purple-600 py-2 rounded-lg text-xs font-bold hover:bg-purple-100 disabled:opacity-50 transition-colors shadow-sm">View Seller Profile</button>
-                     </div>
-                   </div>
-                </div>
-
-                <div className="space-y-4">
-                   {(selectedAppDetails.status === 'order_submitted' || selectedAppDetails.status === 'order_approved' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && selectedAppDetails.order_number && (
-                     <div className="bg-indigo-50 p-4 sm:p-5 rounded-xl border border-indigo-200 shadow-sm">
-                       <h4 className="font-bold text-indigo-800 mb-3 border-b border-indigo-200 pb-2 flex items-center gap-2"><ImageIcon size={18}/> Order Submission</h4>
-                       <p className="text-sm flex flex-col sm:flex-row sm:items-center"><span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Order No:</span> <span className="font-mono font-bold bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">{selectedAppDetails.order_number || 'N/A'}</span></p>
-                       
-                       <div className="mt-3 flex flex-wrap gap-2">
-                         {selectedAppDetails.screenshot_url && (
-                            <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[#0066ff] font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-indigo-100 shadow-sm transition-all hover:shadow-md">
-                              <ImageIcon size={14} /> View Proof 1
-                            </a>
-                         )}
-                         {selectedAppDetails.screenshot_url_2 && (
-                            <a href={selectedAppDetails.screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[#0066ff] font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-indigo-100 shadow-sm transition-all hover:shadow-md">
-                              <ImageIcon size={14} /> View Proof 2
-                            </a>
-                         )}
-                       </div>
-
-                       {selectedAppDetails.order_comment && (<div className="mt-4 text-sm bg-white p-3 rounded-lg border border-indigo-100"><span className="font-bold text-indigo-800 text-xs block mb-1">Buyer Comment:</span><p className="text-gray-700 italic leading-relaxed">{selectedAppDetails.order_comment}</p></div>)}
-                     </div>
-                   )}
-
-                   {(selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && (selectedAppDetails.review_link || selectedAppDetails.review_screenshot_url || selectedAppDetails.review_screenshot_url_2) && (
-                     <div className="bg-pink-50 p-4 sm:p-5 rounded-xl border border-pink-200 shadow-sm">
-                       <h4 className="font-bold text-pink-800 mb-3 border-b border-pink-200 pb-2 flex items-center gap-2"><Star size={18}/> Review Submission</h4>
-                       {selectedAppDetails.review_link && (<p className="text-sm mb-3 flex flex-col sm:flex-row sm:items-start"><span className="font-semibold text-gray-600 sm:w-24 shrink-0 mb-1 sm:mb-0">Review Link:</span> <a href={selectedAppDetails.review_link} target="_blank" rel="noreferrer" className="text-[#0066ff] font-bold hover:underline break-all bg-white px-2 py-1 border border-pink-100 rounded inline-block w-full sm:w-auto">Open Review ↗</a></p>)}
-                       
-                       <div className="mt-2 flex flex-wrap gap-2">
-                         {selectedAppDetails.review_screenshot_url && (
-                            <a href={selectedAppDetails.review_screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-700 font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-pink-100 shadow-sm transition-all hover:shadow-md">
-                              <ImageIcon size={14} /> View Review Proof 1
-                            </a>
-                         )}
-                         {selectedAppDetails.review_screenshot_url_2 && (
-                            <a href={selectedAppDetails.review_screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-700 font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-pink-100 shadow-sm transition-all hover:shadow-md">
-                              <ImageIcon size={14} /> View Review Proof 2
-                            </a>
-                         )}
-                       </div>
-                     </div>
-                   )}
-                </div>
-              </div>
-
-              {/* ACTION BUTTONS */}
-              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-200 bg-gray-50 -mx-6 -mb-6 p-4 sm:p-5 rounded-b-2xl flex-col sm:flex-row flex-wrap">
-                <button onClick={() => setShowAppDetailsModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-colors mr-auto">Close Details</button>
-                {selectedAppDetails.status === 'pending' && (
-                  <>
-                    <button onClick={() => actionApplication(selectedAppDetails.id, 'reject')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Apply</button>
-                    {selectedAppDetails.category === 'Pre-Pay' ? (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="w-full sm:w-auto bg-orange-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-orange-600 shadow-md transition-colors text-center">Approve & Pay <span className="block text-[9px] opacity-80">(External)</span></button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve')} className="w-full sm:w-auto bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-md transition-colors">Approve Apply</button>)}
-                  </>
-                )}
-                {selectedAppDetails.status === 'order_submitted' && (
-                  <>
-                    <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-order')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Order</button>
-                    {selectedAppDetails.category === 'No Review' ? (<button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Forward to Seller</button>) : (<button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Approve Order</button>)}
-                  </>
-                )}
-                {selectedAppDetails.status === 'forwarded_to_seller' && (<div className="bg-yellow-100 text-yellow-800 px-6 py-2.5 rounded-xl font-bold w-full md:w-auto text-center border border-yellow-200">Waiting for Seller Verification</div>)}
-                {selectedAppDetails.status === 'review_submitted' && (
-                  <><button onClick={() => actionApplication(selectedAppDetails.id, 'reject-review')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Review</button><button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="w-full sm:w-auto bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-600 shadow-md transition-colors">Forward to Seller</button><button onClick={() => actionApplication(selectedAppDetails.id, 'approve-review')} className="w-full sm:w-auto bg-pink-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-pink-700 shadow-md transition-colors text-center">Force Approve <span className="block text-[9px] opacity-80">(Admin bypass)</span></button></>
-                )}
-                {selectedAppDetails.status === 'pending_refund' && (<button onClick={() => { setRefundAppId(selectedAppDetails.id); setShowRefundModal(true); }} className="w-full sm:w-auto bg-green-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-green-600 shadow-md transition-colors flex items-center justify-center gap-1"><CheckCircle size={16}/> Process Refund</button>)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* DYNAMIC REFUND / PAYMENT MODAL */}
-        {showRefundModal && selectedAppDetails && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in-up">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Wallet className={selectedAppDetails.category === 'Pre-Pay' ? 'text-orange-500' : 'text-green-500'}/>
-                {selectedAppDetails.category === 'Pre-Pay' ? 'Confirm Pre-Pay (External)' : 'Confirm Refund Payment'}
-              </h3>
-              <div className={`border p-4 rounded-xl mb-6 shadow-sm ${selectedAppDetails.category === 'Pre-Pay' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
-                 {selectedAppDetails.category === 'Pre-Pay' ? (
-                   <p className="text-sm text-orange-800 font-semibold leading-relaxed">You are marking this Pre-Pay application as paid. Send the funds directly to the buyer's external account (e.g. PayPal) and submit the proof below. <strong className="font-black text-red-600 block mt-2 bg-red-100 px-2 py-1 rounded">Funds will NOT be added to the system wallet.</strong></p>
-                 ) : (
-                   <p className="text-sm text-green-800 font-semibold leading-relaxed">Funds (Product Price + Reward) will be added directly to the buyer's wallet. The buyer will be notified that they can withdraw this balance at any time.</p>
-                 )}
-              </div>
-              <form onSubmit={submitRefund} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">{selectedAppDetails.category === 'Pre-Pay' ? 'Transaction ID (Optional)' : 'Admin Order / Ref Number'}</label>
-                  <input type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none transition-all" value={refundData.orderNumber} onChange={e => setRefundData({...refundData, orderNumber: e.target.value})} placeholder={selectedAppDetails.category === 'Pre-Pay' ? 'Enter Trx ID...' : 'e.g. REF-12345...'} />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Payment Screenshot (Optional)</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleRefundImageUpload} 
-                    className="w-full p-2 bg-gray-50 border border-gray-200 rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-[#0066ff] file:text-white hover:file:bg-blue-700 cursor-pointer transition-all" 
-                  />
-                  {isUploadingRefundProof && <p className="text-xs text-blue-600 mt-1 animate-pulse font-semibold">Uploading image to secure storage...</p>}
-                  {refundData.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image successfully attached!</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Admin Comment (Optional)</label>
-                  <textarea className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#0066ff] outline-none h-20 resize-none transition-all" value={refundData.comment} onChange={e => setRefundData({...refundData, comment: e.target.value})} placeholder="Message to the buyer..." />
-                </div>
-                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-5 border-t border-gray-100">
-                  <button type="button" onClick={() => setShowRefundModal(false)} className="w-full sm:w-auto px-6 py-2.5 bg-gray-200 text-gray-800 rounded-xl font-bold hover:bg-gray-300 transition-colors">Cancel</button>
-                  <button type="submit" disabled={isUploadingRefundProof} className={`w-full sm:w-auto px-6 py-2.5 text-white rounded-xl font-bold shadow-md disabled:opacity-50 transition-colors ${selectedAppDetails.category === 'Pre-Pay' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'}`}>{selectedAppDetails.category === 'Pre-Pay' ? 'Confirm External Payment' : 'Send Wallet Refund'}</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-      {/* FULL IMAGE LIGHTBOX FOR ADMIN */}
-      {showFullImageModal && (
-        <div 
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in"
-          onClick={() => setShowFullImageModal(false)}
-        >
-          <button 
-            className="absolute top-6 right-6 text-white hover:text-red-500 bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-colors"
-            onClick={() => setShowFullImageModal(false)}
-          >
-            <X size={32}/>
-          </button>
-          <img 
-            src={fullImageUrl} 
-            alt="Full Proof" 
-            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/20 cursor-default" 
-            onClick={(e) => e.stopPropagation()} 
+          <ApproveWithdrawalModal
+            withdrawalToApprove={withdrawalToApprove}
+            onClose={() => {
+              setShowApproveWithdrawalModal(false);
+              setWithdrawalToApprove(null);
+            }}
+            onSuccess={() => {
+              setShowApproveWithdrawalModal(false);
+              setWithdrawalToApprove(null);
+              fetchWithdrawals();
+            }}
+            onImageClick={(url) => {
+              setFullImageUrl(url);
+              setShowFullImageModal(true);
+            }}
+            API_BASE={API_BASE}
+            handleAction={handleAction}
           />
-        </div>
-      )}
+        )}
+
+        {/* 2. TRANSACTION DETAILS MODAL */}
+        {showTrxDetailsModal && selectedTrx && (
+          <TrxDetailsModal
+            selectedTrx={selectedTrx}
+            trxType={trxType}
+            onClose={() => setShowTrxDetailsModal(false)}
+            onImageClick={(url) => {
+              setFullImageUrl(url);
+              setShowFullImageModal(true);
+            }}
+          />
+        )}
+
+        {/* 3. APPEAL DETAILS MODAL */}
+        {showAppealModal && selectedAppeal && (
+          <AppealDetailsModal
+            selectedAppeal={selectedAppeal}
+            onClose={() => setShowAppealModal(false)}
+            onViewProfile={(userId) => fetchAndShowUserProfile(userId)}
+            onActionSuccess={() => {
+              setShowAppealModal(false);
+              fetchAppeals();
+            }}
+            approveAppeal={approveAppeal}
+            rejectAppeal={rejectAppeal}
+            API_BASE={API_BASE}
+            handleAction={handleAction}
+          />
+        )}
+
+        {/* 4. USER PROFILE MODAL */}
+        {showUserProfileModal && selectedUserProfile && (
+          <UserProfileModal
+            selectedUserProfile={selectedUserProfile}
+            userAppStats={userAppStats}
+            sellerProductsList={sellerProductsList}
+            selectedUserApps={selectedUserApps}
+            profileViewMode={profileViewMode}
+            setProfileViewMode={setProfileViewMode}
+            onClose={() => setShowUserProfileModal(false)}
+            onViewProduct={(product) => {
+              setSelectedProductDetails(product);
+              setShowProductModal(true);
+            }}
+            onViewApp={(app) => {
+              setSelectedAppDetails(app);
+              setShowAppDetailsModal(true);
+            }}
+          />
+        )}
+
+        {/* 5. PRODUCT DETAILS MODAL */}
+        {showProductModal && selectedProductDetails && (
+          <ProductDetailsModal
+            selectedProductDetails={selectedProductDetails}
+            onClose={() => setShowProductModal(false)}
+            getConvertedPrice={getConvertedPrice}
+            onViewProfile={(userId) => {
+              setShowProductModal(false);
+              fetchAndShowUserProfile(userId);
+            }}
+            onImageClick={(url) => {
+              setFullImageUrl(url);
+              setShowFullImageModal(true);
+            }}
+            approveProduct={approveProduct}
+            rejectProduct={rejectProduct}
+            stopProductAction={stopProductAction}
+            resumeProductAction={resumeProductAction}
+          />
+        )}
+
+        {/* 6. APPLICATION DETAILS MODAL */}
+        {showAppDetailsModal && selectedAppDetails && (
+          <AppDetailsModal
+            selectedAppDetails={selectedAppDetails}
+            onClose={() => setShowAppDetailsModal(false)}
+            onViewProfile={(userId) => {
+              setShowAppDetailsModal(false);
+              fetchAndShowUserProfile(userId);
+            }}
+            onImageClick={(url) => {
+              setFullImageUrl(url);
+              setShowFullImageModal(true);
+            }}
+            onRefundClick={() => {
+              setRefundAppId(selectedAppDetails.id);
+              setShowRefundModal(true);
+            }}
+            actionApplication={actionApplication}
+          />
+        )}
+
+        {/* 7. DYNAMIC REFUND / PAYMENT MODAL */}
+        {showRefundModal && selectedAppDetails && (
+          <RefundModal
+            selectedAppDetails={selectedAppDetails}
+            onClose={() => {
+              setShowRefundModal(false);
+              setRefundAppId(null);
+            }}
+            onSuccess={submitRefund}
+          />
+        )}
+
+        {/* 8. FULL IMAGE LIGHTBOX FOR ADMIN */}
+        {showFullImageModal && (
+          <FullImageModal 
+            fullImageUrl={fullImageUrl} 
+            onClose={() => setShowFullImageModal(false)} 
+          />
+        )}
 
       <style dangerouslySetInnerHTML={{__html: `
         .hide-scrollbar::-webkit-scrollbar { display: none; }
