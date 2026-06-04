@@ -1395,7 +1395,7 @@ export default function SellerDashboard() {
               )}
 
               {/* Payment Proof Section */}
-              {(selectedTrx.transaction_id || selectedTrx.screenshot_url) && (
+              {(selectedTrx.transaction_id || selectedTrx.screenshot_url || selectedTrx.image_url || selectedTrx.proof_url) && (
                 <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mt-3 shadow-sm">
                   <p className="font-black text-blue-800 text-[10px] uppercase tracking-wider mb-3 flex items-center gap-1"><ShieldCheck size={14}/> Payment Proof</p>
                   
@@ -1406,11 +1406,11 @@ export default function SellerDashboard() {
                      </div>
                   )}
                   
-                  {selectedTrx.screenshot_url && (
+                  {(selectedTrx.screenshot_url || selectedTrx.image_url || selectedTrx.proof_url) && (
                      <div>
                        <p className="text-[10px] text-gray-500 font-bold uppercase mb-1">Screenshot:</p>
-                       <a href={selectedTrx.screenshot_url} target="_blank" rel="noreferrer" className="inline-block mt-1">
-                         <img src={selectedTrx.screenshot_url} alt="Proof" className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-sm hover:opacity-80 transition-opacity" />
+                       <a href={selectedTrx.screenshot_url || selectedTrx.image_url || selectedTrx.proof_url} target="_blank" rel="noreferrer" className="inline-block mt-1">
+                         <img src={selectedTrx.screenshot_url || selectedTrx.image_url || selectedTrx.proof_url} alt="Proof" className="w-20 h-20 object-cover rounded-lg border border-blue-200 shadow-sm hover:opacity-80 transition-opacity" />
                        </a>
                      </div>
                   )}
