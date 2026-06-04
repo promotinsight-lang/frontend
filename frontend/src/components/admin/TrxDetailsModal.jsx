@@ -114,6 +114,13 @@ export default function TrxDetailsModal({
             <span className="font-bold text-gray-500">Status:</span> 
             {renderStatusBadge(selectedTrx.status)}
           </p>
+
+          {/* DEBUG SECTION - ডাটা চেক করার জন্য */}
+          <div className="mt-4 bg-gray-800 text-green-400 p-3 rounded-lg text-xs font-mono overflow-x-auto shadow-inner">
+             <p className="text-white mb-2 font-bold border-b border-gray-600 pb-1">Backend Data Check (Debug):</p>
+             <pre>{JSON.stringify(selectedTrx, null, 2)}</pre>
+          </div>
+          
         </div>
         
         <div className="mt-6">
