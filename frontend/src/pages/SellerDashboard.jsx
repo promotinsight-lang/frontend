@@ -1182,7 +1182,16 @@ export default function SellerDashboard() {
                     {selectedDepositMethod.qr_code_url && (
                       <div className="mt-4 flex flex-col items-center bg-white p-3 rounded-lg border border-blue-100 shadow-sm">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Scan QR Code to Pay</p>
-                        <img src={selectedDepositMethod.qr_code_url} alt="Payment QR Code" className="w-32 h-32 object-contain border p-1 rounded-md" />
+                        <img 
+                          src={selectedDepositMethod.qr_code_url} 
+                          alt="Payment QR Code" 
+                          className="w-32 h-32 object-contain border p-1 rounded-md cursor-pointer hover:opacity-80 transition-opacity" 
+                          onClick={() => {
+                            setFullImageUrl(selectedDepositMethod.qr_code_url);
+                            setShowFullImageModal(true);
+                          }}
+                          title="Click to view full screen"
+                        />
                       </div>
                     )}
                   </div>
