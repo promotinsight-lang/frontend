@@ -1775,7 +1775,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* DEPOSITS TAB */}
+       {/* DEPOSITS TAB */}
         {activeTab === 'deposits' && (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b"><h3 className="font-bold text-gray-700">Pending Deposit Requests</h3></div>
@@ -1785,6 +1785,7 @@ export default function AdminDashboard() {
               mobile={deposits.map((d) => (
                 <AdminMobileCard key={d.id} title={d.email} subtitle={d.payment_method} actions={
                   <>
+                    <button onClick={() => openTrxDetails(d, 'deposit')} className="flex-1 bg-blue-50 text-blue-600 border border-blue-200 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1"><Eye size={14}/> Details</button>
                     <button onClick={() => approveDeposit(d.id)} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold">Approve</button>
                     <button onClick={() => rejectDeposit(d.id)} className="flex-1 bg-red-500 text-white py-2 rounded-lg text-xs font-bold">Reject</button>
                   </>
@@ -1805,9 +1806,10 @@ export default function AdminDashboard() {
                       <td className="p-4 text-green-600 font-bold">${d.amount}</td>
                       <td className="p-4"><span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">{d.payment_method}</span></td>
                       <td className="p-4 font-mono text-gray-500 break-all">{d.transaction_id}</td>
-                      <td className="p-4 text-right gap-2 flex justify-end">
-                        <button onClick={() => approveDeposit(d.id)} className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 font-semibold text-xs mr-2">Approve</button>
-                        <button onClick={() => rejectDeposit(d.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 font-semibold text-xs">Reject</button>
+                      <td className="p-4 text-right flex justify-end gap-2 items-center">
+                        <button onClick={() => openTrxDetails(d, 'deposit')} className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 font-bold text-xs flex items-center gap-1"><Eye size={14}/> Details</button>
+                        <button onClick={() => approveDeposit(d.id)} className="bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 font-semibold text-xs">Approve</button>
+                        <button onClick={() => rejectDeposit(d.id)} className="bg-red-500 text-white px-3 py-1.5 rounded-lg hover:bg-red-600 font-semibold text-xs">Reject</button>
                       </td>
                     </tr>
                   ))}
