@@ -6,7 +6,7 @@ import SellerTariffsPage from '../components/SellerTariffsPage';
 import { 
   Package, PlusCircle, LayoutDashboard, Wallet, Clock,
   Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
-  Headset, MessageCircle, Send, History, Settings, ShieldCheck 
+  Headset, MessageCircle, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake 
 } from 'lucide-react';
 
 // ================= SECURITY HELPER =================
@@ -31,6 +31,7 @@ export default function SellerDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [products, setProducts] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [userProfile, setUserProfile] = useState(null); // 🔥 NEW STATE
   const [loading, setLoading] = useState(true);
 
   // Modal States
@@ -135,6 +136,7 @@ export default function SellerDashboard() {
       const profileData = await profileRes.json();
       if (profileData.success) {
          setWalletBalance(parseFloat(profileData.user.wallet_balance) || 0);
+         setUserProfile(profileData.user); // 🔥 SET USER PROFILE STATE
          
          // 🔥 FIX: Update localStorage so Sidebar gets the live status & balance
          const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -519,7 +521,19 @@ export default function SellerDashboard() {
 
       <div className="bg-[#0066ff] px-4 pt-6 pb-8 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Seller Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold">Seller Dashboard</h1>
+            {userProfile && userProfile.is_active === false && (
+              <span className="bg-red-500 text-white text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wider flex items-center gap-1 shadow-md border border-red-400">
+                <ShieldAlert size={14}/> Disabled
+              </span>
+            )}
+            {userProfile && userProfile.is_frozen === true && userProfile.is_active !== false && (
+              <span className="bg-orange-500 text-white text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wider flex items-center gap-1 shadow-md border border-orange-400">
+                <Snowflake size={14}/> Frozen
+              </span>
+            )}
+          </div>
           <p className="text-sm text-blue-100 opacity-90 mt-1">Manage your products and sales</p>
         </div>
         
