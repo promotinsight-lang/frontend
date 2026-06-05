@@ -523,12 +523,13 @@ export default function SellerDashboard() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold">Seller Dashboard</h1>
-            {userProfile && userProfile.is_active === false && (
+            {userProfile && (userProfile.is_active === false || userProfile.is_active === "false" || userProfile.is_active === 0) && (
               <span className="bg-red-500 text-white text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wider flex items-center gap-1 shadow-md border border-red-400">
                 <ShieldAlert size={14}/> Disabled
               </span>
             )}
-            {userProfile && userProfile.is_frozen === true && userProfile.is_active !== false && (
+            {userProfile && (userProfile.is_frozen === true || userProfile.is_frozen === "true" || userProfile.is_frozen === 1) && 
+             !(userProfile.is_active === false || userProfile.is_active === "false" || userProfile.is_active === 0) && (
               <span className="bg-orange-500 text-white text-xs px-2.5 py-1 rounded-md uppercase font-black tracking-wider flex items-center gap-1 shadow-md border border-orange-400">
                 <Snowflake size={14}/> Frozen
               </span>
