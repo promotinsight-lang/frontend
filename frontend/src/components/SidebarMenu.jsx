@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ShoppingBag, User, AlertTriangle, CheckCircle,
@@ -9,9 +9,24 @@ import {
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 
 const SidebarMenu = ({ isOpen, setIsOpen }) => {
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : null;
+  const [user, setUser] = useState(() => {
+    const userString = localStorage.getItem('user');
+    return userString ? JSON.parse(userString) : null;
+  });
   const { formatWallet } = useBuyerCurrency();
+
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      const updatedUserString = localStorage.getItem('user');
+      setUser(updatedUserString ? JSON.parse(updatedUserString) : null);
+    };
+
+    window.addEventListener('user-profile-updated', handleUserUpdate);
+    
+    return () => {
+      window.removeEventListener('user-profile-updated', handleUserUpdate);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {

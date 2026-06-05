@@ -136,6 +136,14 @@ export default function SellerDashboard() {
       if (profileData.success) {
          setWalletBalance(parseFloat(profileData.user.wallet_balance) || 0);
          
+         // 🔥 FIX: Update localStorage so Sidebar gets the live status & balance
+         const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
+         const updatedUser = { ...existingUser, ...profileData.user };
+         localStorage.setItem('user', JSON.stringify(updatedUser));
+         
+         // Dispatch event to trigger Sidebar re-render
+         window.dispatchEvent(new Event('user-profile-updated'));
+         
          try {
             const userCountry = profileData.user.country || '';
             if (userCountry) {
