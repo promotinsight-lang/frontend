@@ -103,7 +103,7 @@ export default function AdminDashboard() {
   // Helper for Dual Currency Calculation
   const getConvertedPrice = (amount, country, platform) => {
     if (!amount) return '0.00';
-    const config = allFeeConfigs.find(c => c.country === country && c.platform === platform);
+    const config = allFeeConfigs.find(c => c.country?.toLowerCase() === country?.toLowerCase() && c.platform?.toLowerCase() === platform?.toLowerCase());
     const rate = config && config.exchange_rate ? parseFloat(config.exchange_rate) : 1;
     return (parseFloat(amount) * rate).toFixed(2);
   };

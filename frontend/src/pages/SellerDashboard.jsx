@@ -8,6 +8,7 @@ import {
   Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
   Headset, MessageCircle, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake 
 } from 'lucide-react';
+import { getCurrencyForCountry } from '../utils/currency';
 
 // ================= SECURITY HELPER =================
 const secureFetch = async (url, options = {}) => {

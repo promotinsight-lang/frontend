@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Eye, Package } from 'lucide-react';
+import { getCurrencyForCountry } from '../../utils/currency';
 
 export default function ProductDetailsModal({
   selectedProductDetails,
@@ -52,7 +53,7 @@ export default function ProductDetailsModal({
                       ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)} <span className="text-xs sm:text-sm font-bold text-gray-500">USD</span>
                    </p>
                    <p className="text-[10px] sm:text-sm font-bold text-gray-600 bg-yellow-100/50 w-max px-2 py-0.5 rounded border border-yellow-200">
-                      ~ {getConvertedPrice(selectedProductDetails.total_deposit, selectedProductDetails.country, selectedProductDetails.platform)} <span className="text-[10px] uppercase">Local ({selectedProductDetails.country || 'N/A'})</span>
+                      ~ {getConvertedPrice(selectedProductDetails.total_deposit, selectedProductDetails.country, selectedProductDetails.platform)} <span className="text-[10px] uppercase">{getCurrencyForCountry(selectedProductDetails.country).code}</span>
                    </p>
                 </div>
 
@@ -99,10 +100,10 @@ export default function ProductDetailsModal({
               <span className="font-semibold text-gray-500 w-24 shrink-0 hidden sm:inline-block">Financials:</span> 
               <div className="flex gap-2">
                 <span className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
-                   <span className="text-xs text-gray-500">Price:</span> <b>USD ${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} {selectedProductDetails.country})</span>
+                   <span className="text-xs text-gray-500">Price:</span> <b>USD ${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} {getCurrencyForCountry(selectedProductDetails.country).code})</span>
                 </span>
                 <span className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
-                   <span className="text-xs text-green-700">Reward:</span> <b className="text-green-600">USD ${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} {selectedProductDetails.country})</span>
+                   <span className="text-xs text-green-700">Reward:</span> <b className="text-green-600">USD ${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} {getCurrencyForCountry(selectedProductDetails.country).code})</span>
                 </span>
               </div>
             </div>
