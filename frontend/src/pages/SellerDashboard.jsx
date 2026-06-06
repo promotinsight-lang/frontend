@@ -157,7 +157,21 @@ export default function SellerDashboard() {
             }
          } catch(e) { console.error("Currency fetch error", e); }
 
-      const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
+         const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
+         const productsData = await productsRes.json();
+         if (productsData.success) setProducts(productsData.data);
+
+         const settingsRes = await secureFetch('https://backend-6aiq.onrender.com/api/users/payment-settings', { headers: authHeaders });
+         const settingsData = await settingsRes.json();
+         if (settingsData.success && settingsData.data.length > 0) {
+           setPaymentSettings(settingsData.data);
+         }
+
+         const pmRes = await fetch('https://backend-6aiq.onrender.com/api/payment-methods/list', { headers: authHeaders });
+         const pmData = await pmRes.json();
+         if (pmRes.ok && pmData.success) {
+           setPaymentMethods(pmData.data || []);
+         }
       const productsData = await productsRes.json();
       if (productsData.success) setProducts(productsData.data);
 
@@ -1030,12 +1044,12 @@ export default function SellerDashboard() {
                     <div>
                       <span className="font-bold text-gray-400 block text-[10px] uppercase">Price</span> 
                       <span className="font-black text-gray-800">${selectedProduct.price}</span>
-                      <span className="block text-[9px] text-gray-500 font-bold mt-0.5">~ {(parseFloat(selectedProduct.price || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</span>
+                      <span className="block text-[9px] text-gray-500 font-bold mt-0.5">~ {(parseFloat(selectedProduct.price || 0) * getRateForCountry(allRatesMap, selectedProduct.country || userProfile?.country)).toFixed(2)} {getCurrencyForCountry(selectedProduct.country || userProfile?.country).code}</span>
                     </div>
                     <div>
                       <span className="font-bold text-gray-400 block text-[10px] uppercase">Reward</span> 
                       <span className="font-black text-green-600">${selectedProduct.reward}</span>
-                      <span className="block text-[9px] text-green-600 font-bold mt-0.5">~ {(parseFloat(selectedProduct.reward || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</span>
+                      <span className="block text-[9px] text-green-600 font-bold mt-0.5">~ {(parseFloat(selectedProduct.reward || 0) * getRateForCountry(allRatesMap, selectedProduct.country || userProfile?.country)).toFixed(2)} {getCurrencyForCountry(selectedProduct.country || userProfile?.country).code}</span>
                     </div>
                     <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Platform</span> <span className="font-bold text-gray-800">{selectedProduct.platform}</span></p>
                     <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Target Qty</span> <span className="font-black text-[#0066ff]">{selectedProduct.required_orders}</span></p>
