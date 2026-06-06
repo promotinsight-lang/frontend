@@ -49,7 +49,7 @@ export default function Support() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-blue-900/60">Email Us</p>
-                  <p className="font-bold">support@PromotInsight.com</p>
+                  <p className="font-bold">promotinsight@gmail.com</p>
                 </div>
               </div>
               
