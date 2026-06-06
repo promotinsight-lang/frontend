@@ -151,11 +151,11 @@ export default function SellerDashboard() {
             const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: authHeaders });
             const feeData = await feeRes.json();
             if (feeData.success && feeData.data) {
-               // পুরো সিস্টেমের রেট ম্যাপ তৈরি করে সেভ করে রাখছি
-               setAllRatesMap(buildCountryRateMap(feeData.data));
+               // নিশ্চিত করুন যে ম্যাপটি আপডেট হচ্ছে
+               const newMap = buildCountryRateMap(feeData.data);
+               setAllRatesMap(newMap);
             }
          } catch(e) { console.error("Currency fetch error", e); }
-      }
 
       const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
       const productsData = await productsRes.json();

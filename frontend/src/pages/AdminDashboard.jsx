@@ -594,8 +594,9 @@ export default function AdminDashboard() {
     if (activeTab === 'withdrawals' || activeTab === 'history') fetchWithdrawals();
     if (activeTab === 'history') fetchRefunds(); 
     if (activeTab === 'products' || activeTab === 'all-products') fetchProducts();
-    if (activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); fetchGlobalVerificationFields(); } 
-    if (activeTab === 'applications') fetchApplications(); 
+    fetchAllFeeConfigs(); // 🔥 Exchange rates সব ট্যাবের জন্য লোড হবে
+    if (activeTab === 'settings') { fetchSettings(); fetchGlobalVerificationFields(); } 
+    if (activeTab === 'applications') fetchApplications();
     if (activeTab === 'verify-requests') fetchVerifications(); 
     if (activeTab === 'appeals') fetchAppeals(); 
     if (activeTab === 'all-buyers') fetchUsers('buyer'); 
@@ -783,7 +784,8 @@ export default function AdminDashboard() {
             if(activeTab === 'support-tickets') fetchSupportTickets();
             if(activeTab === 'announcements') fetchAnnouncements();
             if(activeTab === 'blogs') fetchAdminBlogs();
-            if(activeTab === 'settings') { fetchSettings(); fetchAllFeeConfigs(); fetchGlobalVerificationFields(); }
+            fetchAllFeeConfigs(); // 🔥 রিফ্রেশ বাটনেও রেট ফেচ হবে
+            if(activeTab === 'settings') { fetchSettings(); fetchGlobalVerificationFields(); }
           }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-all">
             <RefreshCcw size={20} />
           </button>
