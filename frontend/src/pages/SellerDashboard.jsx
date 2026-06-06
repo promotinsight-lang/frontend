@@ -599,8 +599,14 @@ export default function SellerDashboard() {
                         </span>
                       </div>
                       <div className="flex justify-between text-sm mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
-                        <p className="text-gray-600">Price: <span className="font-bold text-black">${product.price}</span></p>
-                        <p className="text-gray-600">Reward: <span className="font-bold text-green-600">${product.reward}</span></p>
+                        <div className="flex flex-col">
+                          <p className="text-gray-600">Price: <span className="font-bold text-black">USD ${product.price}</span></p>
+                          <p className="text-[9px] text-gray-500 font-bold">~ {(parseFloat(product.price || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</p>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <p className="text-gray-600">Reward: <span className="font-bold text-green-600">USD ${product.reward}</span></p>
+                          <p className="text-[9px] text-green-600/80 font-bold">~ {(parseFloat(product.reward || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</p>
+                        </div>
                       </div>
                       <div className="mt-auto pt-4 flex gap-2">
                         {product.status === 'pending' && (
@@ -953,26 +959,27 @@ export default function SellerDashboard() {
                            </div>
                            <div className="text-right shrink-0 w-full sm:w-auto flex flex-row sm:flex-col justify-between items-center sm:items-end">
                              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Deducted</p>
-                             <p className="text-xl sm:text-2xl font-black text-red-500">-${totalDeducted.toFixed(2)}</p>
+                             <p className="text-xl sm:text-2xl font-black text-red-500">- USD ${totalDeducted.toFixed(2)}</p>
+                             <p className="text-[10px] text-red-400 font-bold mt-0.5">~ {(totalDeducted * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</p>
                            </div>
                          </div>
                          
                          <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 text-sm bg-white">
                             <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
                               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Unit Price</p>
-                              <p className="font-black text-gray-800 text-base sm:text-lg">${price.toFixed(2)}</p>
+                              <p className="font-black text-gray-800 text-base sm:text-lg">USD ${price.toFixed(2)}</p>
                             </div>
                             <div className="bg-green-50 p-3 rounded-xl border border-green-100 text-center">
                               <p className="text-green-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Reward</p>
-                              <p className="font-black text-green-700 text-base sm:text-lg">+${reward.toFixed(2)}</p>
+                              <p className="font-black text-green-700 text-base sm:text-lg">+ USD ${reward.toFixed(2)}</p>
                             </div>
                             <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 text-center relative group">
                               <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Tariff</p>
-                              <p className="font-black text-orange-700 text-base sm:text-lg">+${commission.toFixed(2)}</p>
+                              <p className="font-black text-orange-700 text-base sm:text-lg">+ USD ${commission.toFixed(2)}</p>
                             </div>
                             <div className="bg-red-50 p-3 rounded-xl border border-red-100 text-center relative group">
                               <p className="text-red-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Refund Fee</p>
-                              <p className="font-black text-red-700 text-base sm:text-lg">+${Math.max(0, refundFee).toFixed(2)}</p>
+                              <p className="font-black text-red-700 text-base sm:text-lg">+ USD ${Math.max(0, refundFee).toFixed(2)}</p>
                             </div>
                             <div className="col-span-2 sm:col-span-1 bg-blue-50 p-3 rounded-xl border border-blue-100 text-center">
                               <p className="text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Target Qty</p>

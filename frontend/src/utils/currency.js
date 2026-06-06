@@ -37,15 +37,27 @@ export function getCurrencyForCountry(country) {
   return key ? COUNTRY_CURRENCIES[key] : { symbol: '$', code: 'USD' };
 }
 
-/** Product price/reward are stored in the product's local currency */
-export function formatProductMoney(amount, country) {
+/** Product price/reward are stored in USD; exchange_rate = local units per 1 USD */
+export function formatProductMoney(usdAmount, country, exchangeRate) {
+  const usd = Number(usdAmount) || 0;
   const { symbol, code } = getCurrencyForCountry(country);
-  const value = Number(amount) || 0;
+  const rate = Number(exchangeRate) || 1;
+  const localValue = usd * rate;
+  const isUsdCountry = code === 'USD' || rate === 1;
+
+  let formatted = `USD $${usd.toFixed(2)}`;
+  if (!isUsdCountry) {
+    formatted += ` (~ ${localValue.toFixed(2)} ${code})`;
+  }
+
   return {
-    formatted: `${symbol}${value.toFixed(2)}`,
+    formatted,
+    primary: `USD $${usd.toFixed(2)}`,
+    secondary: isUsdCountry ? null : `~ ${localValue.toFixed(2)} ${code}`,
     symbol,
     code,
-    value,
+    usdValue: usd,
+    localValue: localValue,
   };
 }
 

@@ -101,8 +101,10 @@ export function useBuyerCurrency() {
   );
 
   const formatProduct = useCallback((amount, productCountry) => {
-    return formatProductMoney(amount, productCountry || buyerCountry);
-  }, [buyerCountry]);
+    const targetCountry = productCountry || buyerCountry;
+    const rate = getRateForCountry(rateByCountry, targetCountry);
+    return formatProductMoney(amount, targetCountry, rate);
+  }, [buyerCountry, rateByCountry]);
 
   const currency = getCurrencyForCountry(buyerCountry);
 

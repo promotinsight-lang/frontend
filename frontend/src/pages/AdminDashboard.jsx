@@ -1566,8 +1566,9 @@ export default function AdminDashboard() {
                   <div>
                     <img src={p.image_url} alt="Product" className="w-full h-32 object-contain bg-white rounded mb-3 border p-2" />
                     <h4 className="font-bold text-gray-800 truncate">{p.product_name || p.store_name}</h4>
-                    <div className="flex justify-between text-sm mt-2"><span className="text-gray-600">Price: <b className="text-black">${p.price}</b></span><span className="text-gray-600">Reward: <b className="text-green-600">${p.reward}</b></span></div>
-                    <p className="text-xs text-gray-500 mt-2 truncate">Platform: {p.platform} | Qty: {p.required_orders}</p>
+                    <div className="flex justify-between text-sm mt-2"><span className="text-gray-600">Price: <b className="text-black">USD ${p.price}</b></span><span className="text-gray-600">Reward: <b className="text-green-600">USD ${p.reward}</b></span></div>
+                    <div className="flex justify-between text-[10px] mt-0.5"><span className="text-gray-500">~ {getConvertedPrice(p.price, p.country, p.platform)} {p.country}</span><span className="text-green-600/80">~ {getConvertedPrice(p.reward, p.country, p.platform)} {p.country}</span></div>
+                    <p className="text-xs text-gray-500 mt-2 truncate">Platform: {p.platform} ({p.country}) | Qty: {p.required_orders}</p>
                     <div className="mt-3 bg-blue-50 p-2 rounded border border-blue-100 overflow-hidden">
                       <p className="text-xs text-blue-800 font-bold truncate">👤 {p.seller_name || 'N/A'}</p>
                       <p className="text-xs text-blue-600 truncate">✉️ {p.seller_email || 'N/A'} (ID: #{p.seller_id})</p>

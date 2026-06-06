@@ -60,15 +60,15 @@ export default function ProductDetailsModal({
                 <div className="space-y-2 text-[10px] sm:text-xs font-semibold bg-white p-3 rounded-lg border border-yellow-100">
                    <div className="flex justify-between text-gray-600">
                       <span>Previous Balance:</span>
-                      <span>${(parseFloat(selectedProductDetails.seller_wallet_balance || 0) + parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2))}</span>
+                      <span>USD ${(parseFloat(selectedProductDetails.seller_wallet_balance || 0) + parseFloat(selectedProductDetails.total_deposit || 0)).toFixed(2)}</span>
                    </div>
                    <div className="flex justify-between text-red-500 border-b border-gray-100 pb-2">
                       <span>Deducted (This Product):</span>
-                      <span>- ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)}</span>
+                      <span>- USD ${parseFloat(selectedProductDetails.total_deposit || 0).toFixed(2)}</span>
                    </div>
                    <div className="flex justify-between text-green-700 pt-1 font-bold">
                       <span>Remaining Balance:</span>
-                      <span>${parseFloat(selectedProductDetails.seller_wallet_balance || 0).toFixed(2)}</span>
+                      <span>USD ${parseFloat(selectedProductDetails.seller_wallet_balance || 0).toFixed(2)}</span>
                    </div>
                 </div>
                 <p className="text-[10px] text-gray-400 mt-3 text-center italic">Safely held by system</p>
@@ -99,10 +99,10 @@ export default function ProductDetailsModal({
               <span className="font-semibold text-gray-500 w-24 shrink-0 hidden sm:inline-block">Financials:</span> 
               <div className="flex gap-2">
                 <span className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
-                   <span className="text-xs text-gray-500">Price:</span> <b>${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
+                   <span className="text-xs text-gray-500">Price:</span> <b>USD ${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} {selectedProductDetails.country})</span>
                 </span>
                 <span className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
-                   <span className="text-xs text-green-700">Reward:</span> <b className="text-green-600">${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} Local)</span>
+                   <span className="text-xs text-green-700">Reward:</span> <b className="text-green-600">USD ${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} {selectedProductDetails.country})</span>
                 </span>
               </div>
             </div>
