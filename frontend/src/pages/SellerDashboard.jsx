@@ -156,7 +156,6 @@ export default function SellerDashboard() {
             }
          } catch(e) { console.error("Currency fetch error", e); }
       }
-      }
 
       const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
       const productsData = await productsRes.json();
