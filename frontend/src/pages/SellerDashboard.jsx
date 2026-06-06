@@ -8,7 +8,7 @@ import {
   Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
   Headset, MessageCircle, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake 
 } from 'lucide-react';
-import { getCurrencyForCountry } from '../utils/currency';
+import { getCurrencyForCountry, getRateForCountry, buildCountryRateMap } from '../utils/currency';
 
 // ================= SECURITY HELPER =================
 const secureFetch = async (url, options = {}) => {
@@ -56,7 +56,7 @@ export default function SellerDashboard() {
   });
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isUploadingWithdrawQR, setIsUploadingWithdrawQR] = useState(false);
-  const [localCurrencyInfo, setLocalCurrencyInfo] = useState({ rate: 1, code: 'Local' });
+  const [allRatesMap, setAllRatesMap] = useState({}); // নতুন স্টেট
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -148,18 +148,14 @@ export default function SellerDashboard() {
          window.dispatchEvent(new Event('user-profile-updated'));
          
          try {
-            const userCountry = profileData.user.country || '';
-            if (userCountry) {
-               const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: authHeaders });
-               const feeData = await feeRes.json();
-               if (feeData.success && feeData.data) {
-                  const config = feeData.data.find(c => c.country.toLowerCase() === userCountry.toLowerCase());
-                  if (config && config.exchange_rate) {
-                     setLocalCurrencyInfo({ rate: parseFloat(config.exchange_rate), code: config.country });
-                  }
-               }
+            const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: authHeaders });
+            const feeData = await feeRes.json();
+            if (feeData.success && feeData.data) {
+               // পুরো সিস্টেমের রেট ম্যাপ তৈরি করে সেভ করে রাখছি
+               setAllRatesMap(buildCountryRateMap(feeData.data));
             }
          } catch(e) { console.error("Currency fetch error", e); }
+      }
       }
 
       const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
@@ -544,9 +540,11 @@ export default function SellerDashboard() {
             <p className="text-xs text-blue-100 font-bold uppercase tracking-wider">Wallet Balance</p>
             <div className="flex flex-col">
               <p className="text-2xl md:text-3xl font-black">${walletBalance.toFixed(2)} <span className="text-sm font-bold">USD</span></p>
-              <p className="text-[10px] text-blue-100 font-bold bg-white/10 px-2 py-0.5 rounded border border-white/20 w-max mt-1">
-                 ~ {(walletBalance * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}
-              </p>
+              {userProfile && userProfile.country && (
+                <p className="text-[10px] text-blue-100 font-bold bg-white/10 px-2 py-0.5 rounded border border-white/20 w-max mt-1">
+                   ~ {(walletBalance * getRateForCountry(allRatesMap, userProfile.country)).toFixed(2)} {getCurrencyForCountry(userProfile.country).code}
+                </p>
+              )}
             </div>
           </div>
           
@@ -601,12 +599,16 @@ export default function SellerDashboard() {
                       </div>
                       <div className="flex justify-between text-sm mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <div className="flex flex-col">
-                          <p className="text-gray-600">Price: <span className="font-bold text-black">USD ${product.price}</span></p>
-                          <p className="text-[9px] text-gray-500 font-bold">~ {(parseFloat(product.price || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</p>
+                          <p className="text-gray-600">Price: <span className="font-bold text-black">USD ${parseFloat(product.price || 0).toFixed(2)}</span></p>
+                          <p className="text-[9px] text-gray-500 font-bold">
+                            ~ {(parseFloat(product.price || 0) * getRateForCountry(allRatesMap, product.country)).toFixed(2)} {getCurrencyForCountry(product.country).code}
+                          </p>
                         </div>
                         <div className="flex flex-col items-end">
-                          <p className="text-gray-600">Reward: <span className="font-bold text-green-600">USD ${product.reward}</span></p>
-                          <p className="text-[9px] text-green-600/80 font-bold">~ {(parseFloat(product.reward || 0) * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</p>
+                          <p className="text-gray-600">Reward: <span className="font-bold text-green-600">USD ${parseFloat(product.reward || 0).toFixed(2)}</span></p>
+                          <p className="text-[9px] text-green-600/80 font-bold">
+                            ~ {(parseFloat(product.reward || 0) * getRateForCountry(allRatesMap, product.country)).toFixed(2)} {getCurrencyForCountry(product.country).code}
+                          </p>
                         </div>
                       </div>
                       <div className="mt-auto pt-4 flex gap-2">
@@ -961,7 +963,9 @@ export default function SellerDashboard() {
                            <div className="text-right shrink-0 w-full sm:w-auto flex flex-row sm:flex-col justify-between items-center sm:items-end">
                              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Total Deducted</p>
                              <p className="text-xl sm:text-2xl font-black text-red-500">- USD ${totalDeducted.toFixed(2)}</p>
-                             <p className="text-[10px] text-red-400 font-bold mt-0.5">~ {(totalDeducted * localCurrencyInfo.rate).toFixed(2)} {localCurrencyInfo.code}</p>
+                             <p className="text-[10px] text-red-400 font-bold mt-0.5">
+                               ~ {(totalDeducted * getRateForCountry(allRatesMap, p.country)).toFixed(2)} {getCurrencyForCountry(p.country).code}
+                             </p>
                            </div>
                          </div>
                          

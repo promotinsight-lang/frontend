@@ -20,6 +20,7 @@ import AppealDetailsModal from '../components/admin/AppealDetailsModal';
 import UserProfileModal from '../components/admin/UserProfileModal';
 import ProductDetailsModal from '../components/admin/ProductDetailsModal';
 import AppDetailsModal from '../components/admin/AppDetailsModal';
+import { getCurrencyForCountry } from '../utils/currency';
 
 const API_BASE = 'https://backend-6aiq.onrender.com';
 
@@ -206,11 +207,14 @@ export default function AdminDashboard() {
           }
         } catch (e) { /* use fee row fields */ }
 
+        const fetchedRate = data.data.exchange_rate || 1;
+        const localReward = data.data.buyer_reward ? (parseFloat(data.data.buyer_reward) * fetchedRate).toFixed(2) : '';
+
         setFeeConfig({
           country: data.data.country, platform: data.data.platform, platform_charge: parsedTiers,
-          buyer_reward: data.data.buyer_reward, buyer_refund_fee: data.data.buyer_refund_fee,
+          buyer_reward: localReward, buyer_refund_fee: data.data.buyer_refund_fee,
           seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee,
-          exchange_rate: data.data.exchange_rate || 1,
+          exchange_rate: fetchedRate,
           verification_fields: platformVerFields,
         });
       } else {
@@ -279,11 +283,14 @@ export default function AdminDashboard() {
       } catch (e) { /* keep defaults */ }
     }
 
+    const rate = config.exchange_rate || 1;
+    const localReward = config.buyer_reward ? (parseFloat(config.buyer_reward) * rate).toFixed(2) : '';
+
     setFeeConfig({
       country: config.country, platform: config.platform, platform_charge: parsedTiers,
-      buyer_reward: config.buyer_reward, buyer_refund_fee: config.buyer_refund_fee,
+      buyer_reward: localReward, buyer_refund_fee: config.buyer_refund_fee,
       seller_deposit_fee: config.seller_deposit_fee, seller_withdrawal_fee: config.seller_withdrawal_fee,
-      exchange_rate: config.exchange_rate || 1,
+      exchange_rate: rate,
       verification_fields: parsedVerificationFields,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -394,8 +401,12 @@ export default function AdminDashboard() {
       return;
     }
 
+    const currentRate = parseFloat(feeConfig.exchange_rate) || 1;
+    const usdReward = feeConfig.buyer_reward ? (parseFloat(feeConfig.buyer_reward) / currentRate).toFixed(4) : '';
+
     const payload = {
       ...feeConfig,
+      buyer_reward: usdReward,
       platform_charge: JSON.stringify(feeConfig.platform_charge),
       verification_fields: feeConfig.verification_fields,
     };
@@ -1121,10 +1132,33 @@ export default function AdminDashboard() {
                     <label className="block text-xs font-bold text-gray-600 mb-1">Exchange Rate (1 USD = ?)</label>
                     <input type="number" step="0.0001" min="0.0001" required placeholder="e.g. 1.0000" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.exchange_rate} onChange={(e) => handleFeeSelectorChange('exchange_rate', e.target.value)} />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Buyer Reward (Fixed Amt)</label>
-                    <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_reward} onChange={(e) => handleFeeSelectorChange('buyer_reward', e.target.value)} />
-                  </div>
+                  {(() => {
+                    const currentCurrency = getCurrencyForCountry(feeConfig.country);
+                    return (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-600 mb-1">
+                          Buyer Reward (Fixed in {currentCurrency.code})
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                            {currentCurrency.symbol}
+                          </span>
+                          <input 
+                            type="number" 
+                            step="0.01" 
+                            required 
+                            placeholder="0.00" 
+                            className="w-full pl-8 pr-12 p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" 
+                            value={feeConfig.buyer_reward} 
+                            onChange={(e) => handleFeeSelectorChange('buyer_reward', e.target.value)} 
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
+                            {currentCurrency.code}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Refund Fee (%)</label>
                     <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_refund_fee} onChange={(e) => handleFeeSelectorChange('buyer_refund_fee', e.target.value)} />

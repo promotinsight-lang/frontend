@@ -97,7 +97,9 @@ export default function AddProduct({ onProductAdded }) {
           setActiveConfig(data.data);
           
           if (parseFloat(data.data.buyer_reward) > 0) {
-              setFormData(prev => ({ ...prev, reward: parseFloat(data.data.buyer_reward) }));
+              const fetchedRate = data.data.exchange_rate ? parseFloat(data.data.exchange_rate) : 1;
+              const localReward = (parseFloat(data.data.buyer_reward) * fetchedRate).toFixed(2);
+              setFormData(prev => ({ ...prev, reward: localReward }));
           }
         } else {
           setActiveConfig(null);
@@ -195,11 +197,20 @@ export default function AddProduct({ onProductAdded }) {
       Object.keys(formData).forEach(key => {
         if (key === 'product_link' && formData[key] && !formData[key].startsWith('http')) {
           submitData.append(key, `https://${formData[key]}`);
-        } else {
+        } 
+        // 🔥 Price এবং Reward কে USD তে কনভার্ট করে API তে পাঠানো হচ্ছে
+        else if (key === 'price' || key === 'reward') {
+          const usdValue = (parseFloat(formData[key] || 0) / exchangeRate).toFixed(4);
+          submitData.append(key, usdValue);
+        } 
+        else {
           submitData.append(key, formData[key]);
         }
       });
       submitData.append('image_url', cloudJson.secure_url);
+      
+      // 🔥 Total Deposit-ও যদি ব্যাকএন্ড এক্সপেক্ট করে, তবে সেটিও USD তে পাঠিয়ে দিন
+      submitData.append('total_deposit', totalDepositUSD.toFixed(4));
 
       const token = localStorage.getItem('token');
       const res = await fetch('https://backend-6aiq.onrender.com/api/products', {
