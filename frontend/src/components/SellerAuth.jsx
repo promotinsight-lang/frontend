@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { User, ShoppingBag, FileText, X, RefreshCcw } from 'lucide-react'; 
 
 // 🔥 Firebase Imports (আপনার firebase.js ফাইলের লোকেশন অনুযায়ী পাথ ঠিক আছে)
@@ -357,7 +357,14 @@ export default function SellerAuth({ onAuthSuccess }) {
           )}
 
           <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1">Password</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-xs font-bold text-gray-600">Password</label>
+              {isLogin && (
+                <Link to="/forgot-password" className="text-[11px] font-bold text-[#0066ff] hover:underline">
+                  Forgot Password?
+                </Link>
+              )}
+            </div>
             <input required type="password" minLength="8" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
 
