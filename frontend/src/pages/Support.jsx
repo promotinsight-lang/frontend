@@ -1,16 +1,33 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
-import { Mail, MessageSquare, Send } from 'lucide-react';
+import { Mail, MessageSquare, Send, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function Support() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Ekhane backend a form submit er logic hobe (e.g. Nodemailer endpoint)
-    console.log('Support Request:', formData);
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+
+    try {
+      // আপনার ব্যাকএন্ডের আসল URL দিন
+      const response = await axios.post('http://localhost:5000/api/users/contact-support', formData);
+      
+      if (response.data.success) {
+        setSubmitted(true);
+        setFormData({ name: '', email: '', message: '' }); // ফর্ম ক্লিয়ার
+      }
+    } catch (err) {
+      console.error("Submit Error:", err);
+      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,7 +49,7 @@ export default function Support() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-blue-900/60">Email Us</p>
-                  <p className="font-bold">PromotInsight@gmail.com</p>
+                  <p className="font-bold">support@PromotInsight.com</p>
                 </div>
               </div>
               
@@ -65,11 +82,14 @@ export default function Support() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg font-semibold">{error}</div>}
+                
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">Your Name</label>
                   <input 
                     type="text" 
                     required
+                    value={formData.name}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0066ff] focus:border-transparent transition-all"
                     placeholder="John Doe"
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -80,6 +100,7 @@ export default function Support() {
                   <input 
                     type="email" 
                     required
+                    value={formData.email}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0066ff] focus:border-transparent transition-all"
                     placeholder="john@example.com"
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -90,6 +111,7 @@ export default function Support() {
                   <textarea 
                     required
                     rows="4"
+                    value={formData.message}
                     className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0066ff] focus:border-transparent transition-all resize-none"
                     placeholder="Describe your issue..."
                     onChange={(e) => setFormData({...formData, message: e.target.value})}
@@ -97,9 +119,10 @@ export default function Support() {
                 </div>
                 <button 
                   type="submit"
-                  className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-transform hover:-translate-y-0.5"
+                  disabled={loading}
+                  className="w-full bg-[#0066ff] hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3.5 rounded-xl shadow-lg transition-transform hover:-translate-y-0.5 flex justify-center items-center"
                 >
-                  Send Message
+                  {loading ? <Loader2 className="animate-spin mr-2" size={20} /> : 'Send Message'}
                 </button>
               </form>
             )}
