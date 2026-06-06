@@ -16,11 +16,11 @@ export default function Support() {
 
     try {
       // আপনার ব্যাকএন্ডের আসল URL দিন
-      const response = await axios.post('http://localhost:5000/api/users/contact-support', formData);
+      const response = await axios.post('https://backend-6aiq.onrender.com/api/users/contact-support', formData);
       
       if (response.data.success) {
         setSubmitted(true);
-        setFormData({ name: '', email: '', message: '' }); // ফর্ম ক্লিয়ার
+        setFormData({ name: '', email: '', message: '' }); // ফর্ম ক্লিয়ার
       }
     } catch (err) {
       console.error("Submit Error:", err);
