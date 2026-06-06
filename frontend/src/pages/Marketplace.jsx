@@ -24,7 +24,7 @@ export default function Marketplace() {
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
       setUser(parsed);
-      if (parsed.is_active === false) setIsAccountDisabled(true);
+      if (parsed.is_active === false || parsed.is_active === "false" || parsed.is_active === 0) setIsAccountDisabled(true);
     } else {
         // User logged in na thakle login page e pathiye dibe
         navigate('/login');
@@ -46,6 +46,7 @@ export default function Marketplace() {
 
          const data = await res.json();
          if(data.success) {
+            if(data.user.is_active === false || data.user.is_active === "false" || data.user.is_active === 0) setIsAccountDisabled(true);
             if(data.user.is_active === false) setIsAccountDisabled(true);
             const lsUser = JSON.parse(localStorage.getItem('user') || '{}');
             localStorage.setItem('user', JSON.stringify({ ...lsUser, is_active: data.user.is_active, is_frozen: data.user.is_frozen }));
