@@ -4,7 +4,7 @@ import {
   ShoppingBag, User, AlertTriangle, CheckCircle,
   LogOut, ChevronRight, X, Snowflake, ShieldAlert,
   LayoutDashboard, ShoppingCart, Package, Wallet, Landmark, Settings,
-  List, UserCheck, History, PlusCircle, Users, Scale, Headset, Megaphone, FileText 
+  List, UserCheck, History, PlusCircle, Users, Scale, Headset, Megaphone, FileText, MessageSquare 
 } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 
@@ -246,6 +246,13 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
+              <Link to="/dashboard?tab=live-chat" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
+                <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
+                  <MessageSquare size={20} />
+                  <span className="font-semibold">Live Chat</span>
+                </div>
+                <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
+              </Link>
 
               <Link to="/dashboard?tab=announcements" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
@@ -344,7 +351,13 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                   </div>
                   <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
                 </Link>
-                
+                <Link to="/support" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
+                  <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
+                    <MessageSquare size={20} />
+                    <span className="font-semibold">Live Chat</span>
+                  </div>
+                  <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
+                </Link>
                 <Link to="/profile" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                   <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                     <User size={20} />
@@ -394,7 +407,13 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
-
+              <Link to="/support" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
+                <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
+                  <MessageSquare size={20} />
+                  <span className="font-semibold">Live Chat</span>
+                </div>
+                <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
+              </Link>
               <Link to="/profile" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   <User size={20} />
