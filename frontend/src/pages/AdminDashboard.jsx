@@ -180,6 +180,14 @@ export default function AdminDashboard() {
           } catch(e) { }
         }
 
+        const fetchedRate = data.data.exchange_rate || 1;
+        // 🔥 NEW: Tiers গুলোকে UI এর জন্য Local Currency তে কনভার্ট করা
+        parsedTiers = parsedTiers.map(t => ({
+            min: t.min ? (parseFloat(t.min) * fetchedRate).toFixed(2) : '',
+            max: t.max ? (parseFloat(t.max) * fetchedRate).toFixed(2) : '',
+            fee: t.fee ? (parseFloat(t.fee) * fetchedRate).toFixed(2) : ''
+        }));
+
         let parsedVerificationFields = [
           { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
           { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
@@ -269,6 +277,14 @@ export default function AdminDashboard() {
         if (Array.isArray(parsed)) parsedTiers = parsed;
       } catch(e) { }
     }
+
+    const rate = config.exchange_rate || 1;
+    // 🔥 NEW: Tiers গুলোকে UI এর জন্য Local Currency তে কনভার্ট করা
+    parsedTiers = parsedTiers.map(t => ({
+        min: t.min ? (parseFloat(t.min) * rate).toFixed(2) : '',
+        max: t.max ? (parseFloat(t.max) * rate).toFixed(2) : '',
+        fee: t.fee ? (parseFloat(t.fee) * rate).toFixed(2) : ''
+    }));
 
     let parsedVerificationFields = [
       { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
@@ -404,10 +420,17 @@ export default function AdminDashboard() {
     const currentRate = parseFloat(feeConfig.exchange_rate) || 1;
     const usdReward = feeConfig.buyer_reward ? (parseFloat(feeConfig.buyer_reward) / currentRate).toFixed(4) : '';
 
+    // 🔥 NEW: Tiers গুলোকে Database এর জন্য USD তে কনভার্ট করা
+    const usdTiers = feeConfig.platform_charge.map(t => ({
+        min: t.min ? (parseFloat(t.min) / currentRate).toFixed(4) : '',
+        max: t.max ? (parseFloat(t.max) / currentRate).toFixed(4) : '',
+        fee: t.fee ? (parseFloat(t.fee) / currentRate).toFixed(4) : ''
+    }));
+
     const payload = {
       ...feeConfig,
       buyer_reward: usdReward,
-      platform_charge: JSON.stringify(feeConfig.platform_charge),
+      platform_charge: JSON.stringify(usdTiers),
       verification_fields: feeConfig.verification_fields,
     };
     
