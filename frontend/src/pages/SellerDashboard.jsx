@@ -1624,9 +1624,6 @@ export default function SellerDashboard() {
           </div>
         </div>
       )}
-{/* 🔴 LIVE CHAT MODAL */}
-      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} />
-      {/* FULL IMAGE LIGHTBOX */}
       {showFullImageModal && (
         <div 
           className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in"
@@ -1646,6 +1643,9 @@ export default function SellerDashboard() {
           />
         </div>
       )}
+
+      {/* 🔴 LIVE CHAT MODAL */}
+      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} />
 
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
