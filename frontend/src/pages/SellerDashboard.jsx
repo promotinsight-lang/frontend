@@ -97,6 +97,7 @@ export default function SellerDashboard() {
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
   const [ticketForm, setTicketForm] = useState({ subject: '', message: '' });
   const [showLiveChatModal, setShowLiveChatModal] = useState(false);
+  const localCurrencyInfo = { symbol: '$', rate: 1 }; // Currency Fallback Fix
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [ticketReplies, setTicketReplies] = useState([]);
   const [replyMessage, setReplyMessage] = useState('');

@@ -55,7 +55,7 @@ export default function LiveChatModal({ isOpen, onClose }) {
   }, [messages, chatStatus]);
 
   const getHeaders = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    withCredentials: true
   });
 
   const fetchChatStatus = async () => {

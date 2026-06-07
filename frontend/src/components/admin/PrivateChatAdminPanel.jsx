@@ -19,7 +19,7 @@ export default function PrivateChatAdminPanel() {
   const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const getHeaders = () => ({
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    withCredentials: true
   });
 
   useEffect(() => {
