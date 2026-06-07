@@ -94,10 +94,18 @@ export default function LiveChatModal({ isOpen, onClose }) {
   const requestLiveChat = async () => {
     setChatLoading(true);
     try {
-      await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, getHeaders());
-      setChatStatus('pending');
+      const res = await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, getHeaders());
+      if (res.data && res.data.success) {
+        setChatStatus('pending');
+        alert("✅ Chat request sent successfully!");
+      } else {
+        alert("⚠️ Request sent, but no success response: " + JSON.stringify(res.data));
+        setChatStatus('pending');
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Chat Request Error:", error);
+      // স্ক্রিনে এরর মেসেজ দেখানোর জন্য Alert
+      alert("❌ Error: " + (error.response?.data?.message || error.message));
     } finally {
       setChatLoading(false);
     }

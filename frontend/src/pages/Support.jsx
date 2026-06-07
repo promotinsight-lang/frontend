@@ -131,10 +131,17 @@ export default function Support() {
   const requestLiveChat = async () => {
     setChatLoading(true);
     try {
-      await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, { withCredentials: true });
-      setChatStatus('pending');
+      const res = await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, { withCredentials: true });
+      if (res.data && res.data.success) {
+        setChatStatus('pending');
+        alert("✅ Chat request sent successfully!");
+      } else {
+        alert("⚠️ Request sent, but no success response: " + JSON.stringify(res.data));
+        setChatStatus('pending');
+      }
     } catch (error) {
-      console.error("Error requesting chat:", error);
+      console.error("Chat Request Error:", error);
+      alert("❌ Error: " + (error.response?.data?.message || error.message));
     } finally {
       setChatLoading(false);
     }
