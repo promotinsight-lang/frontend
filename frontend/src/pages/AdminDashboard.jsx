@@ -298,7 +298,6 @@ export default function AdminDashboard() {
       } catch (e) { /* keep defaults */ }
     }
 
-    const rate = config.exchange_rate || 1;
     const localReward = config.buyer_reward ? (parseFloat(config.buyer_reward) * rate).toFixed(2) : '';
 
     setFeeConfig({
