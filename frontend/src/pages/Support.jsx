@@ -11,7 +11,7 @@ const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 export default function Support() {
   const [activeTab, setActiveTab] = useState('email'); // 'email' or 'chat'
   
-  // ইউজার ডেটা লোকাল স্টোরেজ থেকে নেওয়া হচ্ছে (আপনার প্রজেক্টে Context API থাকলে সেভাবে নেবেন)
+  // ইউজার ডেটা লোকাল স্টোরেজ থেকে নেওয়া হচ্ছে
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -62,6 +62,7 @@ export default function Support() {
   useEffect(() => {
     if (activeTab === 'chat' && user) {
       socket.connect();
+      // ✅ সঠিক কন্ডিশন
       if (user.verification_status === 'approved' || user.verification_status === 'verified') {
         fetchChatStatus();
       }
@@ -273,8 +274,8 @@ export default function Support() {
                   </div>
                 )}
 
-                {/* Not Verified */}
-                {user && user.verification_status !== 'verified' && (
+                {/* ✅ সঠিক কন্ডিশন: Not Verified */}
+                {user && user.verification_status !== 'approved' && user.verification_status !== 'verified' && (
                   <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-red-50 rounded-2xl border border-red-100 py-20">
                     <AlertCircle className="text-red-500 mb-4 w-16 h-16" />
                     <h3 className="text-2xl font-bold text-red-800">Verification Required</h3>
@@ -282,8 +283,8 @@ export default function Support() {
                   </div>
                 )}
 
-                {/* Verified but No Request */}
-                {user && user.verification_status === 'verified' && chatStatus === null && (
+                {/* ✅ সঠিক কন্ডিশন: Verified but No Request */}
+                {user && (user.verification_status === 'approved' || user.verification_status === 'verified') && chatStatus === null && (
                   <div className="flex flex-col items-center justify-center h-full text-center py-20">
                     <div className="bg-blue-50 p-6 rounded-full mb-6">
                       <MessageSquare className="text-[#0066ff] w-12 h-12" />
@@ -300,8 +301,8 @@ export default function Support() {
                   </div>
                 )}
 
-                {/* Pending Approval */}
-                {user && user.verification_status === 'verified' && chatStatus === 'pending' && (
+                {/* ✅ সঠিক কন্ডিশন: Pending Approval */}
+                {user && (user.verification_status === 'approved' || user.verification_status === 'verified') && chatStatus === 'pending' && (
                   <div className="flex flex-col items-center justify-center h-full text-center py-20">
                     <Loader2 className="animate-spin text-[#0066ff] w-16 h-16 mb-6" />
                     <h3 className="text-2xl font-bold text-gray-900 mb-2">Request Sent Successfully!</h3>
@@ -309,8 +310,8 @@ export default function Support() {
                   </div>
                 )}
 
-                {/* Active Chat Interface */}
-                {user && user.verification_status === 'verified' && (chatStatus === 'active' || chatStatus === 'ended') && (
+                {/* ✅ সঠিক কন্ডিশন: Active Chat Interface */}
+                {user && (user.verification_status === 'approved' || user.verification_status === 'verified') && (chatStatus === 'active' || chatStatus === 'ended') && (
                   <div className="flex flex-col h-[500px] bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-inner">
                     
                     {/* Chat Area */}
