@@ -26,7 +26,19 @@ export default function PrivateChatAdminPanel() {
   useEffect(() => {
     socket.connect();
     fetchPendingRequests();
-    return () => socket.disconnect();
+
+    // ✅ অটো-রিফ্রেশ: প্রতি ৫ সেকেন্ড পর পর নতুন রিকোয়েস্ট চেক করবে
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await axios.get(`${BACKEND_URL}/api/private-chat/admin/requests`, getHeaders());
+        if (res.data.success) setPendingRequests(res.data.data);
+      } catch (err) {} // সাইলেন্ট ক্যাচ, যাতে স্ক্রিনে এরর না আসে
+    }, 5000);
+
+    return () => {
+      clearInterval(pollInterval);
+      socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {

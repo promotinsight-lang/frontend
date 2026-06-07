@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, Loader2, AlertCircle, X } from 'lucide-react';
+import { MessageSquare, Send, Loader2, AlertCircle, X, BellRing } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
@@ -13,6 +13,7 @@ export default function LiveChatModal({ isOpen, onClose }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false); // ✅ আনরিড মেসেজের স্টেট
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -20,26 +21,60 @@ export default function LiveChatModal({ isOpen, onClose }) {
     if (storedUser) setUser(JSON.parse(storedUser));
   }, [isOpen]);
 
-  // ✅ স্মার্ট ভেরিফিকেশন চেক (Case Insensitive)
   const isVerified = user && (user.verification_status?.toLowerCase() === 'approved' || user.verification_status?.toLowerCase() === 'verified');
 
-  useEffect(() => {
-    if (isOpen && user) {
-      socket.connect();
-      if (isVerified) {
-        fetchChatStatus();
-      }
-    }
-    return () => {
-      socket.disconnect();
-    };
-  }, [isOpen, user, isVerified]);
+  const getHeaders = () => ({
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  });
 
+  // ✅ ১. ব্যাকগ্রাউন্ড কানেকশন (মডাল বন্ধ থাকলেও কানেক্টেড থাকবে)
+  useEffect(() => {
+    if (user && isVerified) {
+      socket.connect();
+      fetchChatStatus();
+    }
+    return () => socket.disconnect();
+  }, [user, isVerified]);
+
+  // ✅ ২. ইউজারের অটো-রিফ্রেশ (পেন্ডিং থাকলে প্রতি ৩ সেকেন্ডে চেক করবে)
+  useEffect(() => {
+    let poll;
+    if (chatStatus === 'pending') {
+      poll = setInterval(async () => {
+        try {
+          const res = await axios.get(`${BACKEND_URL}/api/private-chat/me/status`, getHeaders());
+          if (res.data.activeSession) {
+            setSessionId(res.data.activeSession.id);
+            setChatStatus('active');
+            fetchMessages(res.data.activeSession.id);
+          }
+        } catch (err) {}
+      }, 3000);
+    }
+    return () => clearInterval(poll);
+  }, [chatStatus]);
+
+  // ✅ ৩. মেসেজ লিসেনার এবং অ্যালার্ট ট্রিগার
   useEffect(() => {
     if (sessionId) {
       socket.emit('join_chat_room', sessionId);
 
-      const handleReceive = (msg) => setMessages((prev) => [...prev, msg]);
+      const handleReceive = (msg) => {
+        setMessages((prev) => [...prev, msg]);
+
+        // যদি এডমিন মেসেজ দেয় এবং ইউজার এখনো রিপ্লাই না দেয়
+        if (msg.sender_user_id !== user.id) {
+          setHasUnread(true); // অ্যালার্ট চালু!
+
+          // নোটিফিকেশন সাউন্ড বাজানো
+          try {
+            const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+            audio.play();
+          } catch (e) {}
+        }
+      };
+
       const handleClose = () => setChatStatus('ended');
 
       socket.on('receive_message', handleReceive);
@@ -50,17 +85,23 @@ export default function LiveChatModal({ isOpen, onClose }) {
         socket.off('chat_closed_event', handleClose);
       };
     }
-  }, [sessionId]);
+  }, [sessionId, user]);
+
+  // ✅ ৪. যতক্ষণ রিপ্লাই না দেবে, ততক্ষণ ব্রাউজারে পপ-আপ আসবে!
+  useEffect(() => {
+    let alertInterval;
+    if (hasUnread) {
+      alertInterval = setInterval(() => {
+         // ব্রাউজারের ডিফল্ট বিরক্তিকর পপ-আপ অ্যালার্ট (প্রতি ১২ সেকেন্ড পর পর)
+         alert("⚠️ Admin sent a new message! Please open Live Chat to reply immediately.");
+      }, 12000); 
+    }
+    return () => clearInterval(alertInterval);
+  }, [hasUnread]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, chatStatus]);
-
-  // ✅ 401 Unauthorized Error Fix
-  const getHeaders = () => ({
-    withCredentials: true,
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
+  }, [messages, chatStatus, isOpen]);
 
   const fetchChatStatus = async () => {
     setChatLoading(true);
@@ -97,15 +138,9 @@ export default function LiveChatModal({ isOpen, onClose }) {
       const res = await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, getHeaders());
       if (res.data && res.data.success) {
         setChatStatus('pending');
-        alert("✅ Chat request sent successfully!");
-      } else {
-        alert("⚠️ Request sent, but no success response: " + JSON.stringify(res.data));
-        setChatStatus('pending');
       }
     } catch (error) {
-      console.error("Chat Request Error:", error);
-      // স্ক্রিনে এরর মেসেজ দেখানোর জন্য Alert
-      alert("❌ Error: " + (error.response?.data?.message || error.message));
+      console.error(error);
     } finally {
       setChatLoading(false);
     }
@@ -121,94 +156,106 @@ export default function LiveChatModal({ isOpen, onClose }) {
       message: newMessage
     });
     setNewMessage('');
+    
+    // ✅ ইউজার রিপ্লাই দিয়েছে, তাই অ্যালার্ট বন্ধ করে দাও!
+    setHasUnread(false); 
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl flex flex-col h-[600px] max-h-[90vh] overflow-hidden relative">
-        
-        {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h3 className="font-black text-gray-800 text-lg flex items-center gap-2">
-            <MessageSquare className="text-[#0066ff]"/> Live Private Chat
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-red-500 bg-white shadow-sm border border-gray-200 p-1.5 rounded-full transition-colors"><X size={20} /></button>
+    <>
+      {/* 🔴 Persistent Flashing Overlay (যতক্ষণ রিপ্লাই না দেবে, ড্যাশবোর্ডে এটা ভাসতে থাকবে) */}
+      {hasUnread && (
+        <div className="fixed top-0 left-0 w-full z-[99999] bg-red-600 text-white p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-4 animate-pulse">
+          <div className="flex items-center gap-2">
+            <BellRing className="w-8 h-8 animate-bounce" />
+            <span className="font-black text-lg md:text-xl">⚠️ NEW MESSAGE FROM ADMIN!</span>
+          </div>
+          <p className="font-bold text-sm md:text-base">Please open "Live Chat" from your menu and reply immediately.</p>
         </div>
+      )}
 
-        {/* Body Area */}
-        <div className="flex-1 overflow-y-auto bg-gray-50/50 flex flex-col p-4 sm:p-6">
-          
-          {/* Unverified User */}
-          {user && !isVerified && (
-            <div className="flex flex-col items-center justify-center h-full text-center py-10">
-              <AlertCircle className="text-red-500 w-16 h-16 mb-4" />
-              <h3 className="text-2xl font-bold text-red-800">Verification Required</h3>
-              <p className="text-red-600 mt-2 text-sm">Please verify your profile from the dashboard to enable private chat.</p>
+      {/* রেগুলার চ্যাট মডাল (শুধুমাত্র ওপেন থাকলে দেখাবে) */}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl flex flex-col h-[600px] max-h-[90vh] overflow-hidden relative">
+            
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-black text-gray-800 text-lg flex items-center gap-2">
+                <MessageSquare className="text-[#0066ff]"/> Live Private Chat
+              </h3>
+              <button onClick={onClose} className="text-gray-400 hover:text-red-500 bg-white shadow-sm border border-gray-200 p-1.5 rounded-full transition-colors"><X size={20} /></button>
             </div>
-          )}
 
-          {/* Request Button */}
-          {user && isVerified && chatStatus === null && (
-            <div className="flex flex-col items-center justify-center h-full text-center py-10">
-              <div className="bg-blue-50 p-6 rounded-full mb-6">
-                <MessageSquare className="text-[#0066ff] w-12 h-12" />
-              </div>
-              <h3 className="text-3xl font-black text-gray-900 mb-4">Instant Live Support</h3>
-              <p className="text-gray-500 mb-8 max-w-sm mx-auto">Connect directly with an admin for immediate assistance.</p>
-              <button onClick={requestLiveChat} disabled={chatLoading} className="bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all flex items-center gap-3">
-                {chatLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Request Live Chat Now'}
-              </button>
-            </div>
-          )}
+            {/* Body Area */}
+            <div className="flex-1 overflow-y-auto bg-gray-50/50 flex flex-col p-4 sm:p-6">
+              
+              {user && !isVerified && (
+                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                  <AlertCircle className="text-red-500 w-16 h-16 mb-4" />
+                  <h3 className="text-2xl font-bold text-red-800">Verification Required</h3>
+                  <p className="text-red-600 mt-2 text-sm">Please verify your profile to enable private chat.</p>
+                </div>
+              )}
 
-          {/* Pending Approval */}
-          {user && isVerified && chatStatus === 'pending' && (
-            <div className="flex flex-col items-center justify-center h-full text-center py-10">
-              <Loader2 className="animate-spin text-[#0066ff] w-16 h-16 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Request Sent Successfully!</h3>
-              <p className="text-gray-500 text-sm">Waiting for an admin to accept your request...</p>
-            </div>
-          )}
-
-          {/* Active Chat */}
-          {user && isVerified && (chatStatus === 'active' || chatStatus === 'ended') && (
-            <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-inner">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.length === 0 ? (
-                  <p className="text-center text-gray-400 text-sm mt-10">Chat started! Say hello.</p>
-                ) : (
-                  messages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.sender_user_id === user.id ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${msg.sender_user_id === user.id ? 'bg-[#0066ff] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200'}`}>
-                        {msg.message}
-                      </div>
-                    </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Chat Input */}
-              <div className="p-3 bg-gray-50 border-t border-gray-200">
-                {chatStatus === 'ended' ? (
-                  <div className="text-center p-2 bg-red-50 text-red-600 text-sm font-bold rounded-lg border border-red-100">
-                    Chat closed by Admin.
+              {user && isVerified && chatStatus === null && (
+                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                  <div className="bg-blue-50 p-6 rounded-full mb-6">
+                    <MessageSquare className="text-[#0066ff] w-12 h-12" />
                   </div>
-                ) : (
-                  <form onSubmit={sendChatMessage} className="flex gap-2">
-                    <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#0066ff] transition-all text-sm" />
-                    <button type="submit" disabled={!newMessage.trim()} className="bg-[#0066ff] text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md">
-                      <Send size={18} />
-                    </button>
-                  </form>
-                )}
-              </div>
+                  <h3 className="text-3xl font-black text-gray-900 mb-4">Instant Live Support</h3>
+                  <p className="text-gray-500 mb-8 max-w-sm mx-auto">Connect directly with an admin for immediate assistance.</p>
+                  <button onClick={requestLiveChat} disabled={chatLoading} className="bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all flex items-center gap-3">
+                    {chatLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Request Live Chat Now'}
+                  </button>
+                </div>
+              )}
+
+              {user && isVerified && chatStatus === 'pending' && (
+                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                  <Loader2 className="animate-spin text-[#0066ff] w-16 h-16 mb-4" />
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Request Sent Successfully!</h3>
+                  <p className="text-gray-500 text-sm">Waiting for an admin to accept your request...</p>
+                </div>
+              )}
+
+              {user && isVerified && (chatStatus === 'active' || chatStatus === 'ended') && (
+                <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-inner">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {messages.length === 0 ? (
+                      <p className="text-center text-gray-400 text-sm mt-10">Chat started! Say hello.</p>
+                    ) : (
+                      messages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.sender_user_id === user.id ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${msg.sender_user_id === user.id ? 'bg-[#0066ff] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200'}`}>
+                            {msg.message}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <div className="p-3 bg-gray-50 border-t border-gray-200">
+                    {chatStatus === 'ended' ? (
+                      <div className="text-center p-2 bg-red-50 text-red-600 text-sm font-bold rounded-lg border border-red-100">
+                        Chat closed by Admin.
+                      </div>
+                    ) : (
+                      <form onSubmit={sendChatMessage} className="flex gap-2">
+                        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#0066ff] transition-all text-sm" />
+                        <button type="submit" disabled={!newMessage.trim()} className="bg-[#0066ff] text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md">
+                          <Send size={18} />
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
