@@ -53,11 +53,21 @@ export default function PrivateChatAdminPanel() {
   const fetchVerifiedUsers = async () => {
      setLoading(true);
      try {
-       const res = await axios.get(`${BACKEND_URL}/api/admin/users/buyer`, getHeaders()); 
-       if (res.data.success) {
-          setVerifiedUsers(res.data.data.filter(u => u.verification_status === 'approved' || u.verification_status === 'verified'));
-       }
-     } catch(err) { console.error(err); }
+       // Buyer এবং Seller উভয়ের ডেটা একসাথে ফেচ করা হচ্ছে
+       const [buyersRes, sellersRes] = await Promise.all([
+         axios.get(`${BACKEND_URL}/api/users/admin/role/buyer`, getHeaders()),
+         axios.get(`${BACKEND_URL}/api/users/admin/role/seller`, getHeaders())
+       ]);
+       
+       let allUsers = [];
+       if (buyersRes.data && buyersRes.data.success) allUsers = [...allUsers, ...buyersRes.data.data];
+       if (sellersRes.data && sellersRes.data.success) allUsers = [...allUsers, ...sellersRes.data.data];
+
+       // শুধুমাত্র ভেরিফাইড ইউজারদের ফিল্টার করা
+       setVerifiedUsers(allUsers.filter(u => u.verification_status === 'approved' || u.verification_status === 'verified'));
+     } catch(err) { 
+       console.error("Error fetching users:", err); 
+     }
      setLoading(false);
   };
 

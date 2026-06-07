@@ -62,7 +62,7 @@ export default function Support() {
   useEffect(() => {
     if (activeTab === 'chat' && user) {
       socket.connect();
-      if (user.verification_status === 'verified') {
+      if (user.verification_status === 'approved' || user.verification_status === 'verified') {
         fetchChatStatus();
       }
     }
