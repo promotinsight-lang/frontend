@@ -16,6 +16,10 @@ export const COUNTRY_CURRENCIES = {
   Poland: { symbol: 'zł', code: 'PLN' },
   Bangladesh: { symbol: '৳', code: 'BDT' },
   India: { symbol: '₹', code: 'INR' },
+  Japan: { symbol: '¥', code: 'JPY' },
+  Australia: { symbol: 'A$', code: 'AUD' },
+  Pakistan: { symbol: 'Rs', code: 'PKR' },
+  Singapore: { symbol: 'د.إ', code: 'SGD' } 
 };
 
 export function normalizeCountry(country) {
