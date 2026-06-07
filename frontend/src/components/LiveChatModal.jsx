@@ -13,13 +13,20 @@ export default function LiveChatModal({ isOpen, onClose }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false); // ✅ আনরিড মেসেজের স্টেট
+  const [hasUnread, setHasUnread] = useState(false);
   const messagesEndRef = useRef(null);
+  const isOpenRef = useRef(isOpen);
+
+  // ✅ মডাল ওপেন নাকি ক্লোজ, তা ট্র্যাক করা
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+    if (isOpen) setHasUnread(false); // মডাল ওপেন করলেই অ্যালার্ট বন্ধ হয়ে যাবে
+  }, [isOpen]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) setUser(JSON.parse(storedUser));
-  }, [isOpen]);
+  }, []);
 
   const isVerified = user && (user.verification_status?.toLowerCase() === 'approved' || user.verification_status?.toLowerCase() === 'verified');
 
@@ -28,7 +35,6 @@ export default function LiveChatModal({ isOpen, onClose }) {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
 
-  // ✅ ১. ব্যাকগ্রাউন্ড কানেকশন (মডাল বন্ধ থাকলেও কানেক্টেড থাকবে)
   useEffect(() => {
     if (user && isVerified) {
       socket.connect();
@@ -37,7 +43,7 @@ export default function LiveChatModal({ isOpen, onClose }) {
     return () => socket.disconnect();
   }, [user, isVerified]);
 
-  // ✅ ২. ইউজারের অটো-রিফ্রেশ (পেন্ডিং থাকলে প্রতি ৩ সেকেন্ডে চেক করবে)
+  // ✅ পোলিং (অটো-চেক): রিকোয়েস্ট পেন্ডিং থাকলে ব্যাকগ্রাউন্ডে চেক করবে
   useEffect(() => {
     let poll;
     if (chatStatus === 'pending') {
@@ -55,23 +61,27 @@ export default function LiveChatModal({ isOpen, onClose }) {
     return () => clearInterval(poll);
   }, [chatStatus]);
 
-  // ✅ ৩. মেসেজ লিসেনার এবং অ্যালার্ট ট্রিগার
+  // ✅ তাৎক্ষণিক অ্যালার্ট ফাংশন
+  const triggerAlert = () => {
+    setHasUnread(true);
+    try {
+      const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+      audio.play();
+    } catch (e) {}
+    // সাথে সাথে ব্রাউজার অ্যালার্ট!
+    alert("🔔 Admin sent you a new message! Please open Live Chat to reply.");
+  };
+
+  // ✅ সকেট লিসেনার (লাইভ মেসেজ আসলে)
   useEffect(() => {
     if (sessionId) {
       socket.emit('join_chat_room', sessionId);
 
       const handleReceive = (msg) => {
         setMessages((prev) => [...prev, msg]);
-
-        // যদি এডমিন মেসেজ দেয় এবং ইউজার এখনো রিপ্লাই না দেয়
-        if (msg.sender_user_id !== user.id) {
-          setHasUnread(true); // অ্যালার্ট চালু!
-
-          // নোটিফিকেশন সাউন্ড বাজানো
-          try {
-            const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-            audio.play();
-          } catch (e) {}
+        // যদি মেসেজটি এডমিনের হয় এবং চ্যাট মডাল বন্ধ থাকে
+        if (String(msg.sender_user_id) !== String(user?.id) && !isOpenRef.current) {
+          triggerAlert();
         }
       };
 
@@ -87,17 +97,16 @@ export default function LiveChatModal({ isOpen, onClose }) {
     }
   }, [sessionId, user]);
 
-  // ✅ ৪. যতক্ষণ রিপ্লাই না দেবে, ততক্ষণ ব্রাউজারে পপ-আপ আসবে!
+  // ✅ বিরক্তিকর পপ-আপ অ্যালার্ট (প্রতি ১৫ সেকেন্ড পর পর)
   useEffect(() => {
     let alertInterval;
-    if (hasUnread) {
+    if (hasUnread && !isOpen) {
       alertInterval = setInterval(() => {
-         // ব্রাউজারের ডিফল্ট বিরক্তিকর পপ-আপ অ্যালার্ট (প্রতি ১২ সেকেন্ড পর পর)
-         alert("⚠️ Admin sent a new message! Please open Live Chat to reply immediately.");
-      }, 12000); 
+         alert("⚠️ You have unread messages from Admin! Please reply.");
+      }, 15000); 
     }
     return () => clearInterval(alertInterval);
-  }, [hasUnread]);
+  }, [hasUnread, isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -126,7 +135,16 @@ export default function LiveChatModal({ isOpen, onClose }) {
   const fetchMessages = async (sid) => {
     try {
       const res = await axios.get(`${BACKEND_URL}/api/private-chat/sessions/${sid}/messages`, getHeaders());
-      setMessages(res.data.data);
+      const fetchedMsgs = res.data.data;
+      setMessages(fetchedMsgs);
+      
+      // ✅ API থেকে প্রথম মেসেজ আসলেও অ্যালার্ট দেবে
+      if (fetchedMsgs.length > 0 && !isOpenRef.current) {
+        const lastMsg = fetchedMsgs[fetchedMsgs.length - 1];
+        if (String(lastMsg.sender_user_id) !== String(user?.id)) {
+          triggerAlert();
+        }
+      }
     } catch (error) {
       console.error(error);
     }
@@ -136,9 +154,7 @@ export default function LiveChatModal({ isOpen, onClose }) {
     setChatLoading(true);
     try {
       const res = await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, getHeaders());
-      if (res.data && res.data.success) {
-        setChatStatus('pending');
-      }
+      if (res.data && res.data.success) setChatStatus('pending');
     } catch (error) {
       console.error(error);
     } finally {
@@ -156,30 +172,26 @@ export default function LiveChatModal({ isOpen, onClose }) {
       message: newMessage
     });
     setNewMessage('');
-    
-    // ✅ ইউজার রিপ্লাই দিয়েছে, তাই অ্যালার্ট বন্ধ করে দাও!
-    setHasUnread(false); 
   };
 
   return (
     <>
-      {/* 🔴 Persistent Flashing Overlay (যতক্ষণ রিপ্লাই না দেবে, ড্যাশবোর্ডে এটা ভাসতে থাকবে) */}
-      {hasUnread && (
-        <div className="fixed top-0 left-0 w-full z-[99999] bg-red-600 text-white p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-4 animate-pulse">
+      {/* 🔴 Persistent Flashing Overlay */}
+      {hasUnread && !isOpen && (
+        <div className="fixed top-0 left-0 w-full z-[99998] bg-red-600 text-white p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-4 animate-pulse">
           <div className="flex items-center gap-2">
             <BellRing className="w-8 h-8 animate-bounce" />
             <span className="font-black text-lg md:text-xl">⚠️ NEW MESSAGE FROM ADMIN!</span>
           </div>
-          <p className="font-bold text-sm md:text-base">Please open "Live Chat" from your menu and reply immediately.</p>
+          <p className="font-bold text-sm md:text-base">Please open "Live Chat" to reply.</p>
         </div>
       )}
 
-      {/* রেগুলার চ্যাট মডাল (শুধুমাত্র ওপেন থাকলে দেখাবে) */}
+      {/* রেগুলার চ্যাট মডাল */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl flex flex-col h-[600px] max-h-[90vh] overflow-hidden relative">
             
-            {/* Header */}
             <div className="p-4 sm:p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="font-black text-gray-800 text-lg flex items-center gap-2">
                 <MessageSquare className="text-[#0066ff]"/> Live Private Chat
@@ -187,7 +199,6 @@ export default function LiveChatModal({ isOpen, onClose }) {
               <button onClick={onClose} className="text-gray-400 hover:text-red-500 bg-white shadow-sm border border-gray-200 p-1.5 rounded-full transition-colors"><X size={20} /></button>
             </div>
 
-            {/* Body Area */}
             <div className="flex-1 overflow-y-auto bg-gray-50/50 flex flex-col p-4 sm:p-6">
               
               {user && !isVerified && (
@@ -226,8 +237,8 @@ export default function LiveChatModal({ isOpen, onClose }) {
                       <p className="text-center text-gray-400 text-sm mt-10">Chat started! Say hello.</p>
                     ) : (
                       messages.map((msg, idx) => (
-                        <div key={idx} className={`flex ${msg.sender_user_id === user.id ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${msg.sender_user_id === user.id ? 'bg-[#0066ff] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200'}`}>
+                        <div key={idx} className={`flex ${String(msg.sender_user_id) === String(user.id) ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${String(msg.sender_user_id) === String(user.id) ? 'bg-[#0066ff] text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200'}`}>
                             {msg.message}
                           </div>
                         </div>
