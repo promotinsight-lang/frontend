@@ -57,6 +57,11 @@ export default function Support() {
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  // ✅ 401 Error Fix: Token and Cookie Header
+  const getHeaders = () => ({
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  });
 
   // সকেট কানেকশন ও চ্যাট স্ট্যাটাস ফেচ করা
   useEffect(() => {
@@ -99,10 +104,17 @@ export default function Support() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeTab]);
 
+  // ✅ ১. সিকিউরিটি হেডার ফাংশন (টোকেন ও কুকি একসাথে পাঠানোর জন্য)
+  const getHeaders = () => ({
+    withCredentials: true,
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  });
+
+  // ✅ ২. চ্যাট স্ট্যাটাস চেক করার ফাংশন
   const fetchChatStatus = async () => {
     setChatLoading(true);
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/private-chat/me/status`, { withCredentials: true });
+      const res = await axios.get(`${BACKEND_URL}/api/private-chat/me/status`, getHeaders());
       if (res.data.activeSession) {
         setSessionId(res.data.activeSession.id);
         setChatStatus('active');
@@ -119,19 +131,21 @@ export default function Support() {
     }
   };
 
+  // ✅ ৩. পুরোনো মেসেজ হিস্ট্রি নিয়ে আসার ফাংশন
   const fetchMessages = async (sid) => {
     try {
-      const res = await axios.get(`${BACKEND_URL}/api/private-chat/sessions/${sid}/messages`, { withCredentials: true });
+      const res = await axios.get(`${BACKEND_URL}/api/private-chat/sessions/${sid}/messages`, getHeaders());
       setMessages(res.data.data);
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
   };
 
+  // ✅ ৪. নতুন চ্যাট রিকোয়েস্ট পাঠানোর ফাংশন (অ্যালার্টসহ)
   const requestLiveChat = async () => {
     setChatLoading(true);
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, { withCredentials: true });
+      const res = await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, getHeaders());
       if (res.data && res.data.success) {
         setChatStatus('pending');
         alert("✅ Chat request sent successfully!");
