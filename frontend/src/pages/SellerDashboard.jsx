@@ -9,7 +9,7 @@ import {
   Headset, MessageCircle, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake 
 } from 'lucide-react';
 import { getCurrencyForCountry, getRateForCountry, buildCountryRateMap } from '../utils/currency';
-
+import LiveChatModal from '../components/LiveChatModal';
 // ================= SECURITY HELPER =================
 const secureFetch = async (url, options = {}) => {
   options.credentials = 'include';
@@ -103,7 +103,7 @@ export default function SellerDashboard() {
   const [showTicketViewModal, setShowTicketViewModal] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
-
+  const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   // Prevent background scrolling when any modal is open
   useEffect(() => {
     const isAnyModalOpen = showDepositModal || showWithdrawModal || showViewModal || showEditModal || showSellerAppealModal || showLedgerModal || showCreateTicketModal || showTicketViewModal || showFullImageModal || showTrxDetailsModal;
@@ -863,12 +863,20 @@ export default function SellerDashboard() {
 
         {!loading && activeTab === 'support' && (
           <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
-             <button 
-                onClick={() => setShowCreateTicketModal(true)} 
-                className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all text-lg"
-             >
-               <PlusCircle size={24} /> Create New Ticket
-             </button>
+             <div className="flex flex-col sm:flex-row gap-4">
+               <button 
+                  onClick={() => setShowCreateTicketModal(true)} 
+                  className="flex-1 bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all text-sm sm:text-base"
+               >
+                 <PlusCircle size={20} /> Create New Ticket
+               </button>
+               <button 
+                  onClick={() => setShowLiveChatModal(true)} 
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all text-sm sm:text-base"
+               >
+                 <MessageSquare size={20} /> Live Private Chat
+               </button>
+             </div>
 
              <div className="space-y-4">
                 {supportTickets.length === 0 ? (
@@ -1616,7 +1624,8 @@ export default function SellerDashboard() {
           </div>
         </div>
       )}
-
+{/* 🔴 LIVE CHAT MODAL */}
+      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} />
       {/* FULL IMAGE LIGHTBOX */}
       {showFullImageModal && (
         <div 

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
-
+import LiveChatModal from '../components/LiveChatModal';
 const BuyerDashboard = () => {
   const { formatWallet, formatProduct } = useBuyerCurrency();
   const location = useLocation();
@@ -56,7 +56,7 @@ const BuyerDashboard = () => {
   const [replyMessage, setReplyMessage] = useState('');
   const [showTicketViewModal, setShowTicketViewModal] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
-
+const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
@@ -844,12 +844,20 @@ const BuyerDashboard = () => {
 
         {!loading && activeTab === 'support' && (
           <div className="space-y-6 animate-fade-in">
-             <button 
-                onClick={() => setShowCreateTicketModal(true)} 
-                className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
-             >
-               <PlusCircle size={20} /> Create New Ticket
-             </button>
+             <div className="flex flex-col sm:flex-row gap-4">
+               <button 
+                  onClick={() => setShowCreateTicketModal(true)} 
+                  className="flex-1 bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
+               >
+                 <PlusCircle size={20} /> Create New Ticket
+               </button>
+               <button 
+                  onClick={() => setShowLiveChatModal(true)} 
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
+               >
+                 <MessageSquare size={20} /> Live Private Chat
+               </button>
+             </div>
 
              <div className="space-y-4">
                 {supportTickets.length === 0 ? (
@@ -1323,7 +1331,8 @@ const BuyerDashboard = () => {
           </div>
         </div>
       )}
-
+{/* 🔴 LIVE CHAT MODAL */}
+      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} />
       <BottomNavbar />
 
       <style dangerouslySetInnerHTML={{__html: `

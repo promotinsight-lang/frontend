@@ -21,7 +21,7 @@ import UserProfileModal from '../components/admin/UserProfileModal';
 import ProductDetailsModal from '../components/admin/ProductDetailsModal';
 import AppDetailsModal from '../components/admin/AppDetailsModal';
 import { getCurrencyForCountry } from '../utils/currency';
-
+import PrivateChatAdminPanel from '../components/admin/PrivateChatAdminPanel';
 const API_BASE = 'https://backend-6aiq.onrender.com';
 
 export default function AdminDashboard() {
@@ -829,6 +829,7 @@ export default function AdminDashboard() {
             { id: 'history', icon: <History size={16} />, label: 'Trx History' },
             { id: 'appeals', icon: <Scale size={16} />, label: 'Appeals' },
             { id: 'support-tickets', icon: <Headset size={16} />, label: 'Support Tickets' },
+            { id: 'live-chat', icon: <MessageSquare size={16} />, label: 'Live Chat' },
             { id: 'announcements', icon: <Megaphone size={16} />, label: 'Announcements' },
             { id: 'blogs', icon: <FileText size={16} />, label: 'Blogs' },
             { id: 'settings', icon: <Settings size={16} />, label: 'Settings' },
@@ -1556,6 +1557,13 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </ResponsiveTableShell>
+          </div>
+        )}
+
+        {/* 🔴 LIVE CHAT TAB */}
+        {activeTab === 'live-chat' && (
+          <div className="animate-fade-in-up mt-6 flex justify-center">
+            <PrivateChatAdminPanel />
           </div>
         )}
 
