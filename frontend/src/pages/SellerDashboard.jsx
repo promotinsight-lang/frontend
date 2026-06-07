@@ -137,41 +137,25 @@ export default function SellerDashboard() {
       const profileData = await profileRes.json();
       if (profileData.success) {
          setWalletBalance(parseFloat(profileData.user.wallet_balance) || 0);
-         setUserProfile(profileData.user); // 🔥 SET USER PROFILE STATE
+         setUserProfile(profileData.user); 
          
-         // 🔥 FIX: Update localStorage so Sidebar gets the live status & balance
          const existingUser = JSON.parse(localStorage.getItem('user') || '{}');
          const updatedUser = { ...existingUser, ...profileData.user };
          localStorage.setItem('user', JSON.stringify(updatedUser));
          
-         // Dispatch event to trigger Sidebar re-render
          window.dispatchEvent(new Event('user-profile-updated'));
          
          try {
             const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: authHeaders });
             const feeData = await feeRes.json();
             if (feeData.success && feeData.data) {
-               // নিশ্চিত করুন যে ম্যাপটি আপডেট হচ্ছে
                const newMap = buildCountryRateMap(feeData.data);
                setAllRatesMap(newMap);
             }
          } catch(e) { console.error("Currency fetch error", e); }
+      }
 
-         const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
-         const productsData = await productsRes.json();
-         if (productsData.success) setProducts(productsData.data);
-
-         const settingsRes = await secureFetch('https://backend-6aiq.onrender.com/api/users/payment-settings', { headers: authHeaders });
-         const settingsData = await settingsRes.json();
-         if (settingsData.success && settingsData.data.length > 0) {
-           setPaymentSettings(settingsData.data);
-         }
-
-         const pmRes = await fetch('https://backend-6aiq.onrender.com/api/payment-methods/list', { headers: authHeaders });
-         const pmData = await pmRes.json();
-         if (pmRes.ok && pmData.success) {
-           setPaymentMethods(pmData.data || []);
-         }
+      const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
       const productsData = await productsRes.json();
       if (productsData.success) setProducts(productsData.data);
 
