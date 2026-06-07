@@ -1140,16 +1140,18 @@ export default function AdminDashboard() {
                       <button type="button" onClick={handleAddTier} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors shrink-0">+ Add Tier</button>
                     </div>
                     
-                    {feeConfig.platform_charge.map((tier, index) => (
+                    {feeConfig.platform_charge.map((tier, index) => {
+                      const currentCurrency = getCurrencyForCountry(feeConfig.country);
+                      return (
                       <div key={index} className="flex flex-col sm:flex-row gap-3 mb-3 sm:items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm min-w-[300px]">
-                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price ($)</label><input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" /></div>
-                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price ($)</label><input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" /></div>
-                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee ($)</label><input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" /></div>
+                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price ({currentCurrency.code})</label><input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" /></div>
+                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price ({currentCurrency.code})</label><input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" /></div>
+                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee ({currentCurrency.code})</label><input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" /></div>
                         {feeConfig.platform_charge.length > 1 && (
                           <div className="pb-1 mt-2 sm:mt-0"><button type="button" onClick={() => handleRemoveTier(index)} className="p-2 w-full sm:w-auto bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors flex justify-center" title="Remove Tier"><Trash2 size={16} /></button></div>
                         )}
                       </div>
-                    ))}
+                    )})}
                   </div>
 
                   {/* 🔥 NEW: Exchange Rate Input */}
