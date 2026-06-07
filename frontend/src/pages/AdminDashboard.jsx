@@ -215,7 +215,6 @@ export default function AdminDashboard() {
           }
         } catch (e) { /* use fee row fields */ }
 
-        const fetchedRate = data.data.exchange_rate || 1;
         const localReward = data.data.buyer_reward ? (parseFloat(data.data.buyer_reward) * fetchedRate).toFixed(2) : '';
 
         setFeeConfig({
