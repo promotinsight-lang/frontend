@@ -146,24 +146,33 @@ export default function AddProduct({ onProductAdded }) {
   
   const costPerOrderLocal = priceNum + rewardNum;
   
-  let platformCommissionLocal = 0;
+  // 🔥 1. Exchange Rate agei ber kore nilam
+  const exchangeRate = activeConfig && activeConfig.exchange_rate ? parseFloat(activeConfig.exchange_rate) : 1.0;
+  
+  // 🔥 2. Local Price ke USD te convert kora holo jate Database er USD Tier er sathe compare kora jay
+  const priceNumUSD = priceNum / exchangeRate;
+  
+  let platformCommissionUSD = 0;
   if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
-      const matchedTier = activeConfig.parsed_platform_charge.find(t => priceNum >= Number(t.min) && priceNum <= Number(t.max));
-      platformCommissionLocal = matchedTier ? Number(matchedTier.fee) : 0;
+      // MXN noy, USD price er sathe USD min/max compare hochche
+      const matchedTier = activeConfig.parsed_platform_charge.find(t => priceNumUSD >= Number(t.min) && priceNumUSD <= Number(t.max));
+      platformCommissionUSD = matchedTier ? Number(matchedTier.fee) : 0;
   } else if (activeConfig && !isNaN(activeConfig.platform_charge)) {
-      platformCommissionLocal = priceNum * (parseFloat(activeConfig.platform_charge) / 100);
+      platformCommissionUSD = priceNumUSD * (parseFloat(activeConfig.platform_charge) / 100);
   } else {
-      platformCommissionLocal = priceNum * 0.10; // Fallback
+      platformCommissionUSD = priceNumUSD * 0.10; // Fallback 10%
   }
   
-  const refundFeePercent = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
+  // 🔥 3. Database theke paowa USD fee ke Local Currency te convert kore UI er variable e rakha holo
+  const platformCommissionLocal = platformCommissionUSD * exchangeRate;
+  
+  const refundFeePercent = activeConfig && activeConfig.buyer_refund_fee ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
   const refundFeeAmountLocal = costPerOrderLocal * refundFeePercent;
   
   // Total in Local Currency
   const totalDepositLocal = (costPerOrderLocal + platformCommissionLocal + refundFeeAmountLocal) * qtyNum;
 
-  // 🔥 Exchange Rate & USD Conversion
-  const exchangeRate = activeConfig && activeConfig.exchange_rate ? parseFloat(activeConfig.exchange_rate) : 1.0;
+  // 🔥 USD Conversion for Database submission
   const totalDepositUSD = totalDepositLocal / exchangeRate;
 
   const handleSubmit = async (e) => {
