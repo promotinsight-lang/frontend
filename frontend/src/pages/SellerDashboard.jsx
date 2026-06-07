@@ -6,7 +6,7 @@ import SellerTariffsPage from '../components/SellerTariffsPage';
 import { 
   Package, PlusCircle, LayoutDashboard, Wallet, Clock,
   Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
-  Headset, MessageCircle, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake 
+  Headset, MessageCircle, MessageSquare, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake 
 } from 'lucide-react';
 import { getCurrencyForCountry, getRateForCountry, buildCountryRateMap } from '../utils/currency';
 import LiveChatModal from '../components/LiveChatModal';

@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import { 
   ShoppingBag, CheckCircle, Clock, ChevronRight, X, ShieldAlert, 
   XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon,
-  Headset, PlusCircle, MessageCircle, Send, Megaphone, Users 
+  Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Users 
 } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';

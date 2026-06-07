@@ -4,7 +4,7 @@ import {
   RefreshCcw, CheckCircle, XCircle, Eye, Search, X, 
   ShieldCheck, ShieldAlert, Snowflake, Play, Star, Users, User, Trash2, Scale, Clock, Package, AlertTriangle, Wallet, Image as ImageIcon,
   BarChart3, Calendar, Headset, MessageCircle, Send, History, Megaphone, MapPin, FileText, Settings, Edit,
-  Briefcase, LayoutDashboard
+  Briefcase, LayoutDashboard, MessageSquare
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { ResponsiveTableShell, AdminMobileCard, AdminField } from '../components/admin/AdminMobileUi';
