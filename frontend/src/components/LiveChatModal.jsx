@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, Loader2, AlertCircle, X, BellRing } from 'lucide-react';
+import { MessageSquare, Send, Loader2, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
@@ -17,10 +17,9 @@ export default function LiveChatModal({ isOpen, onClose }) {
   const messagesEndRef = useRef(null);
   const isOpenRef = useRef(isOpen);
 
-  // ✅ মডাল ওপেন নাকি ক্লোজ, তা ট্র্যাক করা
   useEffect(() => {
     isOpenRef.current = isOpen;
-    if (isOpen) setHasUnread(false); // মডাল ওপেন করলেই অ্যালার্ট বন্ধ হয়ে যাবে
+    if (isOpen) setHasUnread(false);
   }, [isOpen]);
 
   useEffect(() => {
@@ -43,7 +42,6 @@ export default function LiveChatModal({ isOpen, onClose }) {
     return () => socket.disconnect();
   }, [user, isVerified]);
 
-  // ✅ পোলিং (অটো-চেক): রিকোয়েস্ট পেন্ডিং থাকলে ব্যাকগ্রাউন্ডে চেক করবে
   useEffect(() => {
     let poll;
     if (chatStatus === 'pending') {
@@ -61,25 +59,21 @@ export default function LiveChatModal({ isOpen, onClose }) {
     return () => clearInterval(poll);
   }, [chatStatus]);
 
-  // ✅ তাৎক্ষণিক অ্যালার্ট ফাংশন
+  // ✅ ফ্রেন্ডলি অ্যালার্ট (সাউন্ড বাজবে, কিন্তু ব্রাউজার হ্যাং করবে না)
   const triggerAlert = () => {
     setHasUnread(true);
     try {
       const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
       audio.play();
     } catch (e) {}
-    // সাথে সাথে ব্রাউজার অ্যালার্ট!
-    alert("🔔 Admin sent you a new message! Please open Live Chat to reply.");
   };
 
-  // ✅ সকেট লিসেনার (লাইভ মেসেজ আসলে)
   useEffect(() => {
     if (sessionId) {
       socket.emit('join_chat_room', sessionId);
 
       const handleReceive = (msg) => {
         setMessages((prev) => [...prev, msg]);
-        // যদি মেসেজটি এডমিনের হয় এবং চ্যাট মডাল বন্ধ থাকে
         if (String(msg.sender_user_id) !== String(user?.id) && !isOpenRef.current) {
           triggerAlert();
         }
@@ -96,17 +90,6 @@ export default function LiveChatModal({ isOpen, onClose }) {
       };
     }
   }, [sessionId, user]);
-
-  // ✅ বিরক্তিকর পপ-আপ অ্যালার্ট (প্রতি ১৫ সেকেন্ড পর পর)
-  useEffect(() => {
-    let alertInterval;
-    if (hasUnread && !isOpen) {
-      alertInterval = setInterval(() => {
-         alert("⚠️ You have unread messages from Admin! Please reply.");
-      }, 15000); 
-    }
-    return () => clearInterval(alertInterval);
-  }, [hasUnread, isOpen]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -138,7 +121,6 @@ export default function LiveChatModal({ isOpen, onClose }) {
       const fetchedMsgs = res.data.data;
       setMessages(fetchedMsgs);
       
-      // ✅ API থেকে প্রথম মেসেজ আসলেও অ্যালার্ট দেবে
       if (fetchedMsgs.length > 0 && !isOpenRef.current) {
         const lastMsg = fetchedMsgs[fetchedMsgs.length - 1];
         if (String(lastMsg.sender_user_id) !== String(user?.id)) {
@@ -176,14 +158,16 @@ export default function LiveChatModal({ isOpen, onClose }) {
 
   return (
     <>
-      {/* 🔴 Persistent Flashing Overlay */}
+      {/* 🔵 ফ্রেন্ডলি ফ্লোটিং নোটিফিকেশন (কোনো স্ক্রিন ব্লক করবে না) */}
       {hasUnread && !isOpen && (
-        <div className="fixed top-0 left-0 w-full z-[99998] bg-red-600 text-white p-4 shadow-2xl flex flex-col sm:flex-row items-center justify-center gap-4 animate-pulse">
-          <div className="flex items-center gap-2">
-            <BellRing className="w-8 h-8 animate-bounce" />
-            <span className="font-black text-lg md:text-xl">⚠️ NEW MESSAGE FROM ADMIN!</span>
+        <div className="fixed bottom-20 right-6 z-[90000] bg-white border-2 border-[#0066ff] shadow-2xl rounded-2xl p-4 flex items-center gap-4 animate-bounce cursor-default">
+          <div className="bg-blue-100 p-2 rounded-full">
+            <MessageSquare className="text-[#0066ff] w-6 h-6" />
           </div>
-          <p className="font-bold text-sm md:text-base">Please open "Live Chat" to reply.</p>
+          <div>
+            <p className="font-bold text-gray-800 text-sm">New Admin Message!</p>
+            <p className="text-xs text-gray-500">Open Live Chat to reply.</p>
+          </div>
         </div>
       )}
 
