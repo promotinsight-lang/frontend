@@ -96,14 +96,14 @@ export default function SellerDashboard() {
   const [supportTickets, setSupportTickets] = useState([]);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
   const [ticketForm, setTicketForm] = useState({ subject: '', message: '' });
-  
+  const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [ticketReplies, setTicketReplies] = useState([]);
   const [replyMessage, setReplyMessage] = useState('');
   const [showTicketViewModal, setShowTicketViewModal] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
-  const [showLiveChatModal, setShowLiveChatModal] = useState(false);
+  
   // Prevent background scrolling when any modal is open
   useEffect(() => {
     const isAnyModalOpen = showDepositModal || showWithdrawModal || showViewModal || showEditModal || showSellerAppealModal || showLedgerModal || showCreateTicketModal || showTicketViewModal || showFullImageModal || showTrxDetailsModal;

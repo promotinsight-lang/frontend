@@ -1556,12 +1556,7 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
-            </ResponsiveTableShell>
-          </div>
-        )}
-
-      
-            <PrivateChatAdminPanel />
+           </ResponsiveTableShell>
           </div>
         )}
 
