@@ -2062,6 +2062,13 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* 🔴 LIVE CHAT TAB */}
+        {activeTab === 'live-chat' && (
+          <div className="animate-fade-in-up mt-6">
+            <PrivateChatAdminPanel />
+          </div>
+        )}
+
         {/* ANNOUNCEMENTS TAB */}
         {activeTab === 'announcements' && (
           <div className="space-y-6 animate-fade-in-up mt-6">
