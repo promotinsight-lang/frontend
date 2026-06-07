@@ -57,12 +57,7 @@ export default function Support() {
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const messagesEndRef = useRef(null);
-  // ✅ 401 Error Fix: Token and Cookie Header
-  const getHeaders = () => ({
-    withCredentials: true,
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
-
+  
   // সকেট কানেকশন ও চ্যাট স্ট্যাটাস ফেচ করা
   useEffect(() => {
     if (activeTab === 'chat' && user) {
