@@ -6,7 +6,7 @@ import { io } from 'socket.io-client';
 const BACKEND_URL = 'https://backend-6aiq.onrender.com';
 const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 
-export default function LiveChatModal({ isOpen, onClose }) {
+export default function LiveChatModal({ isOpen, onClose, onOpen }) {
   const [user, setUser] = useState(null);
   const [chatStatus, setChatStatus] = useState(null);
   const [sessionId, setSessionId] = useState(null);
@@ -160,9 +160,12 @@ export default function LiveChatModal({ isOpen, onClose }) {
 
   return (
     <>
-      {/* 🔵 ফ্রেন্ডলি ফ্লোটিং নোটিফিকেশন (কোনো স্ক্রিন ব্লক করবে না) */}
+      {/* 🔵 ফ্রেন্ডলি ফ্লোটিং নোটিফিকেশন (ক্লিক করলে চ্যাট ওপেন হবে) */}
       {hasUnread && !isOpen && (
-        <div className="fixed bottom-20 right-6 z-[90000] bg-white border-2 border-[#0066ff] shadow-2xl rounded-2xl p-4 flex items-center gap-4 animate-bounce cursor-default">
+        <div 
+          onClick={onOpen || (() => window.location.href='/support')} 
+          className="fixed bottom-20 right-6 z-[90000] bg-white hover:bg-blue-50 border-2 border-[#0066ff] shadow-2xl rounded-2xl p-4 flex items-center gap-4 animate-bounce cursor-pointer transition-colors"
+        >
           <div className="bg-blue-100 p-2 rounded-full">
             <MessageSquare className="text-[#0066ff] w-6 h-6" />
           </div>

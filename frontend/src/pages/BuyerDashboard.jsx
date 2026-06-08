@@ -1332,7 +1332,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
         </div>
       )}
 {/* 🔴 LIVE CHAT MODAL */}
-      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} />
+      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} onOpen={() => setShowLiveChatModal(true)} />
       <BottomNavbar />
 
       <style dangerouslySetInnerHTML={{__html: `

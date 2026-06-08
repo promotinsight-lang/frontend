@@ -1646,7 +1646,7 @@ export default function SellerDashboard() {
       )}
 
       {/* 🔴 LIVE CHAT MODAL */}
-      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} />
+      <LiveChatModal isOpen={showLiveChatModal} onClose={() => setShowLiveChatModal(false)} onOpen={() => setShowLiveChatModal(true)} />
 
       <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
