@@ -62,12 +62,20 @@ export default function Support() {
   useEffect(() => {
     if (activeTab === 'chat' && user) {
       socket.connect();
-      // ✅ সঠিক কন্ডিশন
       if (user.verification_status === 'approved' || user.verification_status === 'verified') {
         fetchChatStatus();
+        
+        // 🟢 সাপোর্ট পেজ থেকেও অনলাইন সিগন্যাল পাঠানো
+        socket.on('connect', () => {
+          socket.emit('user_online', user.id);
+        });
+        if (socket.connected) {
+          socket.emit('user_online', user.id);
+        }
       }
     }
     return () => {
+      socket.off('connect');
       if (activeTab === 'chat') socket.disconnect();
     };
   }, [activeTab, user]);
