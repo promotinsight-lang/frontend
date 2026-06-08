@@ -14,6 +14,7 @@ export default function PrivateChatAdminPanel() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [verifiedUsers, setVerifiedUsers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]); // 🟢 নতুন স্টেট
   const messagesEndRef = useRef(null);
 
   const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -27,6 +28,10 @@ export default function PrivateChatAdminPanel() {
     socket.connect();
     fetchPendingRequests();
 
+    // 🟢 অনলাইন ইউজারদের ডাটা রিসিভ করা
+    socket.on('online_users_update', (users) => setOnlineUsers(users));
+    socket.emit('request_online_users'); // এডমিন প্যানেল ওপেন হলেই লিস্ট চাইবে
+
     // ✅ অটো-রিফ্রেশ: প্রতি ৫ সেকেন্ড পর পর নতুন রিকোয়েস্ট চেক করবে
     const pollInterval = setInterval(async () => {
       try {
@@ -37,6 +42,7 @@ export default function PrivateChatAdminPanel() {
 
     return () => {
       clearInterval(pollInterval);
+      socket.off('online_users_update');
       socket.disconnect();
     };
   }, []);
@@ -235,8 +241,20 @@ export default function PrivateChatAdminPanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {verifiedUsers.map(u => (
                   <div key={u.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center hover:border-purple-300 transition-colors">
-                    <div className="truncate pr-4">
-                      <h4 className="font-bold text-gray-800 truncate">{u.name}</h4>
+                    <div className="truncate pr-4 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-gray-800 truncate">{u.name}</h4>
+                        
+                        {/* 🟢 Online/Offline Badge */}
+                        {onlineUsers.includes(String(u.id)) ? (
+                          <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-50 border border-green-200 text-green-600 rounded-full text-[10px] font-bold">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                            Active
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 font-medium border border-gray-100 px-2 py-0.5 rounded-full bg-gray-50">Offline</span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500 truncate">{u.email}</p>
                     </div>
                     <button onClick={() => startDirectChat(u.id)} className="p-2.5 bg-purple-100 text-purple-700 hover:bg-purple-600 hover:text-white rounded-lg transition-colors shrink-0" title="Start Chat">

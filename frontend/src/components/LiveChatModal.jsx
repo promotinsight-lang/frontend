@@ -38,6 +38,8 @@ export default function LiveChatModal({ isOpen, onClose }) {
     if (user && isVerified) {
       socket.connect();
       fetchChatStatus();
+      // 🟢 ব্যাকএন্ডকে জানিয়ে দেওয়া যে ইউজার অনলাইনে আছে
+      socket.emit('user_online', user.id);
     }
     return () => socket.disconnect();
   }, [user, isVerified]);
