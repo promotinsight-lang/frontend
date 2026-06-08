@@ -14,7 +14,8 @@ export default function PrivateChatAdminPanel() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [verifiedUsers, setVerifiedUsers] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]); // 🟢 নতুন স্টেট
+  const [onlineUsers, setOnlineUsers] = useState([]); 
+  const [activeSessions, setActiveSessions] = useState([]); // 🟢 Active sob session list rarakhar jonno
   const messagesEndRef = useRef(null);
 
   const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -27,17 +28,20 @@ export default function PrivateChatAdminPanel() {
   useEffect(() => {
     socket.connect();
     fetchPendingRequests();
+    fetchActiveSessions(); // 🟢 Prothomei active list-ti load hobe
 
-    // 🟢 অনলাইন ইউজারদের ডাটা রিসিভ করা
     socket.on('online_users_update', (users) => setOnlineUsers(users));
-    socket.emit('request_online_users'); // এডমিন প্যানেল ওপেন হলেই লিস্ট চাইবে
+    socket.emit('request_online_users'); 
 
-    // ✅ অটো-রিফ্রেশ: প্রতি ৫ সেকেন্ড পর পর নতুন রিকোয়েস্ট চেক করবে
+    // ✅ Auto-Refresh: Pending o Active session er data 5s por por fetch korbe
     const pollInterval = setInterval(async () => {
       try {
-        const res = await axios.get(`${BACKEND_URL}/api/private-chat/admin/requests`, getHeaders());
-        if (res.data.success) setPendingRequests(res.data.data);
-      } catch (err) {} // সাইলেন্ট ক্যাচ, যাতে স্ক্রিনে এরর না আসে
+        const resReq = await axios.get(`${BACKEND_URL}/api/private-chat/admin/requests`, getHeaders());
+        if (resReq.data.success) setPendingRequests(resReq.data.data);
+
+        const resAct = await axios.get(`${BACKEND_URL}/api/private-chat/admin/sessions`, getHeaders());
+        if (resAct.data.success) setActiveSessions(resAct.data.data || resAct.data.sessions || []);
+      } catch (err) {} 
     }, 5000);
 
     return () => {
@@ -67,6 +71,16 @@ export default function PrivateChatAdminPanel() {
       if (res.data.success) setPendingRequests(res.data.data);
     } catch (err) { console.error(err); }
     setLoading(false);
+  };
+
+  // 🟢 Active list load korar function
+  const fetchActiveSessions = async () => {
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/private-chat/admin/sessions`, getHeaders());
+      if (res.data.success) {
+        setActiveSessions(res.data.data || res.data.sessions || []);
+      }
+    } catch (err) { console.error(err); }
   };
 
   const fetchVerifiedUsers = async () => {
@@ -189,43 +203,81 @@ export default function PrivateChatAdminPanel() {
         )}
 
         {activeTab === 'active' && (
-          <div className="h-full flex flex-col">
-            {!activeSession ? (
-              <div className="text-center py-20 flex-1">
-                <MessageSquare size={48} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500 font-medium">No active chat session. Please accept a request or start a new chat.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col h-full bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                <div className="p-4 bg-green-50 border-b border-green-100 flex justify-between items-center">
-                  <div>
-                    <h4 className="font-bold text-green-900 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Live Session</h4>
-                    <p className="text-xs text-green-700">Chatting with User ID: {activeSession.user_id}</p>
-                  </div>
-                  <button onClick={endChat} className="px-3 py-1.5 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1"><X size={14}/> End Session</button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
-                  {messages.length === 0 ? <p className="text-center text-gray-400 text-sm mt-10">Chat started! Send a message.</p> : (
-                    messages.map((msg, idx) => (
-                      <div key={idx} className={`flex ${msg.sender_user_id === adminUser.id ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${msg.sender_user_id === adminUser.id ? 'bg-[#0066ff] text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}`}>
-                          <p>{msg.message}</p>
+          <div className="h-full flex flex-col md:flex-row gap-4">
+            
+            {/* 🟢 Left Side: Active Session Sidebar List */}
+            <div className="w-full md:w-60 bg-white border border-gray-200 rounded-xl p-3 flex flex-col h-[180px] md:h-full overflow-y-auto shrink-0">
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5 px-1">Active Sessions ({activeSessions.length})</h4>
+              {activeSessions.length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-6">No active chats</p>
+              ) : (
+                <div className="space-y-1">
+                  {activeSessions.map((session) => {
+                    const isSelected = activeSession?.id === session.id;
+                    const isUserOnline = onlineUsers.includes(String(session.user_id));
+                    return (
+                      <div 
+                        key={session.id}
+                        onClick={() => { setActiveSession(session); fetchMessages(session.id); }}
+                        className={`p-3 rounded-xl cursor-pointer flex items-center justify-between transition-all border ${isSelected ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold shadow-sm' : 'bg-gray-50 hover:bg-gray-100 border-transparent text-gray-700'}`}
+                      >
+                        <div className="truncate flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${isUserOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>
+                          <span className="text-xs truncate">{session.name || `User #${session.user_id}`}</span>
                         </div>
                       </div>
-                    ))
-                  )}
-                  <div ref={messagesEndRef} />
+                    );
+                  })}
                 </div>
+              )}
+            </div>
 
-                <div className="p-3 bg-white border-t border-gray-200">
-                  <form onSubmit={sendMessage} className="flex gap-2">
-                    <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0066ff] transition-all text-sm" />
-                    <button type="submit" disabled={!newMessage.trim()} className="bg-[#0066ff] text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md"><Send size={18} /></button>
-                  </form>
+            {/* 🟢 Right Side: Real-time Selected Chat Box */}
+            <div className="flex-1 flex flex-col h-full min-h-[350px]">
+              {!activeSession ? (
+                <div className="text-center py-20 bg-white border border-gray-200 rounded-xl flex-1 flex flex-col justify-center items-center">
+                  <MessageSquare size={44} className="text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-bold text-sm">Select an active user from list</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Manage multiple client live conversations at the same time.</p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col h-full bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex-1">
+                  <div className="p-4 bg-green-50 border-b border-green-100 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-green-900 text-sm flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${onlineUsers.includes(String(activeSession.user_id)) ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span> 
+                        {activeSession.name || `User #${activeSession.user_id}`}
+                      </h4>
+                      <p className="text-[10px] text-green-700 font-medium">Email: {activeSession.email || 'N/A'}</p>
+                    </div>
+                    <button onClick={endChat} className="px-3 py-1.5 bg-red-100 text-red-600 hover:bg-red-600 hover:text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1"><X size={14}/> End Session</button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+                    {messages.length === 0 ? <p className="text-center text-gray-400 text-sm mt-10">Chat started! Send a message.</p> : (
+                      messages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.sender_user_id === adminUser.id ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${msg.sender_user_id === adminUser.id ? 'bg-[#0066ff] text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'}`}>
+                            <p>{msg.message}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <div className="p-3 bg-white border-t border-gray-200">
+                    <form onSubmit={sendMessage} className="flex gap-2 items-center">
+                      <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#0066ff] transition-all text-sm" />
+                      <button type="submit" disabled={!newMessage.trim()} className="bg-[#0066ff] text-white w-12 h-12 flex items-center justify-center shrink-0 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md">
+                        <Send size={20} className="ml-0.5" />
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 

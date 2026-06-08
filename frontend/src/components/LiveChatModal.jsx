@@ -242,10 +242,20 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
                         Chat closed by Admin.
                       </div>
                     ) : (
-                      <form onSubmit={sendChatMessage} className="flex gap-2">
-                        <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#0066ff] transition-all text-sm" />
-                        <button type="submit" disabled={!newMessage.trim()} className="bg-[#0066ff] text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md">
-                          <Send size={18} />
+                      <form onSubmit={sendChatMessage} className="flex gap-2 items-center">
+                        <input 
+                          type="text" 
+                          value={newMessage} 
+                          onChange={(e) => setNewMessage(e.target.value)} 
+                          placeholder="Type a message..." 
+                          className="flex-1 p-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#0066ff] transition-all text-sm" 
+                        />
+                        <button 
+                          type="submit" 
+                          disabled={!newMessage.trim()} 
+                          className="bg-[#0066ff] text-white w-12 h-12 flex items-center justify-center shrink-0 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md"
+                        >
+                          <Send size={20} className="ml-0.5" />
                         </button>
                       </form>
                     )}
