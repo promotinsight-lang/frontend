@@ -40,7 +40,7 @@ export default function PrivateChatAdminPanel() {
         if (resReq.data.success) setPendingRequests(resReq.data.data);
 
         const resAct = await axios.get(`${BACKEND_URL}/api/private-chat/admin/sessions`, getHeaders());
-        if (resAct.data.success) setActiveSessions(resAct.data.data || resAct.data.sessions || []);
+        if (resAct.data.success) setActiveSessions(resAct.data.data || resAct.data.sessions || resAct.data.activeSessions || []);
       } catch (err) {} 
     }, 5000);
 
@@ -78,7 +78,8 @@ export default function PrivateChatAdminPanel() {
     try {
       const res = await axios.get(`${BACKEND_URL}/api/private-chat/admin/sessions`, getHeaders());
       if (res.data.success) {
-        setActiveSessions(res.data.data || res.data.sessions || []);
+        // 🟢 Shob dhoroner backend key fallback check
+        setActiveSessions(res.data.data || res.data.sessions || res.data.activeSessions || []);
       }
     } catch (err) { console.error(err); }
   };
@@ -112,6 +113,7 @@ export default function PrivateChatAdminPanel() {
         setActiveTab('active');
         fetchMessages(res.data.session.id);
         fetchPendingRequests();
+        fetchActiveSessions(); // 🟢 Sathe sathe active list refresh korbe
       }
     } catch (err) { alert('Failed to approve'); }
   };
@@ -155,10 +157,15 @@ export default function PrivateChatAdminPanel() {
           setActiveSession(res.data.session);
           setActiveTab('active');
           fetchMessages(res.data.session.id);
+          fetchActiveSessions(); // 🟢 চ্যাট শুরু হওয়ার সাথে সাথে লিস্ট রিফ্রেশ হবে
        }
      } catch (err) { alert('Failed to start chat'); }
   };
-
+// 🟢 100% Fail-safe: Admin active chat-e thakle ota jodi api list-e na-o ashe, client-side auto merge hobe
+  const displaySessions = [...activeSessions];
+  if (activeSession && !displaySessions.some(s => s.id === activeSession.id)) {
+    displaySessions.push(activeSession);
+  }
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[700px] w-full">
       {/* Header Tabs */}
@@ -207,12 +214,12 @@ export default function PrivateChatAdminPanel() {
             
             {/* 🟢 Left Side: Active Session Sidebar List */}
             <div className="w-full md:w-60 bg-white border border-gray-200 rounded-xl p-3 flex flex-col h-[180px] md:h-full overflow-y-auto shrink-0">
-              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5 px-1">Active Sessions ({activeSessions.length})</h4>
-              {activeSessions.length === 0 ? (
+              <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5 px-1">Active Sessions ({displaySessions.length})</h4>
+              {displaySessions.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-6">No active chats</p>
               ) : (
                 <div className="space-y-1">
-                  {activeSessions.map((session) => {
+                  {displaySessions.map((session) => {
                     const isSelected = activeSession?.id === session.id;
                     const isUserOnline = onlineUsers.includes(String(session.user_id));
                     return (
