@@ -363,20 +363,20 @@ export default function Support() {
                           Chat session has been closed by the Admin.
                         </div>
                       ) : (
-                        <form onSubmit={sendChatMessage} className="flex gap-3 relative">
-                          <input
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Type your message here..."
-                            className="flex-1 px-6 py-4 bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0066ff] focus:bg-white rounded-2xl transition-all"
+                        <form onSubmit={sendChatMessage} className="flex gap-2 items-center">
+                          <input 
+                            type="text" 
+                            value={newMessage} 
+                            onChange={(e) => setNewMessage(e.target.value)} 
+                            placeholder="Type a message..." 
+                            className="flex-1 p-3.5 bg-white border border-gray-200 rounded-xl outline-none focus:border-[#0066ff] transition-all text-sm" 
                           />
-                          <button
-                            type="submit"
-                            disabled={!newMessage.trim()}
-                            className="bg-[#0066ff] disabled:bg-gray-300 text-white px-6 rounded-2xl transition-all flex items-center justify-center shadow-md hover:shadow-lg disabled:shadow-none"
+                          <button 
+                            type="submit" 
+                            disabled={!newMessage.trim()} 
+                            className="bg-[#0066ff] text-white w-12 h-12 flex items-center justify-center shrink-0 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md"
                           >
-                            <Send className="w-6 h-6" />
+                            <Send size={20} className="ml-0.5" />
                           </button>
                         </form>
                       )}
