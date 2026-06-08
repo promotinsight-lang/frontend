@@ -1,3 +1,4 @@
+import AdminChatNotifier from '../components/admin/AdminChatNotifier';
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -786,6 +787,9 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-10">
       <Navbar /> 
+      
+      {/* 🔴 Global Admin Chat Notifier */}
+      <AdminChatNotifier />
       
       <div className="bg-[#0066ff] pt-6 pb-12 px-4 shadow-lg text-white">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
