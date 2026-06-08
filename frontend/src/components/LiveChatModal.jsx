@@ -38,10 +38,22 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
     if (user && isVerified) {
       socket.connect();
       fetchChatStatus();
-      // 🟢 ব্যাকএন্ডকে জানিয়ে দেওয়া যে ইউজার অনলাইনে আছে
-      socket.emit('user_online', user.id);
+      
+      // 🟢 সকেট পুরোপুরি কানেক্ট হওয়ার পর অনলাইন সিগন্যাল পাঠাবে
+      socket.on('connect', () => {
+        socket.emit('user_online', user.id);
+      });
+      
+      // যদি আগে থেকেই কানেক্টেড থাকে, তবে সাথে সাথে পাঠাবে
+      if (socket.connected) {
+        socket.emit('user_online', user.id);
+      }
     }
-    return () => socket.disconnect();
+    
+    return () => {
+      socket.off('connect');
+      socket.disconnect();
+    };
   }, [user, isVerified]);
 
   useEffect(() => {
