@@ -13,13 +13,13 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0); // 🔴 Unread count state
   const messagesEndRef = useRef(null);
   const isOpenRef = useRef(isOpen);
 
   useEffect(() => {
     isOpenRef.current = isOpen;
-    if (isOpen) setHasUnread(false);
+    if (isOpen) setUnreadCount(0); // মডাল ওপেন করলে আনরিড মেসেজ জিরো হয়ে যাবে
   }, [isOpen]);
 
   useEffect(() => {
@@ -73,9 +73,8 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
     return () => clearInterval(poll);
   }, [chatStatus]);
 
-  // ✅ ফ্রেন্ডলি অ্যালার্ট (সাউন্ড বাজবে, কিন্তু ব্রাউজার হ্যাং করবে না)
   const triggerAlert = () => {
-    setHasUnread(true);
+    setUnreadCount(prev => prev + 1); // 🔴 মেসেজ আসলেই কাউন্ট ১ করে বাড়বে
     try {
       const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
       audio.play();
@@ -88,6 +87,7 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
 
       const handleReceive = (msg) => {
         setMessages((prev) => [...prev, msg]);
+        // যদি মেসেজটি এডমিনের হয় এবং চ্যাট মডাল বন্ধ থাকে
         if (String(msg.sender_user_id) !== String(user?.id) && !isOpenRef.current) {
           triggerAlert();
         }
@@ -172,18 +172,22 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
 
   return (
     <>
-      {/* 🔵 ফ্রেন্ডলি ফ্লোটিং নোটিফিকেশন (ক্লিক করলে চ্যাট ওপেন হবে) */}
-      {hasUnread && !isOpen && (
+      {/* 🔵 Facebook Messenger Style ফ্লোটিং নোটিফিকেশন */}
+      {unreadCount > 0 && !isOpen && (
         <div 
           onClick={onOpen || (() => window.location.href='/support')} 
           className="fixed bottom-20 right-6 z-[90000] bg-white hover:bg-blue-50 border-2 border-[#0066ff] shadow-2xl rounded-2xl p-4 flex items-center gap-4 animate-bounce cursor-pointer transition-colors"
         >
-          <div className="bg-blue-100 p-2 rounded-full">
+          <div className="bg-blue-100 p-2 rounded-full relative">
             <MessageSquare className="text-[#0066ff] w-6 h-6" />
+            {/* 🔴 লাল ব্যাজ (Unread Count) */}
+            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+              {unreadCount}
+            </span>
           </div>
           <div>
             <p className="font-bold text-gray-800 text-sm">New Admin Message!</p>
-            <p className="text-xs text-gray-500">Open Live Chat to reply.</p>
+            <p className="text-xs text-gray-500 font-medium">You have {unreadCount} unread message(s).</p>
           </div>
         </div>
       )}

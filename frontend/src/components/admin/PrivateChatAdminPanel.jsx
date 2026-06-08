@@ -15,8 +15,10 @@ export default function PrivateChatAdminPanel() {
   const [loading, setLoading] = useState(false);
   const [verifiedUsers, setVerifiedUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]); 
-  const [activeSessions, setActiveSessions] = useState([]); // 🟢 Active sob session list rarakhar jonno
+  const [activeSessions, setActiveSessions] = useState([]); 
+  const [unreadCounts, setUnreadCounts] = useState({}); // 🔴 Messenger Style Unread State
   const messagesEndRef = useRef(null);
+  const activeSessionRef = useRef(null); // Reference tracking
 
   const adminUser = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -51,14 +53,38 @@ export default function PrivateChatAdminPanel() {
     };
   }, []);
 
+  // ✅ Active Session Track & Unread Reset
   useEffect(() => {
+    activeSessionRef.current = activeSession;
     if (activeSession) {
-      socket.emit('join_chat_room', activeSession.id);
-      const handleReceive = (msg) => setMessages((prev) => [...prev, msg]);
-      socket.on('receive_message', handleReceive);
-      return () => socket.off('receive_message', handleReceive);
+      setUnreadCounts(prev => ({ ...prev, [activeSession.id]: 0 })); // ওপেন করলে আনরিড জিরো হবে
     }
   }, [activeSession]);
+
+  // ✅ Global Socket Listener for Real-time Unread Messages
+  useEffect(() => {
+    const handleReceive = (msg) => {
+      const sId = msg.session_id || msg.sessionId;
+
+      if (activeSessionRef.current && activeSessionRef.current.id === sId) {
+        setMessages((prev) => [...prev, msg]); // কারেন্ট চ্যাটে মেসেজ অ্যাড হবে
+      } else {
+        // 🔴 ব্যাকগ্রাউন্ড চ্যাটে Unread Count বাড়াবে!
+        setUnreadCounts((prev) => ({ ...prev, [sId]: (prev[sId] || 0) + 1 }));
+        try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch(e) {}
+      }
+    };
+
+    socket.on('receive_message', handleReceive);
+    return () => socket.off('receive_message', handleReceive);
+  }, []);
+
+  // ✅ এডমিন যেন ব্যাকগ্রাউন্ডে সবার মেসেজ পায়, তাই সব অ্যাকটিভ রুমে জয়েন করানো
+  useEffect(() => {
+    activeSessions.forEach(session => {
+      socket.emit('join_chat_room', session.id);
+    });
+  }, [activeSessions]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -218,19 +244,43 @@ export default function PrivateChatAdminPanel() {
               {displaySessions.length === 0 ? (
                 <p className="text-xs text-gray-400 text-center py-6">No active chats</p>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {displaySessions.map((session) => {
                     const isSelected = activeSession?.id === session.id;
                     const isUserOnline = onlineUsers.includes(String(session.user_id));
+                    const unread = unreadCounts[session.id] || 0; // Unread count
+                    
                     return (
                       <div 
                         key={session.id}
                         onClick={() => { setActiveSession(session); fetchMessages(session.id); }}
-                        className={`p-3 rounded-xl cursor-pointer flex items-center justify-between transition-all border ${isSelected ? 'bg-blue-50 border-blue-200 text-blue-700 font-bold shadow-sm' : 'bg-gray-50 hover:bg-gray-100 border-transparent text-gray-700'}`}
+                        className={`p-3 rounded-xl cursor-pointer flex flex-col gap-2 transition-all border ${isSelected ? 'bg-blue-50 border-blue-400 shadow-md ring-2 ring-blue-100' : unread > 0 ? 'bg-white border-red-200 shadow-md' : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'}`}
                       >
-                        <div className="truncate flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${isUserOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`}></span>
-                          <span className="text-xs truncate">{session.name || `User #${session.user_id}`}</span>
+                        <div className="flex items-center justify-between w-full">
+                          <div className="truncate flex items-center gap-2">
+                            {/* User Name */}
+                            <span className={`text-sm truncate ${unread > 0 ? 'font-black text-gray-900' : isSelected ? 'font-black text-blue-800' : 'font-bold'}`}>
+                              {session.name || `User #${session.user_id}`}
+                            </span>
+                          </div>
+                          
+                          {/* 🔴 FB Messenger Style Unread Badge */}
+                          {unread > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm animate-bounce">
+                              {unread} New
+                            </span>
+                          )}
+                        </div>
+
+                        {/* 🟢 Online/Offline Explicit Status */}
+                        <div className="flex items-center gap-1.5">
+                          {isUserOnline ? (
+                            <span className="text-[10px] text-green-700 font-black bg-green-100 border border-green-200 px-2 py-0.5 rounded-md flex items-center gap-1.5 shadow-sm">
+                              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-sm"></span> Online
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-500 font-bold border border-gray-200 bg-gray-100 px-2 py-0.5 rounded-md">Offline</span>
+                          )}
                         </div>
                       </div>
                     );
