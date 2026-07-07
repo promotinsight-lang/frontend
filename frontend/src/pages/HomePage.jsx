@@ -148,7 +148,7 @@ export default function HomePage() {
 
   const priceNum = parseFloat(calcData.price || 0);
   const rewardNum = parseFloat(calcData.reward || 0);
-  const unitCost = priceNum + rewardNum;
+  const rewardDeposit = rewardNum;
   
   // 🔥 DYNAMIC TIER LOGIC FOR PLATFORM FEE
   const platformFee = (() => {
@@ -166,10 +166,7 @@ export default function HomePage() {
     return priceNum * 0.10; // Default 10% fallback
   })();
   
-  const refundFeeRate = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
-  const refundFeeAmount = unitCost * refundFeeRate;
-  
-  const totalPerUnit = unitCost + platformFee + refundFeeAmount;
+  const totalPerUnit = rewardDeposit + platformFee;
   const grandTotalDeposit = totalPerUnit * parseInt(calcData.qty || 1);
 
   const handleCountryChange = (e) => {
@@ -363,7 +360,7 @@ export default function HomePage() {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium">{t('unit_cost')}</span>
-                <span className="font-bold text-gray-800">{calcCurrency}{unitCost.toFixed(2)}</span>
+                <span className="font-bold text-gray-800">{calcCurrency}{rewardDeposit.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium flex items-center gap-1">
@@ -377,15 +374,6 @@ export default function HomePage() {
                 <span className="font-bold text-red-500">+{calcCurrency}{platformFee.toFixed(2)}</span>
               </div>
               
-              {activeConfig && parseFloat(activeConfig.buyer_refund_fee) > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 font-medium flex items-center gap-1">
-                    {t('refund_fee')} <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">{parseFloat(activeConfig.buyer_refund_fee).toFixed(1)}%</span>
-                  </span>
-                  <span className="font-bold text-red-500">+{calcCurrency}{refundFeeAmount.toFixed(2)}</span>
-                </div>
-              )}
-
               <div className="flex justify-between items-center border-t border-gray-200 pt-3">
                 <span className="text-gray-600 font-medium">{t('qty_multiplier')}</span>
                 <span className="font-bold text-gray-800">x {calcData.qty}</span>
@@ -405,7 +393,6 @@ export default function HomePage() {
                  <div className="grid grid-cols-2 gap-y-2 text-xs font-medium text-blue-900">
                     <p>{t('platform')}: <b className="text-blue-700">{activeConfig.parsed_platform_charge?.length > 0 ? t('tiered_fee') : `${activeConfig.platform_charge}%`}</b></p>
                     <p>{t('buyer_reward')}: <b className="text-blue-700">{parseFloat(activeConfig.buyer_reward) > 0 ? `${calcCurrency}${activeConfig.buyer_reward}` : t('custom')}</b></p>
-                    <p>Refund: <b className="text-red-500">{activeConfig.buyer_refund_fee}%</b></p>
                     <p>Deposit: <b className="text-blue-700">{activeConfig.seller_deposit_fee}%</b></p>
                     <p>W.Draw: <b className="text-blue-700">{activeConfig.seller_withdrawal_fee}%</b></p>
                  </div>

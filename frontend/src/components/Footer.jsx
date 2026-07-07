@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, ShieldCheck, X } from 'lucide-react';
+import { Facebook, Globe, Instagram, ShieldCheck, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export default function Footer() {
@@ -45,6 +45,11 @@ export default function Footer() {
     setLanguageOpen(false);
   };
 
+  const socialLinks = [
+    { label: 'Facebook', href: 'https://facebook.com/promotinsight', Icon: Facebook },
+    { label: 'Instagram', href: 'https://instagram.com/promotinsight', Icon: Instagram },
+  ];
+
   return (
     <>
       <footer className="bg-gray-900 text-gray-400 py-12 mt-auto">
@@ -77,6 +82,19 @@ export default function Footer() {
           </div>
           <div className="flex justify-center md:justify-end">
             <div className="bg-gray-800 p-3 rounded-xl inline-flex gap-4 relative">
+              {socialLinks.map(({ label, href, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  className="text-gray-400 hover:text-white transition-colors p-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <Icon size={20} aria-hidden="true" />
+                </a>
+              ))}
+
               <div className="relative" ref={languageMenuRef}>
                 <button
                   type="button"

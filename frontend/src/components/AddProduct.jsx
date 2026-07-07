@@ -144,7 +144,7 @@ export default function AddProduct({ onProductAdded }) {
   const rewardNum = parseFloat(formData.reward) || 0;
   const qtyNum = parseInt(formData.required_orders) || 1;
   
-  const costPerOrderLocal = priceNum + rewardNum;
+  const rewardDepositPerOrderLocal = rewardNum;
   
   // 🔥 1. Exchange Rate agei ber kore nilam
   const exchangeRate = activeConfig && activeConfig.exchange_rate ? parseFloat(activeConfig.exchange_rate) : 1.0;
@@ -167,11 +167,8 @@ export default function AddProduct({ onProductAdded }) {
   // 🔥 3. Database theke paowa USD fee ke Local Currency te convert kore UI er variable e rakha holo
   const platformCommissionLocal = platformCommissionUSD * exchangeRate;
   
-  const refundFeePercent = activeConfig && activeConfig.buyer_refund_fee ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
-  const refundFeeAmountLocal = costPerOrderLocal * refundFeePercent;
-  
   // Total in Local Currency
-  const totalDepositLocal = (costPerOrderLocal + platformCommissionLocal + refundFeeAmountLocal) * qtyNum;
+  const totalDepositLocal = (rewardDepositPerOrderLocal + platformCommissionLocal) * qtyNum;
 
   // 🔥 USD Conversion for Database submission
   const totalDepositUSD = totalDepositLocal / exchangeRate;
@@ -423,7 +420,6 @@ export default function AddProduct({ onProductAdded }) {
                        <b className="text-[#0066ff]">{activeConfig.parsed_platform_charge?.length > 0 ? 'Tiered Fee' : `${activeConfig.platform_charge}%`}</b>
                      </li>
                      <li className="flex justify-between"><span>Buyer Reward:</span> <b>{parseFloat(activeConfig.buyer_reward) > 0 ? `${currency}${activeConfig.buyer_reward}` : 'Custom'}</b></li>
-                     <li className="flex justify-between"><span>Refund Fee:</span> <b className="text-red-500">{activeConfig.buyer_refund_fee}%</b></li>
                      <li className="flex justify-between"><span>Deposit Fee:</span> <b>{activeConfig.seller_deposit_fee}%</b></li>
                      <li className="flex justify-between"><span>W.Draw Fee:</span> <b>{activeConfig.seller_withdrawal_fee}%</b></li>
                      <li className="flex justify-between mt-1 pt-1 border-t border-gray-100">
@@ -437,8 +433,8 @@ export default function AddProduct({ onProductAdded }) {
              <div className={`bg-white p-4 rounded-xl border border-yellow-200 ${activeConfig ? 'w-full md:w-2/3' : 'w-full'}`}>
                 <div className="space-y-2 text-sm text-gray-700">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-500">Unit Cost (Price + Reward)</span>
-                    <span className="font-bold text-gray-800">{currency}{costPerOrderLocal.toFixed(2)}</span>
+                    <span className="font-semibold text-gray-500">Reward Deposit</span>
+                    <span className="font-bold text-gray-800">{currency}{rewardDepositPerOrderLocal.toFixed(2)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
@@ -448,15 +444,6 @@ export default function AddProduct({ onProductAdded }) {
                     <span className="font-bold text-red-500">+{currency}{platformCommissionLocal.toFixed(2)}</span>
                   </div>
 
-                  {activeConfig && parseFloat(activeConfig.buyer_refund_fee) > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-gray-500 flex items-center gap-1">
-                        Refund Fee ({parseFloat(activeConfig.buyer_refund_fee).toFixed(1)}%) 
-                      </span>
-                      <span className="font-bold text-red-500">+{currency}{refundFeeAmountLocal.toFixed(2)}</span>
-                    </div>
-                  )}
-                  
                   <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
                     <span className="font-semibold text-gray-500">Target Quantity</span>
                     <span className="font-bold text-gray-800">x {qtyNum}</span>

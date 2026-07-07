@@ -9,6 +9,7 @@ import {
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
 import LiveChatModal from '../components/LiveChatModal';
+
 const BuyerDashboard = () => {
   const { formatWallet, formatProduct } = useBuyerCurrency();
   const location = useLocation();
@@ -96,6 +97,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
           localStorage.setItem('user', JSON.stringify({ 
             ...lsUser, 
             wallet_balance: profileData.user.wallet_balance, 
+            wallet_breakdown: profileData.user.wallet_breakdown,
             is_active: profileData.user.is_active, 
             is_frozen: profileData.user.is_frozen,
             referral_code: profileData.user.referral_code 
@@ -168,6 +170,10 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   const activeApps = applications.filter(app => !['completed', 'rejected'].includes(app.application_status));
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
+  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const walletBreakdown = storedUser.wallet_breakdown || {};
+  const walletBalance = Number(storedUser.wallet_balance || 0);
+  const withdrawableBalance = Number(walletBreakdown.withdrawable_balance || 0);
 
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
@@ -297,12 +303,20 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
      e.preventDefault();
      
      // 🔥 NEW: Check Balance before submitting
-     const currentBalance = Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0);
+     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+     const currentBalance = Number(storedUser.wallet_balance || 0);
+     const walletBreakdown = storedUser.wallet_breakdown || {};
+     const withdrawableBalance = Number(walletBreakdown.withdrawable_balance || 0);
      const requestedAmount = Number(withdrawForm.amount);
 
      if (requestedAmount > currentBalance) {
          alert("Insufficient wallet balance! You cannot withdraw more than you have.");
          return; 
+     }
+
+     if (requestedAmount > withdrawableBalance) {
+         alert(`You can withdraw up to $${withdrawableBalance.toFixed(2)} USD now. Reward balance must reach $${Number(walletBreakdown.reward_min_withdrawal || 20).toFixed(2)}, and signup bonus unlocks after ${walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.`);
+         return;
      }
 
      setIsSubmitting(true);
@@ -683,7 +697,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Wallet size={20} className="text-green-500"/> Request Withdrawal</h3>
                  <div className="flex flex-col items-end">
                    {(() => {
-                     const bal = formatWallet(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0);
+                     const bal = formatWallet(walletBalance);
                      return (
                        <>
                          <span className="bg-green-100 text-green-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-green-200 shadow-sm">
@@ -699,6 +713,29 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                    })()}
                  </div>
                </div>
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                 <div className="bg-green-50 border border-green-100 rounded-xl p-3">
+                   <p className="text-[10px] font-black uppercase text-green-700 mb-1">Reward Balance</p>
+                   <p className="text-lg font-black text-green-800">{formatWallet(walletBreakdown.reward_balance || 0).primary}</p>
+                   <p className="text-[10px] text-green-700 font-semibold mt-1">
+                     Withdraw when reward reaches ${Number(walletBreakdown.reward_min_withdrawal || 20).toFixed(2)}
+                   </p>
+                 </div>
+                 <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-3">
+                   <p className="text-[10px] font-black uppercase text-yellow-700 mb-1">Signup Bonus</p>
+                   <p className="text-lg font-black text-yellow-800">{formatWallet(walletBreakdown.signup_bonus_balance || 0).primary}</p>
+                   <p className="text-[10px] text-yellow-700 font-semibold mt-1">
+                     {walletBreakdown.signup_bonus_unlocked
+                       ? 'Unlocked'
+                       : `${walletBreakdown.completed_orders || 0}/${walletBreakdown.signup_bonus_min_completed_orders || 5} orders completed`}
+                   </p>
+                 </div>
+                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+                   <p className="text-[10px] font-black uppercase text-blue-700 mb-1">Withdrawable Now</p>
+                   <p className="text-lg font-black text-blue-800">{formatWallet(withdrawableBalance).primary}</p>
+                   <p className="text-[10px] text-blue-700 font-semibold mt-1">Only eligible balance can be requested</p>
+                 </div>
+               </div>
              <form onSubmit={submitWithdrawal} className="space-y-4">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
@@ -708,12 +745,15 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                        type="number" 
                        step="0.01" 
                        min="1" 
-                       max={Number(JSON.parse(localStorage.getItem('user') || '{}').wallet_balance || 0)} 
+                       max={withdrawableBalance} 
                        className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" 
                        value={withdrawForm.amount} 
                        onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} 
-                       placeholder="e.g. 50.00" 
+                       placeholder={withdrawableBalance > 0 ? `e.g. ${Math.min(20, withdrawableBalance).toFixed(2)}` : 'No eligible balance'} 
                      />
+                     <p className="text-[10px] text-gray-500 font-bold mt-1">
+                       Reward needs at least USD ${Number(walletBreakdown.reward_min_withdrawal || 20).toFixed(2)}. Signup bonus unlocks after {walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.
+                     </p>
                      {withdrawForm.amount && (() => {
                        const est = formatWallet(withdrawForm.amount);
                        return (
@@ -795,7 +835,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                     )}
                  </div>
 
-                 <button type="submit" disabled={isSubmitting || !withdrawForm.payment_method} className="w-full py-3 bg-[#0066ff] text-white rounded-lg font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
+                 <button type="submit" disabled={isSubmitting || !withdrawForm.payment_method || withdrawableBalance <= 0 || Number(withdrawForm.amount || 0) <= 0 || Number(withdrawForm.amount || 0) > withdrawableBalance} className="w-full py-3 bg-[#0066ff] text-white rounded-lg font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
                    Submit Request
                  </button>
                </form>
