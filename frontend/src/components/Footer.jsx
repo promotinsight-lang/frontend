@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Globe, Instagram, ShieldCheck, X } from 'lucide-react';
+import { Globe, ShieldCheck, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export default function Footer() {
@@ -46,8 +46,8 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { label: 'Facebook', href: 'https://facebook.com/promotinsight', Icon: Facebook },
-    { label: 'Instagram', href: 'https://instagram.com/promotinsight', Icon: Instagram },
+    { label: 'Facebook', href: 'https://facebook.com/promotinsight', shortLabel: 'f' },
+    { label: 'Instagram', href: 'https://instagram.com/promotinsight', shortLabel: 'ig' },
   ];
 
   return (
@@ -82,16 +82,16 @@ export default function Footer() {
           </div>
           <div className="flex justify-center md:justify-end">
             <div className="bg-gray-800 p-3 rounded-xl inline-flex gap-4 relative">
-              {socialLinks.map(({ label, href, Icon }) => (
+              {socialLinks.map(({ label, href, shortLabel }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={label}
-                  className="text-gray-400 hover:text-white transition-colors p-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="w-5 h-5 inline-flex items-center justify-center text-[11px] font-black uppercase text-gray-400 hover:text-white transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
-                  <Icon size={20} aria-hidden="true" />
+                  {shortLabel}
                 </a>
               ))}
 
