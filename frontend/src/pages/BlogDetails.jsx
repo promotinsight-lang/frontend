@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, User, FileText } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import Navbar from '../components/Navbar';
 
 export default function BlogDetails() {
@@ -11,7 +12,7 @@ export default function BlogDetails() {
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const res = await fetch(`https://backend-6aiq.onrender.com/api/blogs/public/${slug}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/blogs/public/${slug}`);
         const data = await res.json();
         if (res.ok && data.success) {
           setBlog(data.data);
@@ -77,7 +78,9 @@ export default function BlogDetails() {
               */}
               <div 
                 className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: blog.content.replace(/\n/g, '<br/>') }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(blog.content || '').replace(/\n/g, '<br/>')
+                }}
               />
             </div>
           </article>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Trash2, Plus, ChevronDown, ChevronUp, Network, DollarSign, X } from 'lucide-react';
 
-const API_BASE = 'https://backend-6aiq.onrender.com';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
 export default function PaymentMethodsManager() {
   const [methods, setMethods] = useState([]);

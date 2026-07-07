@@ -77,7 +77,7 @@ export default function SellerAuth({ onAuthSuccess }) {
   // FETCH CAPTCHA
   const fetchCaptcha = async () => {
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/users/captcha');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/captcha`);
       const data = await res.json();
       if (data.success) {
         setCaptchaData(data);
@@ -114,7 +114,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     setError('');
     setOtpLoading(true);
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/users/send-otp', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -142,25 +142,17 @@ export default function SellerAuth({ onAuthSuccess }) {
     try {
       const provider = providerName === 'google' ? googleProvider : yahooProvider;
       const result = await signInWithPopup(auth, provider);
-      
-      const userEmail = result.user.email;
-      const userName = result.user.displayName || `${providerName} User`;
-
-      if (!userEmail) {
-        throw new Error("Email not found from social account.");
-      }
+      const idToken = await result.user.getIdToken();
 
       const roleForApi = getRoleFromUrl(); // URL থেকে সরাসরি টাটকা রোল নিচ্ছি
 
       console.log("Social Login - Sending Role to API:", roleForApi);
 
-      const res = await fetch('https://backend-6aiq.onrender.com/api/users/social-login', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/social-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: userEmail,
-          name: userName,
-          auth_provider: providerName,
+          idToken,
           referred_by_code: referredByCode,
           role: roleForApi
         })
@@ -214,7 +206,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       : { fullName, email, password, role, whatsapp, country, profileLink, otp: otpCode, referred_by_code: referredByCode };
 
     try {
-      const res = await fetch(`https://backend-6aiq.onrender.com${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -5,7 +5,7 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 
 // আপনার ব্যাকএন্ড URL
-const BACKEND_URL = 'https://backend-6aiq.onrender.com';
+const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 
 export default function Support() {
@@ -61,6 +61,7 @@ export default function Support() {
   // সকেট কানেকশন ও চ্যাট স্ট্যাটাস ফেচ করা
   useEffect(() => {
     if (activeTab === 'chat' && user) {
+      socket.auth = { token: localStorage.getItem('token') };
       socket.connect();
       if (user.verification_status === 'approved' || user.verification_status === 'verified') {
         fetchChatStatus();
@@ -170,7 +171,6 @@ export default function Support() {
 
     socket.emit('send_message', {
       sessionId,
-      senderId: user.id,
       message: newMessage
     });
     setNewMessage('');

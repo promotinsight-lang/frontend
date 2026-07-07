@@ -34,7 +34,7 @@ export default function Marketplace() {
       const token = localStorage.getItem('token');
       if(!token) return;
       try {
-         const res = await fetch('https://backend-6aiq.onrender.com/api/users/profile', { 
+         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, { 
            headers: { 'Authorization': `Bearer ${token}` },
            credentials: 'include' // 🔥 Required for HttpOnly Cookies
          });
@@ -58,7 +58,7 @@ export default function Marketplace() {
 
     const fetchPublicProducts = async () => {
       try {
-        const res = await fetch('https://backend-6aiq.onrender.com/api/products/public', {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/public`, {
            credentials: 'omit' // Not required for public route, but added for safety
         });
         
@@ -86,7 +86,7 @@ export default function Marketplace() {
     }
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('https://backend-6aiq.onrender.com/api/applications/apply', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include', // 🔥 Secure session validation

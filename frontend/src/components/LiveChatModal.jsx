@@ -3,7 +3,7 @@ import { MessageSquare, Send, Loader2, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
-const BACKEND_URL = 'https://backend-6aiq.onrender.com';
+const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 
 export default function LiveChatModal({ isOpen, onClose, onOpen }) {
@@ -36,6 +36,7 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
 
   useEffect(() => {
     if (user && isVerified) {
+      socket.auth = { token: localStorage.getItem('token') };
       socket.connect();
       fetchChatStatus();
       
@@ -164,7 +165,6 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
 
     socket.emit('send_message', {
       sessionId,
-      senderId: user.id,
       message: newMessage
     });
     setNewMessage('');

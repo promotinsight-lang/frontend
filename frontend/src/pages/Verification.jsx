@@ -7,7 +7,7 @@ import {
   mergeVerificationFields,
 } from '../utils/feeConfigHelpers';
 
-const API = 'https://backend-6aiq.onrender.com';
+const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
 const Verification = () => {
   const navigate = useNavigate();

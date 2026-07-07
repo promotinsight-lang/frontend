@@ -7,7 +7,7 @@ import {
   getRateForCountry,
 } from '../utils/currency';
 
-const API_BASE = 'https://backend-6aiq.onrender.com/api';
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api`;
 let cachedRates = null;
 let cachePromise = null;
 

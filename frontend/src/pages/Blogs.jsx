@@ -10,7 +10,7 @@ export default function Blogs() {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const res = await fetch('https://backend-6aiq.onrender.com/api/blogs/public');
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/blogs/public`);
         const data = await res.json();
         if (res.ok && data.success) {
           setBlogs(data.data);

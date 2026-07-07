@@ -3,8 +3,8 @@ import { MessageSquare, Send, CheckCircle, XCircle, Users, AlertCircle, X } from
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
-const BACKEND_URL = 'https://backend-6aiq.onrender.com';
-const socket = io(BACKEND_URL, { autoConnect: false });
+const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 
 export default function PrivateChatAdminPanel() {
   const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'active', 'users'
@@ -28,6 +28,7 @@ export default function PrivateChatAdminPanel() {
   });
 
   useEffect(() => {
+    socket.auth = { token: localStorage.getItem('token') };
     socket.connect();
     fetchPendingRequests();
     fetchActiveSessions(); // 🟢 Prothomei active list-ti load hobe
@@ -162,7 +163,7 @@ export default function PrivateChatAdminPanel() {
   const sendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim() || !activeSession) return;
-    socket.emit('send_message', { sessionId: activeSession.id, senderId: adminUser.id, message: newMessage });
+    socket.emit('send_message', { sessionId: activeSession.id, message: newMessage });
     setNewMessage('');
   };
 

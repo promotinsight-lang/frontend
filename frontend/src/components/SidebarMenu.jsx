@@ -30,7 +30,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
 
   const handleLogout = async () => {
     try {
-      await fetch('https://backend-6aiq.onrender.com/api/users/logout', { 
+      await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/logout`, { 
         method: 'POST',
         credentials: 'include' 
       });

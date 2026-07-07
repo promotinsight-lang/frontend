@@ -23,7 +23,7 @@ import ProductDetailsModal from '../components/admin/ProductDetailsModal';
 import AppDetailsModal from '../components/admin/AppDetailsModal';
 import { getCurrencyForCountry } from '../utils/currency';
 import PrivateChatAdminPanel from '../components/admin/PrivateChatAdminPanel';
-const API_BASE = 'https://backend-6aiq.onrender.com';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
 export default function AdminDashboard() {
   const location = useLocation();

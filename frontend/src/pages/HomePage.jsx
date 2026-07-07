@@ -79,7 +79,7 @@ export default function HomePage() {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers });
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees/all`, { headers });
         const data = await res.json();
         
         if (data.success && data.data && data.data.length > 0) {
@@ -115,7 +115,7 @@ export default function HomePage() {
         const token = localStorage.getItem('token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`, { headers });
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`, { headers });
         const data = await res.json();
         
         if (data.success && data.data) {
@@ -151,19 +151,20 @@ export default function HomePage() {
   const unitCost = priceNum + rewardNum;
   
   // 🔥 DYNAMIC TIER LOGIC FOR PLATFORM FEE
-  let platformFee = 0;
-  if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
-    // Find the correct tier based on product price
-    const matchedTier = activeConfig.parsed_platform_charge.find(
-      t => priceNum >= Number(t.min) && priceNum <= Number(t.max)
-    );
-    platformFee = matchedTier ? Number(matchedTier.fee) : 0; 
-  } else if (activeConfig && !isNaN(activeConfig.platform_charge)) {
-    // Fallback if it's still using the old percentage format
-    platformFee = priceNum * (parseFloat(activeConfig.platform_charge) / 100);
-  } else {
-    platformFee = priceNum * 0.10; // Default 10% fallback
-  }
+  const platformFee = (() => {
+    if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
+      // Find the correct tier based on product price
+      const matchedTier = activeConfig.parsed_platform_charge.find(
+        t => priceNum >= Number(t.min) && priceNum <= Number(t.max)
+      );
+      return matchedTier ? Number(matchedTier.fee) : 0;
+    }
+    if (activeConfig && !isNaN(activeConfig.platform_charge)) {
+      // Fallback if it's still using the old percentage format
+      return priceNum * (parseFloat(activeConfig.platform_charge) / 100);
+    }
+    return priceNum * 0.10; // Default 10% fallback
+  })();
   
   const refundFeeRate = activeConfig ? (parseFloat(activeConfig.buyer_refund_fee) / 100) : 0;
   const refundFeeAmount = unitCost * refundFeeRate;

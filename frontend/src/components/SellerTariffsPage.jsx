@@ -3,7 +3,7 @@ import { Settings, Globe, Layers } from 'lucide-react';
 import { buildCountriesFromFeeConfigs, parsePlatformChargeTiers } from '../utils/feeConfigHelpers';
 import { ResponsiveTableShell, AdminMobileCard, AdminField } from './admin/AdminMobileUi';
 
-const API = 'https://backend-6aiq.onrender.com';
+const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
 export default function SellerTariffsPage() {
   const [configs, setConfigs] = useState([]);

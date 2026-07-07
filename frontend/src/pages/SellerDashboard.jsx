@@ -134,7 +134,7 @@ export default function SellerDashboard() {
     const token = localStorage.getItem('token');
     const authHeaders = { 'Authorization': `Bearer ${token}` };
     try {
-      const profileRes = await secureFetch('https://backend-6aiq.onrender.com/api/users/profile', { headers: authHeaders });
+      const profileRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, { headers: authHeaders });
       const profileData = await profileRes.json();
       if (profileData.success) {
          setWalletBalance(parseFloat(profileData.user.wallet_balance) || 0);
@@ -147,7 +147,7 @@ export default function SellerDashboard() {
          window.dispatchEvent(new Event('user-profile-updated'));
          
          try {
-            const feeRes = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, { headers: authHeaders });
+            const feeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees/all`, { headers: authHeaders });
             const feeData = await feeRes.json();
             if (feeData.success && feeData.data) {
                const newMap = buildCountryRateMap(feeData.data);
@@ -156,48 +156,48 @@ export default function SellerDashboard() {
          } catch(e) { console.error("Currency fetch error", e); }
       }
 
-      const productsRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/my', { headers: authHeaders });
+      const productsRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/my`, { headers: authHeaders });
       const productsData = await productsRes.json();
       if (productsData.success) setProducts(productsData.data);
 
-      const settingsRes = await secureFetch('https://backend-6aiq.onrender.com/api/users/payment-settings', { headers: authHeaders });
+      const settingsRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/payment-settings`, { headers: authHeaders });
       const settingsData = await settingsRes.json();
       if (settingsData.success && settingsData.data.length > 0) {
         setPaymentSettings(settingsData.data);
       }
 
-      const pmRes = await fetch('https://backend-6aiq.onrender.com/api/payment-methods/list', { headers: authHeaders });
+      const pmRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/payment-methods/list`, { headers: authHeaders });
       const pmData = await pmRes.json();
       if (pmRes.ok && pmData.success) {
          setPaymentMethods(pmData.data || []);
       }
 
       try {
-        const wRes = await secureFetch('https://backend-6aiq.onrender.com/api/withdrawals/my', { headers: authHeaders });
+        const wRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals/my`, { headers: authHeaders });
         const wData = await wRes.json();
         if (wData.success) setWithdrawals(wData.data);
       } catch(e) { }
 
       try {
-        const dRes = await secureFetch('https://backend-6aiq.onrender.com/api/users/deposits', { headers: authHeaders });
+        const dRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/deposits`, { headers: authHeaders });
         const dData = await dRes.json();
         if (dData.success) setDeposits(dData.data);
       } catch(e) { }
 
       try {
-        const rRes = await secureFetch('https://backend-6aiq.onrender.com/api/products/refunds/my', { headers: authHeaders });
+        const rRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/refunds/my`, { headers: authHeaders });
         const rData = await rRes.json();
         if (rData.success) setRefunds(rData.data);
       } catch(e) { }
 
       try {
-        const aRes = await secureFetch('https://backend-6aiq.onrender.com/api/appeals/my', { headers: authHeaders });
+        const aRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/appeals/my`, { headers: authHeaders });
         const aData = await aRes.json();
         if (aData.success) setMyAppeals(aData.data);
       } catch(e) { }
 
       try {
-        const tRes = await secureFetch('https://backend-6aiq.onrender.com/api/support/my', { headers: authHeaders });
+        const tRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/my`, { headers: authHeaders });
         const tData = await tRes.json();
         if (tData.success) setSupportTickets(tData.data);
       } catch(e) { }
@@ -218,7 +218,7 @@ export default function SellerDashboard() {
     setProductReviews([]); 
     try {
       const token = localStorage.getItem('token');
-      const response = await secureFetch(`https://backend-6aiq.onrender.com/api/applications/seller/product/${productId}/reviews`, {
+      const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/seller/product/${productId}/reviews`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -240,7 +240,7 @@ export default function SellerDashboard() {
     if (!window.confirm("Are you sure you want to approve this order/review? It will be sent to Admin for final refund.")) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await secureFetch(`https://backend-6aiq.onrender.com/api/applications/seller/${applicationId}/approve`, {
+      const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/seller/${applicationId}/approve`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -261,7 +261,7 @@ export default function SellerDashboard() {
     setIsAppealing(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await secureFetch('https://backend-6aiq.onrender.com/api/appeals/order', {
+      const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/appeals/order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
@@ -352,7 +352,7 @@ export default function SellerDashboard() {
     setIsDepositing(true);
     const token = localStorage.getItem('token');
     try {
-      const response = await secureFetch('https://backend-6aiq.onrender.com/api/users/deposit', {
+      const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/deposit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(depositData) 
@@ -373,7 +373,7 @@ export default function SellerDashboard() {
     setIsWithdrawing(true);
     const token = localStorage.getItem('token');
     try {
-      const response = await secureFetch('https://backend-6aiq.onrender.com/api/withdrawals', {
+      const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(withdrawData)
@@ -393,7 +393,7 @@ export default function SellerDashboard() {
     if (!window.confirm("Are you sure you want to cancel this product? Your deposit will be refunded to your wallet.")) return;
     const token = localStorage.getItem('token');
     try {
-      const response = await secureFetch(`https://backend-6aiq.onrender.com/api/products/${productId}`, {
+      const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/${productId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -408,7 +408,7 @@ export default function SellerDashboard() {
     setIsEditing(true);
     const token = localStorage.getItem('token');
     try {
-      const response = await secureFetch(`https://backend-6aiq.onrender.com/api/products/${editFormData.id}`, {
+      const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/${editFormData.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(editFormData)
@@ -428,7 +428,7 @@ export default function SellerDashboard() {
     setIsSubmittingTicket(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await secureFetch(`https://backend-6aiq.onrender.com/api/support/create`, {
+      const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(ticketForm)
@@ -454,7 +454,7 @@ export default function SellerDashboard() {
     setRepliesLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await secureFetch(`https://backend-6aiq.onrender.com/api/support/${ticket.id}`, {
+      const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${ticket.id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -475,7 +475,7 @@ export default function SellerDashboard() {
     setIsSubmittingTicket(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await secureFetch(`https://backend-6aiq.onrender.com/api/support/${selectedTicket.id}/reply`, {
+      const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${selectedTicket.id}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ message: replyMessage })

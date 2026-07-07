@@ -34,11 +34,11 @@ const Navbar = () => {
 
           if (user.role === 'admin') {
               const [resAppeals, resVer, resStats, resProd, resApps] = await Promise.all([
-                 fetch('https://backend-6aiq.onrender.com/api/admin/appeals', { headers, credentials }),
-                 fetch('https://backend-6aiq.onrender.com/api/admin/verifications', { headers, credentials }),
-                 fetch('https://backend-6aiq.onrender.com/api/admin/stats', { headers, credentials }),
-                 fetch('https://backend-6aiq.onrender.com/api/products', { headers, credentials }),
-                 fetch('https://backend-6aiq.onrender.com/api/applications/all', { headers, credentials }) 
+                 fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/appeals`, { headers, credentials }),
+                 fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/verifications`, { headers, credentials }),
+                 fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/stats`, { headers, credentials }),
+                 fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products`, { headers, credentials }),
+                 fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/all`, { headers, credentials }) 
               ]);
 
               const dataAppeals = await resAppeals.json();
@@ -77,8 +77,8 @@ const Navbar = () => {
           } 
           else if (user.role === 'buyer') {
               const [appRes, prodRes] = await Promise.all([
-                 fetch('https://backend-6aiq.onrender.com/api/applications/my', { headers, credentials }),
-                 fetch('https://backend-6aiq.onrender.com/api/products/public')
+                 fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/my`, { headers, credentials }),
+                 fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/public`)
               ]);
 
               if (prodRes.ok) {
@@ -116,7 +116,7 @@ const Navbar = () => {
               }
           }
           else if (user.role === 'seller') {
-              const prodRes = await fetch('https://backend-6aiq.onrender.com/api/products/my', { headers, credentials });
+              const prodRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/my`, { headers, credentials });
 
               if (prodRes.ok) {
                  const prodData = await prodRes.json();

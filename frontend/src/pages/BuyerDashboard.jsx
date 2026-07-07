@@ -84,7 +84,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     try {
       const token = localStorage.getItem('token');
       
-      const profileRes = await fetch('https://backend-6aiq.onrender.com/api/users/profile', {
+      const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
@@ -111,7 +111,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       }
 
       try {
-        const annRes = await fetch('https://backend-6aiq.onrender.com/api/announcements', {
+        const annRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/announcements`, {
            headers: { 'Authorization': `Bearer ${token}` },
            credentials: 'include'
         });
@@ -119,7 +119,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
         if (annRes.ok && annData.success) setAnnouncements(annData.data || []);
       } catch (e) { console.error("Announcement fetch error", e); }
 
-      const appRes = await fetch('https://backend-6aiq.onrender.com/api/applications/my', {
+      const appRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/my`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
@@ -127,7 +127,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       if (appRes.ok) setApplications(appData.data || []);
       
       if (activeTab === 'wallet') {
-         const wRes = await fetch('https://backend-6aiq.onrender.com/api/withdrawals/my', {
+         const wRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals/my`, {
             headers: { 'Authorization': `Bearer ${token}` },
             credentials: 'include'
          });
@@ -135,7 +135,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
          if (wRes.ok) setWithdrawals(wData.data || []);
 
          // Fetch dynamic payment methods
-         const pmRes = await fetch('https://backend-6aiq.onrender.com/api/payment-methods/list', {
+         const pmRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/payment-methods/list`, {
             headers: { 'Authorization': `Bearer ${token}` },
             credentials: 'include'
          });
@@ -146,7 +146,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       }
 
       if (activeTab === 'support') {
-         const tRes = await fetch('https://backend-6aiq.onrender.com/api/support/my', {
+         const tRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/my`, {
             headers: { 'Authorization': `Bearer ${token}` },
             credentials: 'include'
          });
@@ -236,7 +236,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/applications/${actionAppId}/order`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/${actionAppId}/order`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
@@ -262,7 +262,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/applications/${actionAppId}/review`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/${actionAppId}/review`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
@@ -308,7 +308,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
      setIsSubmitting(true);
      try {
        const token = localStorage.getItem('token');
-       const res = await fetch(`https://backend-6aiq.onrender.com/api/withdrawals`, {
+       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals`, {
          method: 'POST',
          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
          credentials: 'include',
@@ -334,7 +334,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/create`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
@@ -361,7 +361,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     setRepliesLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${ticket.id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${ticket.id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include'
       });
@@ -383,7 +383,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://backend-6aiq.onrender.com/api/support/${selectedTicket.id}/reply`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${selectedTicket.id}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',

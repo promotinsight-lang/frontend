@@ -38,7 +38,7 @@ export default function App() {
     const verifySession = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('https://backend-6aiq.onrender.com/api/users/profile', {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
           credentials: 'include' // Validate session via HttpOnly Cookie
         });

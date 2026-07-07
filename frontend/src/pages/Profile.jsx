@@ -25,7 +25,7 @@ const Profile = () => {
   const fetchProfileData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const profileRes = await fetch('https://backend-6aiq.onrender.com/api/users/profile', {
+      const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, {
         headers: { 'Authorization': `Bearer ${token}` },
         credentials: 'include' 
       });
@@ -56,7 +56,7 @@ const Profile = () => {
     setUpdateLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('https://backend-6aiq.onrender.com/api/users/profile/name', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile/name`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ const Profile = () => {
     setResetLoading(true);
     setResetMessage({ type: '', text: '' });
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/users/forgot-password', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: userProfile?.email })

@@ -11,7 +11,7 @@ export default function ForgotPassword() {
     setStatus({ loading: true, msg: '', type: '' });
 
     try {
-      const res = await fetch('https://backend-6aiq.onrender.com/api/users/forgot-password', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

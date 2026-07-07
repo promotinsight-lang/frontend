@@ -42,7 +42,7 @@ export default function AddProduct({ onProductAdded }) {
       setIsFeeLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees/all`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees/all`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         const data = await res.json();
@@ -79,7 +79,7 @@ export default function AddProduct({ onProductAdded }) {
       setIsFeeLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`https://backend-6aiq.onrender.com/api/config/fees?country=${formData.country}&platform=${formData.platform}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees?country=${formData.country}&platform=${formData.platform}`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         const data = await res.json();
@@ -152,16 +152,17 @@ export default function AddProduct({ onProductAdded }) {
   // 🔥 2. Local Price ke USD te convert kora holo jate Database er USD Tier er sathe compare kora jay
   const priceNumUSD = priceNum / exchangeRate;
   
-  let platformCommissionUSD = 0;
-  if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
+  const platformCommissionUSD = (() => {
+    if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
       // MXN noy, USD price er sathe USD min/max compare hochche
       const matchedTier = activeConfig.parsed_platform_charge.find(t => priceNumUSD >= Number(t.min) && priceNumUSD <= Number(t.max));
-      platformCommissionUSD = matchedTier ? Number(matchedTier.fee) : 0;
-  } else if (activeConfig && !isNaN(activeConfig.platform_charge)) {
-      platformCommissionUSD = priceNumUSD * (parseFloat(activeConfig.platform_charge) / 100);
-  } else {
-      platformCommissionUSD = priceNumUSD * 0.10; // Fallback 10%
-  }
+      return matchedTier ? Number(matchedTier.fee) : 0;
+    }
+    if (activeConfig && !isNaN(activeConfig.platform_charge)) {
+      return priceNumUSD * (parseFloat(activeConfig.platform_charge) / 100);
+    }
+    return priceNumUSD * 0.10; // Fallback 10%
+  })();
   
   // 🔥 3. Database theke paowa USD fee ke Local Currency te convert kore UI er variable e rakha holo
   const platformCommissionLocal = platformCommissionUSD * exchangeRate;
@@ -222,7 +223,7 @@ export default function AddProduct({ onProductAdded }) {
       submitData.append('total_deposit', totalDepositUSD.toFixed(4));
 
       const token = localStorage.getItem('token');
-      const res = await fetch('https://backend-6aiq.onrender.com/api/products', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: submitData
