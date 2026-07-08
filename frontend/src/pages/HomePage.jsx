@@ -109,12 +109,14 @@ export default function HomePage() {
           setAvailableCountries(uniqueCountries);
           
           if (uniqueCountries.length > 0) {
-            const firstCountry = uniqueCountries[0];
-            const platformsForCountry = data.data.filter(c => c.country === firstCountry).map(c => c.platform);
+            const defaultCountry =
+              uniqueCountries.find(country => country?.toLowerCase() === 'usa') || uniqueCountries[0];
+            const platformsForCountry = data.data.filter(c => c.country === defaultCountry).map(c => c.platform);
             setAvailablePlatforms(platformsForCountry);
             
-            const firstPlatform = platformsForCountry[0] || '';
-            setCalcData(prev => ({ ...prev, country: firstCountry, platform: firstPlatform }));
+            const defaultPlatform =
+              platformsForCountry.find(platform => platform?.toLowerCase() === 'amazon') || platformsForCountry[0] || '';
+            setCalcData(prev => ({ ...prev, country: defaultCountry, platform: defaultPlatform }));
           }
         }
       } catch (error) {
