@@ -23,7 +23,7 @@ const DEFAULT_SHOPPING_PLATFORMS = [
 const DEFAULT_PLATFORM_FIELDS = [
   { key: 'account_name', label: 'Account Details', type: 'text', required: true, placeholder: 'Account details on this platform' },
   { key: 'profile_url', label: 'Profile URL', type: 'url', required: false, placeholder: 'Profile URL on this platform' },
-  { key: 'verification_image_url', label: 'Verification Image', type: 'image', required: false, placeholder: '' },
+  { key: 'verification_image_url', label: 'Profile Screenshot', type: 'image', required: false, placeholder: '' },
 ];
 
 const Verification = () => {
@@ -217,8 +217,8 @@ const Verification = () => {
       if (!res.ok || !data.secure_url) throw new Error('Upload failed');
       setPlatformField(platformName, 'verification_image_url', data.secure_url);
     } catch (error) {
-      console.error('Verification image upload error:', error);
-      setMessage({ type: 'error', text: 'Image upload failed. Please try again.' });
+      console.error('Profile screenshot upload error:', error);
+      setMessage({ type: 'error', text: 'Profile screenshot upload failed. Please try again.' });
     } finally {
       setUploadingImages((prev) => ({ ...prev, [platformName]: false }));
     }
@@ -228,9 +228,12 @@ const Verification = () => {
     const fieldDef = ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key)
       ? { ...field, required: false }
       : field;
-    const value = platformValues[platformName]?.[fieldDef.key] || '';
+    const displayField = fieldDef.key === 'verification_image_url'
+      ? { ...fieldDef, label: 'Profile Screenshot' }
+      : fieldDef;
+    const value = platformValues[platformName]?.[displayField.key] || '';
 
-    if (fieldDef.type === 'image' || fieldDef.key === 'verification_image_url') {
+    if (displayField.type === 'image' || displayField.key === 'verification_image_url') {
       return (
         <div className="space-y-2">
           <input
@@ -240,7 +243,7 @@ const Verification = () => {
             className="w-full p-2 border bg-gray-50 rounded-lg text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
           />
           {uploadingImages[platformName] && (
-            <p className="text-xs text-blue-600 font-semibold animate-pulse">Uploading image...</p>
+            <p className="text-xs text-blue-600 font-semibold animate-pulse">Uploading profile screenshot...</p>
           )}
           {value && (
             <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg p-2">
@@ -250,7 +253,7 @@ const Verification = () => {
               </a>
               <button
                 type="button"
-                onClick={() => setPlatformField(platformName, fieldDef.key, '')}
+                onClick={() => setPlatformField(platformName, displayField.key, '')}
                 className="ml-auto text-red-500 hover:text-red-700"
                 aria-label="Remove image"
               >
@@ -262,7 +265,7 @@ const Verification = () => {
       );
     }
 
-    return renderFieldInput(fieldDef, value, (v) => setPlatformField(platformName, fieldDef.key, v));
+    return renderFieldInput(displayField, value, (v) => setPlatformField(platformName, displayField.key, v));
   };
 
   const setGlobalField = (key, value) => {
@@ -568,8 +571,8 @@ const Verification = () => {
                       {platDef.fields.map((field) => (
                         <div key={`${platformName}-${field.key}`}>
                           <label className="block text-xs font-bold text-gray-600 mb-1">
-                            {field.label}
-                            {field.required && <span className="text-red-500"> *</span>}
+                            {field.key === 'verification_image_url' ? 'Profile Screenshot' : field.label}
+                            {field.required && !['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key) && <span className="text-red-500"> *</span>}
                           </label>
                           {renderPlatformFieldInput(platformName, field)}
                         </div>

@@ -1648,7 +1648,7 @@ export default function AdminDashboard() {
                               )}
                               {imageUrl && (
                                 <a href={imageUrl} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline truncate block max-w-full text-xs font-bold mt-1">
-                                  View Image
+                                  View Profile Screenshot
                                 </a>
                               )}
                             </div>
