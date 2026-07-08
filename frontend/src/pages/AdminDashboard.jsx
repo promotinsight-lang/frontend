@@ -727,6 +727,13 @@ export default function AdminDashboard() {
     }
   };
 
+  const updateRank = async (id, oldRank) => {
+    const rank = prompt("Enter user rank:", oldRank || "New User");
+    if (rank !== null && rank.trim()) {
+      if(await handleAction(`${API_BASE}/api/users/${id}/user-rank`, 'PATCH', { user_rank: rank.trim() })) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
+    }
+  };
+
   const updateSetting = async (id, newDetails) => {
     if (!newDetails) return alert("Account details cannot be empty");
     if (await handleAction(`${API_BASE}/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) fetchSettings();
@@ -1023,6 +1030,14 @@ export default function AdminDashboard() {
                         <Star size={14} fill="currentColor" /> {Number(user.trust_score || 0).toFixed(1)}
                       </button>
                     </AdminField>
+                    <AdminField label="Rank">
+                      <button
+                        onClick={() => updateRank(user.id, user.user_rank)}
+                        className="flex items-center gap-1 text-indigo-600 font-bold ml-auto"
+                      >
+                        <ShieldCheck size={14} /> {user.user_rank || 'New User'}
+                      </button>
+                    </AdminField>
                     <AdminField label="Wallet">
                       <span className="text-green-600 font-bold">
                         ${Number(user.wallet_balance).toFixed(2)}
@@ -1049,7 +1064,7 @@ export default function AdminDashboard() {
                   <tr>
                     <th className="p-4">User Details</th>
                     <th className="p-4">Verification</th>
-                    <th className="p-4">Trust Score</th>
+                    <th className="p-4">Trust Score / Rank</th>
                     <th className="p-4">Wallet Balance</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
@@ -1083,13 +1098,22 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="p-4">
-                        <button 
-                          onClick={() => updateTrust(user.id, user.trust_score)}
-                          className="flex items-center gap-1 text-orange-500 font-bold hover:bg-orange-50 px-2 py-1 rounded border border-transparent hover:border-orange-200 transition-colors"
-                          title="Click to edit trust score"
-                        >
-                          <Star size={14} fill="currentColor" /> {Number(user.trust_score || 0).toFixed(1)}
-                        </button>
+                        <div className="flex flex-col items-start gap-1">
+                          <button
+                            onClick={() => updateTrust(user.id, user.trust_score)}
+                            className="flex items-center gap-1 text-orange-500 font-bold hover:bg-orange-50 px-2 py-1 rounded border border-transparent hover:border-orange-200 transition-colors"
+                            title="Click to edit trust score"
+                          >
+                            <Star size={14} fill="currentColor" /> {Number(user.trust_score || 0).toFixed(1)}
+                          </button>
+                          <button
+                            onClick={() => updateRank(user.id, user.user_rank)}
+                            className="flex items-center gap-1 text-indigo-600 font-bold hover:bg-indigo-50 px-2 py-1 rounded border border-transparent hover:border-indigo-200 transition-colors"
+                            title="Click to edit user rank"
+                          >
+                            <ShieldCheck size={14} /> {user.user_rank || 'New User'}
+                          </button>
+                        </div>
                       </td>
                       <td className="p-4 font-bold text-green-600">${Number(user.wallet_balance).toFixed(2)}</td>
                       <td className="p-4 text-right flex justify-end gap-2">

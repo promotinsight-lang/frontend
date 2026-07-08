@@ -33,6 +33,7 @@ export default function UserProfileModal({
             <div className="flex flex-wrap gap-2 mt-2">
               <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-bold uppercase">{selectedUserProfile.role}</span>
               <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-bold uppercase">Trust Score: {Number(selectedUserProfile.trust_score || 0).toFixed(1)}</span>
+              <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-xs font-bold uppercase">Rank: {selectedUserProfile.user_rank || 'New User'}</span>
               <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-bold uppercase">${Number(selectedUserProfile.wallet_balance || 0).toFixed(2)}</span>
             </div>
           </div>
