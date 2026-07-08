@@ -81,6 +81,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       const data = await res.json();
       if (data.success) {
         setCaptchaData(data);
+        setCaptchaInput('');
       }
     } catch (err) {
       console.error("Failed to load captcha", err);
@@ -381,9 +382,12 @@ export default function SellerAuth({ onAuthSuccess }) {
                   required 
                   type="text" 
                   maxLength="4"
-                  className="w-1/2 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm font-mono tracking-widest uppercase" 
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  className="w-1/2 p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm font-mono tracking-widest normal-case"
                   value={captchaInput} 
-                  onChange={(e) => setCaptchaInput(e.target.value)} 
+                  onChange={(e) => setCaptchaInput(e.target.value.replace(/\s/g, ''))}
                   placeholder="Code" 
                 />
                 <div className="w-1/2 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center bg-[#f4f7f6] relative group">
