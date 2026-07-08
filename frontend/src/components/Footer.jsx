@@ -46,8 +46,18 @@ export default function Footer() {
   };
 
   const socialLinks = [
-    { label: 'Facebook', href: 'https://facebook.com/promotinsight', shortLabel: 'f' },
-    { label: 'Instagram', href: 'https://instagram.com/promotinsight', shortLabel: 'ig' },
+    {
+      label: 'Facebook',
+      href: 'https://facebook.com/promotinsight',
+      shortLabel: 'f',
+      className: 'bg-[#1877f2] text-white shadow-blue-500/25 hover:bg-[#0f6ee9]',
+    },
+    {
+      label: 'Instagram',
+      href: 'https://instagram.com/promotinsight',
+      shortLabel: 'ig',
+      className: 'bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af] text-white shadow-pink-500/25 hover:brightness-110',
+    },
   ];
 
   return (
@@ -81,15 +91,15 @@ export default function Footer() {
             </Link>
           </div>
           <div className="flex justify-center md:justify-end">
-            <div className="bg-gray-800 p-3 rounded-xl inline-flex gap-4 relative">
-              {socialLinks.map(({ label, href, shortLabel }) => (
+            <div className="bg-gray-800/80 p-2.5 rounded-xl inline-flex gap-2.5 relative border border-gray-700/60 shadow-lg">
+              {socialLinks.map(({ label, href, shortLabel, className }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={label}
-                  className="w-5 h-5 inline-flex items-center justify-center text-[11px] font-black uppercase text-gray-400 hover:text-white transition-colors rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className={`w-8 h-8 inline-flex items-center justify-center text-[11px] font-black uppercase rounded-lg shadow-md transition-all hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white ${className}`}
                 >
                   {shortLabel}
                 </a>
@@ -102,9 +112,9 @@ export default function Footer() {
                   aria-label={t('select_language')}
                   aria-expanded={languageOpen}
                   aria-haspopup="listbox"
-                  className="text-gray-400 hover:text-white transition-colors p-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  className="w-8 h-8 inline-flex items-center justify-center rounded-lg bg-sky-500 text-white shadow-md shadow-sky-500/25 transition-all hover:-translate-y-0.5 hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
-                  <Globe size={20} aria-hidden="true" />
+                  <Globe size={18} aria-hidden="true" />
                 </button>
 
                 {languageOpen && (
@@ -141,9 +151,9 @@ export default function Footer() {
                 type="button"
                 onClick={() => setSecurityOpen(true)}
                 aria-label={t('security_trust')}
-                className="text-gray-400 hover:text-white transition-colors p-0.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="w-8 h-8 inline-flex items-center justify-center rounded-lg bg-emerald-500 text-white shadow-md shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:bg-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                <ShieldCheck size={20} aria-hidden="true" />
+                <ShieldCheck size={18} aria-hidden="true" />
               </button>
             </div>
           </div>
