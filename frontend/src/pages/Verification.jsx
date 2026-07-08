@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { CheckCircle, Clock, Globe, Layers } from 'lucide-react';
+import { CheckCircle, Clock, Globe, Layers, Image as ImageIcon, X } from 'lucide-react';
 import {
   buildCountriesFromFeeConfigs,
   mergeVerificationFields,
@@ -21,8 +21,9 @@ const DEFAULT_SHOPPING_PLATFORMS = [
 ];
 
 const DEFAULT_PLATFORM_FIELDS = [
-  { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
-  { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
+  { key: 'account_name', label: 'Account Details', type: 'text', required: true, placeholder: 'Account details on this platform' },
+  { key: 'profile_url', label: 'Profile URL', type: 'url', required: false, placeholder: 'Profile URL on this platform' },
+  { key: 'verification_image_url', label: 'Verification Image', type: 'image', required: false, placeholder: '' },
 ];
 
 const Verification = () => {
@@ -38,6 +39,7 @@ const Verification = () => {
   const [customPlatformName, setCustomPlatformName] = useState('');
   const [globalValues, setGlobalValues] = useState({});
   const [platformValues, setPlatformValues] = useState({});
+  const [uploadingImages, setUploadingImages] = useState({});
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -182,10 +184,86 @@ const Verification = () => {
   };
 
   const getPlatformDefinition = (platformName) =>
-    availablePlatforms.find((p) => p.platform === platformName) || {
-      platform: platformName,
-      fields: DEFAULT_PLATFORM_FIELDS,
-    };
+    (() => {
+      const definition = availablePlatforms.find((p) => p.platform === platformName) || {
+        platform: platformName,
+        fields: DEFAULT_PLATFORM_FIELDS,
+      };
+      const fields = definition.fields?.length ? definition.fields : DEFAULT_PLATFORM_FIELDS;
+      const hasImageField = fields.some((field) => field.key === 'verification_image_url');
+      return {
+        ...definition,
+        fields: (hasImageField ? fields : [...fields, DEFAULT_PLATFORM_FIELDS[2]]).map((field) => (
+          ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key)
+            ? { ...field, required: false }
+            : field
+        )),
+      };
+    })();
+
+  const uploadVerificationImage = async (platformName, file) => {
+    if (!file) return;
+    setUploadingImages((prev) => ({ ...prev, [platformName]: true }));
+    try {
+      const cloudData = new FormData();
+      cloudData.append('file', file);
+      cloudData.append('upload_preset', 'promot_insight_preset');
+
+      const res = await fetch('https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload', {
+        method: 'POST',
+        body: cloudData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.secure_url) throw new Error('Upload failed');
+      setPlatformField(platformName, 'verification_image_url', data.secure_url);
+    } catch (error) {
+      console.error('Verification image upload error:', error);
+      setMessage({ type: 'error', text: 'Image upload failed. Please try again.' });
+    } finally {
+      setUploadingImages((prev) => ({ ...prev, [platformName]: false }));
+    }
+  };
+
+  const renderPlatformFieldInput = (platformName, field) => {
+    const fieldDef = ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key)
+      ? { ...field, required: false }
+      : field;
+    const value = platformValues[platformName]?.[fieldDef.key] || '';
+
+    if (fieldDef.type === 'image' || fieldDef.key === 'verification_image_url') {
+      return (
+        <div className="space-y-2">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => uploadVerificationImage(platformName, e.target.files?.[0])}
+            className="w-full p-2 border bg-gray-50 rounded-lg text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+          />
+          {uploadingImages[platformName] && (
+            <p className="text-xs text-blue-600 font-semibold animate-pulse">Uploading image...</p>
+          )}
+          {value && (
+            <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg p-2">
+              <img src={value} alt={`${platformName} verification`} className="w-14 h-14 object-cover rounded border bg-white" />
+              <a href={value} target="_blank" rel="noreferrer" className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1">
+                <ImageIcon size={14} /> View image
+              </a>
+              <button
+                type="button"
+                onClick={() => setPlatformField(platformName, fieldDef.key, '')}
+                className="ml-auto text-red-500 hover:text-red-700"
+                aria-label="Remove image"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return renderFieldInput(fieldDef, value, (v) => setPlatformField(platformName, fieldDef.key, v));
+  };
 
   const setGlobalField = (key, value) => {
     setGlobalValues((prev) => ({ ...prev, [key]: value }));
@@ -462,17 +540,22 @@ const Verification = () => {
                     <h3 className="text-sm font-bold text-[#0066ff] uppercase tracking-wider border-b border-blue-100 pb-1">
                       Account &amp; contact details
                     </h3>
-                    {formConfig.global_fields.map((field) => (
-                      <div key={field.key}>
-                        <label className="block text-xs font-bold text-gray-600 mb-1">
-                          {field.label}
-                          {field.required && <span className="text-red-500"> *</span>}
-                        </label>
-                        {renderFieldInput(field, globalValues[field.key], (v) =>
-                          setGlobalField(field.key, v)
-                        )}
-                      </div>
-                    ))}
+                    {formConfig.global_fields.map((field) => {
+                      const fieldDef = field.key === 'whatsapp_account'
+                        ? { ...field, required: false }
+                        : field;
+                      return (
+                        <div key={fieldDef.key}>
+                          <label className="block text-xs font-bold text-gray-600 mb-1">
+                            {fieldDef.label}
+                            {fieldDef.required && <span className="text-red-500"> *</span>}
+                          </label>
+                          {renderFieldInput(fieldDef, globalValues[fieldDef.key], (v) =>
+                            setGlobalField(fieldDef.key, v)
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -488,11 +571,7 @@ const Verification = () => {
                             {field.label}
                             {field.required && <span className="text-red-500"> *</span>}
                           </label>
-                          {renderFieldInput(
-                            field,
-                            platformValues[platformName]?.[field.key],
-                            (v) => setPlatformField(platformName, field.key, v)
-                          )}
+                          {renderPlatformFieldInput(platformName, field)}
                         </div>
                       ))}
                     </div>

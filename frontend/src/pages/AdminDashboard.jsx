@@ -1634,6 +1634,7 @@ export default function AdminDashboard() {
                         {getVerificationPlatformDetails(v).map(({ name, values }) => {
                           const accountName = values?.account_name || values?.amazon_account || 'N/A';
                           const profileUrl = values?.profile_url || values?.amazon_profile_url || '';
+                          const imageUrl = values?.verification_image_url || values?.image_url || '';
                           return (
                             <div key={name} className="bg-gray-50 border border-gray-100 rounded-lg p-2">
                               <p className="font-bold text-gray-700">{name}</p>
@@ -1644,6 +1645,11 @@ export default function AdminDashboard() {
                                 </a>
                               ) : (
                                 <p className="text-gray-400 italic text-xs">No link provided</p>
+                              )}
+                              {imageUrl && (
+                                <a href={imageUrl} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline truncate block max-w-full text-xs font-bold mt-1">
+                                  View Image
+                                </a>
                               )}
                             </div>
                           );
