@@ -77,7 +77,7 @@ export default function BlogDetails() {
                 (paragraphs, bold text, links) if you add a rich text editor later.
               */}
               <div 
-                className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
+                className="max-w-none text-gray-700 leading-relaxed [&_h1]:text-3xl [&_h1]:md:text-4xl [&_h1]:font-black [&_h1]:text-gray-900 [&_h1]:mt-8 [&_h1]:mb-4 [&_h2]:text-2xl [&_h2]:font-black [&_h2]:text-gray-900 [&_h2]:mt-7 [&_h2]:mb-3 [&_p]:mb-5 [&_strong]:font-black [&_strong]:text-gray-900 [&_b]:font-black [&_b]:text-gray-900"
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(blog.content || '').replace(/\n/g, '<br/>')
                 }}

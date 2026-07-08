@@ -128,6 +128,7 @@ export default function AdminDashboard() {
 
   const [adminBlogs, setAdminBlogs] = useState([]);
   const [newBlog, setNewBlog] = useState({ title: '', content: '', is_published: true });
+  const [editingBlog, setEditingBlog] = useState(null);
   const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
 
@@ -773,6 +774,45 @@ export default function AdminDashboard() {
     }
   };
 
+  const resetBlogForm = () => {
+    setNewBlog({ title: '', content: '', is_published: true });
+    setEditingBlog(null);
+    setBlogImage(null);
+    const input = document.getElementById('blog-image-upload');
+    if (input) input.value = '';
+  };
+
+  const handleEditBlog = (blog) => {
+    setEditingBlog(blog);
+    setNewBlog({
+      title: blog.title || '',
+      content: blog.content || '',
+      is_published: blog.is_published !== false,
+    });
+    setBlogImage(null);
+    const input = document.getElementById('blog-image-upload');
+    if (input) input.value = '';
+    document.getElementById('blog-editor-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const applyBlogFormat = (tag) => {
+    const textarea = document.getElementById('blog-content-editor');
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = newBlog.content.slice(start, end);
+    const fallback = tag === 'strong' ? 'bold text' : tag === 'h1' ? 'Main title' : 'Section title';
+    const wrapped = `<${tag}>${selected || fallback}</${tag}>`;
+    const content = `${newBlog.content.slice(0, start)}${wrapped}${newBlog.content.slice(end)}`;
+    setNewBlog((prev) => ({ ...prev, content }));
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + wrapped.length, start + wrapped.length);
+    }, 0);
+  };
+
   const handleCreateBlog = async (e) => {
     e.preventDefault();
     if (!newBlog.title || !newBlog.content) return alert("Title and content are required.");
@@ -781,12 +821,14 @@ export default function AdminDashboard() {
     formData.append("title", newBlog.title); formData.append("content", newBlog.content); formData.append("is_published", newBlog.is_published);
     if (blogImage) formData.append("image", blogImage); 
     try {
-      const res = await fetch(`${API_BASE}/api/blogs`, { method: "POST", headers: getAuthHeaders(), body: formData });
+      const endpoint = editingBlog ? `${API_BASE}/api/blogs/${editingBlog.id}` : `${API_BASE}/api/blogs`;
+      const res = await fetch(endpoint, { method: editingBlog ? "PUT" : "POST", headers: getAuthHeaders(), body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert("Blog published successfully!"); setNewBlog({ title: '', content: '', is_published: true }); setBlogImage(null);
-        document.getElementById('blog-image-upload').value = ''; fetchAdminBlogs();
-      } else alert(data.message || "Failed to publish blog.");
+        alert(editingBlog ? "Blog updated successfully!" : "Blog published successfully!");
+        resetBlogForm();
+        fetchAdminBlogs();
+      } else alert(data.message || (editingBlog ? "Failed to update blog." : "Failed to publish blog."));
     } catch (err) {}
     setIsPublishingBlog(false);
   };
@@ -2185,16 +2227,16 @@ export default function AdminDashboard() {
         {/* BLOGS TAB */}
         {activeTab === 'blogs' && (
           <div className="space-y-6 animate-fade-in-up mt-6">
-            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
+            <div id="blog-editor-card" className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
               <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
-                <FileText size={20} className="text-[#0066ff]"/> Publish New Blog Post
+                <FileText size={20} className="text-[#0066ff]"/> {editingBlog ? 'Edit Blog Post' : 'Publish New Blog Post'}
               </h3>
               <form onSubmit={handleCreateBlog} className="space-y-4">
                 <input required type="text" placeholder="Blog Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.title} onChange={e => setNewBlog({...newBlog, title: e.target.value})} />
                 
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 w-full">
-                    <label className="block text-xs font-bold text-gray-500 mb-1">Feature Image (Optional)</label>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">{editingBlog ? 'Replace Feature Image (Optional)' : 'Feature Image (Optional)'}</label>
                     <input type="file" accept="image/*" id="blog-image-upload" className="w-full p-2 border rounded-xl text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" onChange={e => setBlogImage(e.target.files[0])} />
                   </div>
                   <div className="flex items-center gap-2 md:mt-6 pt-2 md:pt-0">
@@ -2203,11 +2245,25 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <textarea required placeholder="Write the blog content here (Supports HTML/Text)..." className="w-full p-3 border rounded-xl h-40 outline-none focus:border-[#0066ff] text-sm" value={newBlog.content} onChange={e => setNewBlog({...newBlog, content: e.target.value})}></textarea>
+                <div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    <button type="button" onClick={() => applyBlogFormat('strong')} className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-black text-gray-700 hover:bg-gray-50">Bold</button>
+                    <button type="button" onClick={() => applyBlogFormat('h1')} className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-xs font-black text-blue-700 hover:bg-blue-100">H1 Title</button>
+                    <button type="button" onClick={() => applyBlogFormat('h2')} className="px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-xs font-black text-indigo-700 hover:bg-indigo-100">H2 Title</button>
+                  </div>
+                  <textarea id="blog-content-editor" required placeholder="Write the blog content here. Use toolbar for Bold, H1, H2..." className="w-full p-3 border rounded-xl h-48 outline-none focus:border-[#0066ff] text-sm font-mono" value={newBlog.content} onChange={e => setNewBlog({...newBlog, content: e.target.value})}></textarea>
+                </div>
                 
-                <button type="submit" disabled={isPublishingBlog} className="w-full sm:w-auto bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
-                  {isPublishingBlog ? 'Publishing...' : <><FileText size={18} /> Publish Blog</>}
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button type="submit" disabled={isPublishingBlog} className="w-full sm:w-auto bg-[#0066ff] text-white px-6 py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                    {isPublishingBlog ? (editingBlog ? 'Updating...' : 'Publishing...') : <><FileText size={18} /> {editingBlog ? 'Update Blog' : 'Publish Blog'}</>}
+                  </button>
+                  {editingBlog && (
+                    <button type="button" onClick={resetBlogForm} className="w-full sm:w-auto bg-white border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50">
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -2232,9 +2288,14 @@ export default function AdminDashboard() {
                         <span className="text-[10px] text-gray-400">{new Date(blog.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <button onClick={() => handleDeleteBlog(blog.id)} className="w-full md:w-auto bg-white border border-red-200 text-red-600 px-3 py-2 md:py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-1 shrink-0">
-                      <Trash2 size={14} /> Delete
-                    </button>
+                    <div className="flex flex-col sm:flex-row md:flex-col gap-2 w-full md:w-auto shrink-0">
+                      <button onClick={() => handleEditBlog(blog)} className="w-full md:w-auto bg-white border border-blue-200 text-blue-600 px-3 py-2 md:py-1.5 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors flex items-center justify-center gap-1">
+                        <Edit size={14} /> Edit
+                      </button>
+                      <button onClick={() => handleDeleteBlog(blog.id)} className="w-full md:w-auto bg-white border border-red-200 text-red-600 px-3 py-2 md:py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-1">
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {adminBlogs.length === 0 && <p className="p-8 text-center text-gray-500 font-medium">No blogs found.</p>}
