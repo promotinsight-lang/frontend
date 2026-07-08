@@ -721,7 +721,7 @@ export default function AdminDashboard() {
   };
 
   const updateTrust = async (id, oldScore) => {
-    const score = prompt("Enter new Trust Score (0.0 - 5.0):", oldScore || "5.0");
+    const score = prompt("Enter new Trust Score (0.0 - 5.0):", oldScore ?? "0.0");
     if (score !== null && !isNaN(score)) {
       if(await handleAction(`${API_BASE}/api/users/${id}/trust-score`, 'PATCH', { trust_score: parseFloat(score) })) fetchUsers(activeTab === 'all-buyers' ? 'buyer' : 'seller');
     }
