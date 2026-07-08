@@ -1334,13 +1334,48 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                 </div>
               )}
 
+              {(selectedItem.data.seller_payment_transaction_id || selectedItem.data.seller_payment_screenshot_url) && (
+                <div className="mt-6 border border-emerald-200 bg-emerald-50 p-4 rounded-xl shadow-sm">
+                  <h4 className="font-bold text-emerald-800 text-sm mb-2 flex items-center gap-1">
+                    <CheckCircle size={16} /> Seller Payment Proof
+                  </h4>
+                  {selectedItem.data.seller_payment_transaction_id && (
+                    <div className="mb-2">
+                      <p className="text-[10px] text-emerald-600 uppercase font-bold">Transaction ID</p>
+                      <p className="text-sm font-mono bg-white px-2 py-1 rounded inline-block border border-emerald-200 text-gray-800 font-bold break-all">
+                        {selectedItem.data.seller_payment_transaction_id}
+                      </p>
+                    </div>
+                  )}
+                  {selectedItem.data.seller_payment_screenshot_url && (
+                    <a href={selectedItem.data.seller_payment_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-emerald-700 font-bold hover:underline text-xs bg-white px-2 py-1.5 rounded border border-emerald-100">
+                      <ImageIcon size={14} /> View Payment Screenshot
+                    </a>
+                  )}
+                  {selectedItem.data.seller_paid_at && (
+                    <p className="text-[10px] text-emerald-700 font-bold mt-2">
+                      Paid at: {new Date(selectedItem.data.seller_paid_at).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedItem.data.seller_payment_note && (
+                    <p className="text-sm text-gray-700 bg-white p-2 rounded border border-emerald-200 italic mt-2">
+                      "{selectedItem.data.seller_payment_note}"
+                    </p>
+                  )}
+                </div>
+              )}
+
               {selectedItem.data.application_status === 'completed' && (
                 <div className="mt-6 border border-green-200 bg-green-50 p-4 rounded-xl shadow-sm">
                   <h4 className="font-bold text-green-800 text-sm mb-2 flex items-center gap-1">
                     <CheckCircle size={16} /> Refund Processed
                   </h4>
                   
-                  {selectedItem.data.category === 'Pre-Pay' ? (
+                  {selectedItem.data.seller_payment_transaction_id ? (
+                     <p className="text-xs text-green-700 font-medium leading-relaxed mb-3">
+                       Seller has marked this order complete and submitted payment proof. Check the seller payment proof above.
+                     </p>
+                  ) : selectedItem.data.category === 'Pre-Pay' ? (
                      <p className="text-xs text-green-700 font-medium leading-relaxed mb-3">
                        Your funds (Product Price + Reward) have been successfully sent to your external payment account by the Admin. <strong className="text-green-800">Note: This amount is NOT added to your system wallet.</strong>
                      </p>
