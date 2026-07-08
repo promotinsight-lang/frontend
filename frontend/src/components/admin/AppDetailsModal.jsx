@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, AlertTriangle, Package, Image as ImageIcon, Star, CheckCircle } from 'lucide-react';
+import { X, AlertTriangle, Package, Image as ImageIcon, Star, CheckCircle, Receipt } from 'lucide-react';
 
 export default function AppDetailsModal({
   selectedAppDetails,
@@ -93,6 +93,11 @@ export default function AppDetailsModal({
                  </h4>
                  <p className="text-sm font-bold text-gray-800 truncate" title={selectedAppDetails.buyer_name}>{selectedAppDetails.buyer_name}</p>
                  <p className="text-xs text-gray-600 truncate mt-0.5" title={selectedAppDetails.buyer_email}>{selectedAppDetails.buyer_email}</p>
+                 <div className="mt-2 text-[10px] text-gray-600 space-y-0.5">
+                   <p><span className="font-bold">PayPal:</span> {selectedAppDetails.paypal_account || 'N/A'}</p>
+                   <p><span className="font-bold">WhatsApp:</span> {selectedAppDetails.whatsapp_account || 'N/A'}</p>
+                   <p><span className="font-bold">Telegram:</span> {selectedAppDetails.telegram_account || 'N/A'}</p>
+                 </div>
                  <button onClick={() => { onClose(); onViewProfile(selectedAppDetails.user_id); }} className="mt-3 w-full bg-white border border-blue-200 text-blue-600 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm">View Buyer Profile</button>
                </div>
                <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 shadow-sm relative">
@@ -154,6 +159,29 @@ export default function AppDetailsModal({
                       </a>
                    )}
                  </div>
+               </div>
+             )}
+
+             {(selectedAppDetails.seller_payment_transaction_id || selectedAppDetails.seller_payment_screenshot_url) && (
+               <div className="bg-green-50 p-4 sm:p-5 rounded-xl border border-green-200 shadow-sm">
+                 <h4 className="font-bold text-green-800 mb-3 border-b border-green-200 pb-2 flex items-center gap-2"><Receipt size={18}/> Seller Payment Proof</h4>
+                 {selectedAppDetails.seller_payment_transaction_id && (
+                   <p className="text-sm mb-2 flex flex-col sm:flex-row sm:items-center">
+                     <span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Trx ID:</span>
+                     <span className="font-mono font-bold bg-white px-2 py-0.5 border border-green-100 rounded break-all">{selectedAppDetails.seller_payment_transaction_id}</span>
+                   </p>
+                 )}
+                 {selectedAppDetails.seller_paid_at && (
+                   <p className="text-xs text-green-700 font-semibold mb-2">Paid: {new Date(selectedAppDetails.seller_paid_at).toLocaleString()}</p>
+                 )}
+                 {selectedAppDetails.seller_payment_screenshot_url && (
+                   <a href={selectedAppDetails.seller_payment_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-green-700 font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-green-100 shadow-sm">
+                     <ImageIcon size={14} /> View Payment Screenshot
+                   </a>
+                 )}
+                 {selectedAppDetails.seller_payment_note && (
+                   <p className="mt-3 text-sm bg-white p-3 rounded-lg border border-green-100 text-gray-700">{selectedAppDetails.seller_payment_note}</p>
+                 )}
                </div>
              )}
           </div>

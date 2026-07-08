@@ -6,7 +6,7 @@ import SellerTariffsPage from '../components/SellerTariffsPage';
 import { 
   Package, PlusCircle, LayoutDashboard, Wallet, Clock,
   Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
-  Headset, MessageCircle, MessageSquare, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake 
+  Headset, MessageCircle, MessageSquare, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake, DollarSign
 } from 'lucide-react';
 import { getCurrencyForCountry, getRateForCountry, buildCountryRateMap } from '../utils/currency';
 import LiveChatModal from '../components/LiveChatModal';
@@ -62,6 +62,11 @@ export default function SellerDashboard() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productReviews, setProductReviews] = useState([]); 
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [showSellerPayModal, setShowSellerPayModal] = useState(false);
+  const [selectedPayReview, setSelectedPayReview] = useState(null);
+  const [sellerPaymentProof, setSellerPaymentProof] = useState({ transaction_id: '', screenshot_url: '', note: '' });
+  const [isSubmittingSellerPayment, setIsSubmittingSellerPayment] = useState(false);
+  const [isUploadingSellerPaymentProof, setIsUploadingSellerPaymentProof] = useState(false);
   
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({});
@@ -253,6 +258,69 @@ export default function SellerDashboard() {
       }
     } catch (error) {
       alert("Server error.");
+    }
+  };
+
+  const openSellerPayModal = (review) => {
+    setSelectedPayReview(review);
+    setSellerPaymentProof({ transaction_id: '', screenshot_url: '', note: '' });
+    setShowSellerPayModal(true);
+  };
+
+  const handleSellerPaymentProofUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploadingSellerPaymentProof(true);
+    try {
+      const cloudData = new FormData();
+      cloudData.append("file", file);
+      cloudData.append("upload_preset", "promot_insight_preset");
+      cloudData.append("cloud_name", "dtlkf5smb");
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
+        method: "POST",
+        body: cloudData,
+      });
+      const cloudJson = await res.json();
+      if (cloudJson.secure_url) {
+        setSellerPaymentProof(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
+      }
+    } catch (error) {
+      alert("Payment screenshot upload failed!");
+    } finally {
+      setIsUploadingSellerPaymentProof(false);
+    }
+  };
+
+  const submitSellerPaymentProof = async (e) => {
+    e.preventDefault();
+    if (!selectedPayReview) return;
+    if (!sellerPaymentProof.transaction_id.trim() || !sellerPaymentProof.screenshot_url) {
+      return alert("Transaction ID and payment screenshot are required.");
+    }
+
+    setIsSubmittingSellerPayment(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/seller/${selectedPayReview.application_id}/payment-proof`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(sellerPaymentProof)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || "Payment proof submitted.");
+        setShowSellerPayModal(false);
+        setSelectedPayReview(null);
+        fetchProductReviews(selectedProduct.id);
+        fetchDashboardData();
+      } else {
+        alert(data.message || "Failed to submit payment proof.");
+      }
+    } catch (error) {
+      alert("Server error.");
+    } finally {
+      setIsSubmittingSellerPayment(false);
     }
   };
 
@@ -1110,13 +1178,25 @@ export default function SellerDashboard() {
                           </div>
                         </div>
 
-                        {(review.status === 'review_submitted' || review.status === 'forwarded_to_seller') && !review.refund_comment && (
-                          <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                        {review.seller_payment_transaction_id ? (
+                          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
+                            <p className="text-sm text-green-800 font-bold flex items-center gap-1.5 mb-2">
+                              <CheckCircle size={16}/> Payment Submitted
+                            </p>
+                            <p className="text-xs text-green-700 font-semibold break-all">Transaction ID: {review.seller_payment_transaction_id}</p>
+                            {review.seller_payment_screenshot_url && (
+                              <a href={review.seller_payment_screenshot_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-green-700 font-bold hover:underline text-xs bg-white px-2 py-1 rounded border border-green-100">
+                                <ImageIcon size={14} /> View Payment Screenshot
+                              </a>
+                            )}
+                          </div>
+                        ) : (review.status === 'review_submitted' || review.status === 'forwarded_to_seller' || review.status === 'pending_refund' || review.status === 'order_submitted' || review.status === 'order_approved') && !review.refund_comment && (
+                          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                             <div>
-                               <p className="text-sm text-indigo-800 font-bold flex items-center gap-1.5">
-                                 <Clock size={16}/> Action Required
+                               <p className="text-sm text-green-800 font-bold flex items-center gap-1.5">
+                                 <CheckCircle size={16}/> Order Complete
                                </p>
-                               <p className="text-xs text-indigo-600 mt-1 font-medium">Please check the details and verify. Auto-approves in 24 hours.</p>
+                               <p className="text-xs text-green-700 mt-1 font-medium">Buyer details are ready. Pay buyer, then upload transaction proof.</p>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                               <button 
@@ -1129,10 +1209,10 @@ export default function SellerDashboard() {
                                 File Appeal
                               </button>
                               <button 
-                                onClick={() => handleSellerApproveReview(review.application_id)} 
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors"
+                                onClick={() => openSellerPayModal(review)}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-1"
                               >
-                                Approve Request
+                                <DollarSign size={14}/> Pay Now
                               </button>
                             </div>
                           </div>
@@ -1181,6 +1261,56 @@ export default function SellerDashboard() {
                 <button type="submit" disabled={isAppealing} className="w-full sm:w-auto px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 font-bold shadow-md disabled:bg-red-300 flex items-center justify-center gap-2 transition-colors">
                   {isAppealing ? 'Submitting...' : 'Submit to Admin'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showSellerPayModal && selectedPayReview && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-gray-800">Pay Buyer</h3>
+                <p className="text-xs text-gray-500 font-semibold">Submit payment proof after sending payment.</p>
+              </div>
+              <button onClick={() => setShowSellerPayModal(false)} className="bg-gray-100 text-gray-500 hover:text-red-500 p-2 rounded-full">
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={submitSellerPaymentProof} className="p-5 space-y-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm space-y-2">
+                <p className="font-black text-blue-800 mb-2">Buyer Payment Details</p>
+                <p><span className="font-bold text-gray-500">Buyer:</span> {selectedPayReview.buyer_name}</p>
+                <p><span className="font-bold text-gray-500">Email:</span> {selectedPayReview.buyer_email || 'N/A'}</p>
+                <p><span className="font-bold text-gray-500">PayPal:</span> {selectedPayReview.paypal_account || 'Not provided'}</p>
+                <p><span className="font-bold text-gray-500">WhatsApp:</span> {selectedPayReview.whatsapp_account || 'Not provided'}</p>
+                <p><span className="font-bold text-gray-500">Telegram:</span> {selectedPayReview.telegram_account || 'Not provided'}</p>
+                <p><span className="font-bold text-gray-500">Facebook:</span> {selectedPayReview.facebook_account || 'Not provided'}</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Transaction ID</label>
+                <input required type="text" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-green-500 outline-none" value={sellerPaymentProof.transaction_id} onChange={e => setSellerPaymentProof({ ...sellerPaymentProof, transaction_id: e.target.value })} placeholder="e.g. TRX123456789" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Payment Screenshot</label>
+                <input required type="file" accept="image/*" onChange={handleSellerPaymentProofUpload} className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer" />
+                {isUploadingSellerPaymentProof && <p className="text-xs text-green-600 mt-1 animate-pulse font-semibold">Uploading screenshot...</p>}
+                {sellerPaymentProof.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">Payment screenshot attached.</p>}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Note (Optional)</label>
+                <textarea rows="2" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-green-500 outline-none resize-none" value={sellerPaymentProof.note} onChange={e => setSellerPaymentProof({ ...sellerPaymentProof, note: e.target.value })} placeholder="Any payment note..." />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowSellerPayModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm">Cancel</button>
+                <button type="submit" disabled={isSubmittingSellerPayment || isUploadingSellerPaymentProof} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm disabled:opacity-50">Submit Payment</button>
               </div>
             </form>
           </div>
