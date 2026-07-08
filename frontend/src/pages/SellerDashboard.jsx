@@ -1196,18 +1196,12 @@ export default function SellerDashboard() {
                                <p className="text-sm text-green-800 font-bold flex items-center gap-1.5">
                                  <CheckCircle size={16}/> Order Complete
                                </p>
-                               <p className="text-xs text-green-700 mt-1 font-medium">Buyer details are ready. Pay buyer, then upload transaction proof.</p>
+                               <p className="text-xs text-green-700 mt-1 font-medium">Transaction proof received. Payment must be completed within 24 to 48 hours.</p>
+                               <span className="inline-flex items-center gap-1 mt-2 bg-amber-100 text-amber-800 border border-amber-200 px-2 py-1 rounded-lg text-[10px] font-black uppercase">
+                                 <Clock size={12}/> Pay within 24-48 hours
+                               </span>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                              <button 
-                                onClick={() => {
-                                  setAppealData({ application_id: review.application_id, reason: '' });
-                                  setShowSellerAppealModal(true);
-                                }} 
-                                className="flex-1 bg-white border border-red-200 text-red-600 hover:bg-red-50 py-2 px-4 rounded-lg text-xs font-bold transition-colors shadow-sm"
-                              >
-                                File Appeal
-                              </button>
                               <button 
                                 onClick={() => openSellerPayModal(review)}
                                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-1"
@@ -1283,12 +1277,11 @@ export default function SellerDashboard() {
             <form onSubmit={submitSellerPaymentProof} className="p-5 space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm space-y-2">
                 <p className="font-black text-blue-800 mb-2">Buyer Payment Details</p>
-                <p><span className="font-bold text-gray-500">Buyer:</span> {selectedPayReview.buyer_name}</p>
-                <p><span className="font-bold text-gray-500">Email:</span> {selectedPayReview.buyer_email || 'N/A'}</p>
-                <p><span className="font-bold text-gray-500">PayPal:</span> {selectedPayReview.paypal_account || 'Not provided'}</p>
-                <p><span className="font-bold text-gray-500">WhatsApp:</span> {selectedPayReview.whatsapp_account || 'Not provided'}</p>
-                <p><span className="font-bold text-gray-500">Telegram:</span> {selectedPayReview.telegram_account || 'Not provided'}</p>
-                <p><span className="font-bold text-gray-500">Facebook:</span> {selectedPayReview.facebook_account || 'Not provided'}</p>
+                {selectedPayReview.paypal_account ? (
+                  <p className="break-all"><span className="font-bold text-gray-500">PayPal:</span> {selectedPayReview.paypal_account}</p>
+                ) : (
+                  <p className="text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-2 font-semibold">No payment details provided by buyer.</p>
+                )}
               </div>
 
               <div>
