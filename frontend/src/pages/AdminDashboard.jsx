@@ -25,6 +25,39 @@ import { getCurrencyForCountry } from '../utils/currency';
 import PrivateChatAdminPanel from '../components/admin/PrivateChatAdminPanel';
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
+const parseMaybeJson = (value, fallback) => {
+  if (!value) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+};
+
+const getVerificationPlatforms = (verification) => {
+  const platforms = parseMaybeJson(verification?.verification_platforms, []);
+  if (Array.isArray(platforms) && platforms.length > 0) return platforms;
+  if (verification?.amazon_account || verification?.amazon_profile_url) return ['Amazon'];
+  return [];
+};
+
+const getVerificationResponses = (verification) =>
+  parseMaybeJson(verification?.verification_responses, {});
+
+const getVerificationPlatformDetails = (verification) => {
+  const responses = getVerificationResponses(verification);
+  const platforms = getVerificationPlatforms(verification);
+
+  return platforms.map((platformName, index) => ({
+    name: platformName,
+    values: responses?.platforms?.[platformName] || {
+      account_name: index === 0 ? verification?.amazon_account : '',
+      profile_url: index === 0 ? verification?.amazon_profile_url : '',
+    },
+  }));
+};
+
 export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1585,9 +1618,45 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-3 text-sm mb-5">
                     <div>
+                      <p className="text-xs font-semibold text-gray-400">Country & Selected Platforms</p>
+                      <p className="font-medium text-gray-700 break-all">{v.verification_country || v.amazon_location || 'N/A'}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {getVerificationPlatforms(v).map((platformName) => (
+                          <span key={platformName} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                            {platformName}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400">Platform Details</p>
+                      <div className="space-y-2 mt-1">
+                        {getVerificationPlatformDetails(v).map(({ name, values }) => {
+                          const accountName = values?.account_name || values?.amazon_account || 'N/A';
+                          const profileUrl = values?.profile_url || values?.amazon_profile_url || '';
+                          return (
+                            <div key={name} className="bg-gray-50 border border-gray-100 rounded-lg p-2">
+                              <p className="font-bold text-gray-700">{name}</p>
+                              <p className="text-xs text-gray-600 break-all">Account: {accountName}</p>
+                              {profileUrl ? (
+                                <a href={profileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate block max-w-full text-xs font-bold">
+                                  View Profile
+                                </a>
+                              ) : (
+                                <p className="text-gray-400 italic text-xs">No link provided</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {!v.verification_responses && (
+                    <div>
                       <p className="text-xs font-semibold text-gray-400">Amazon Location & Account</p>
                       <p className="font-medium text-gray-700 break-all">{v.amazon_location || 'N/A'} - {v.amazon_account || 'N/A'}</p>
                     </div>
+                    )}
+                    {!v.verification_responses && (
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Amazon Profile Link</p>
                       {v.amazon_profile_url ? (
@@ -1598,6 +1667,7 @@ export default function AdminDashboard() {
                         <p className="text-gray-400 italic">No link provided</p>
                       )}
                     </div>
+                    )}
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Payment & Contacts</p>
                       <p className="font-medium text-gray-700 break-all">PayPal: {v.paypal_account || 'N/A'}</p>

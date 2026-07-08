@@ -9,6 +9,22 @@ import {
 
 const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
+const DEFAULT_SHOPPING_PLATFORMS = [
+  'Amazon',
+  'Walmart',
+  'Mercado Libre',
+  'Etsy',
+  'TikTok',
+  'Noon',
+  'Shine',
+  'Temu',
+];
+
+const DEFAULT_PLATFORM_FIELDS = [
+  { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
+  { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
+];
+
 const Verification = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -18,6 +34,8 @@ const Verification = () => {
 
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedPlatforms, setSelectedPlatforms] = useState([]);
+  const [customPlatformEnabled, setCustomPlatformEnabled] = useState(false);
+  const [customPlatformName, setCustomPlatformName] = useState('');
   const [globalValues, setGlobalValues] = useState({});
   const [platformValues, setPlatformValues] = useState({});
 
@@ -91,22 +109,83 @@ const Verification = () => {
     const country = e.target.value;
     setSelectedCountry(country);
     setSelectedPlatforms([]);
+    setCustomPlatformEnabled(false);
+    setCustomPlatformName('');
     setPlatformValues({});
   };
 
-  const handlePlatformSelect = (e) => {
-    const selected = Array.from(e.target.selectedOptions, (opt) => opt.value);
-    setSelectedPlatforms(selected);
+  const availablePlatforms = useMemo(() => {
+    const configuredPlatforms = countryEntry?.platforms || [];
+    const platformMap = new Map();
+
+    for (const platform of configuredPlatforms) {
+      if (platform?.platform) platformMap.set(platform.platform, platform);
+    }
+
+    for (const platformName of DEFAULT_SHOPPING_PLATFORMS) {
+      if (!platformMap.has(platformName)) {
+        platformMap.set(platformName, {
+          platform: platformName,
+          fields: DEFAULT_PLATFORM_FIELDS,
+        });
+      }
+    }
+
+    return Array.from(platformMap.values());
+  }, [countryEntry]);
+
+  const syncSelectedPlatforms = (selected) => {
+    const uniqueSelected = Array.from(new Set(selected.filter(Boolean)));
+    setSelectedPlatforms(uniqueSelected);
     setPlatformValues((prev) => {
       const next = {};
-      for (const p of selected) {
+      for (const p of uniqueSelected) {
         if (prev[p]) next[p] = prev[p];
       }
       return next;
     });
   };
 
-  const availablePlatforms = countryEntry?.platforms || [];
+  const handlePlatformToggle = (platformName) => {
+    syncSelectedPlatforms(
+      selectedPlatforms.includes(platformName)
+        ? selectedPlatforms.filter((p) => p !== platformName)
+        : [...selectedPlatforms, platformName]
+    );
+  };
+
+  const handleCustomToggle = () => {
+    const currentCustom = customPlatformName.trim();
+    if (customPlatformEnabled) {
+      syncSelectedPlatforms(selectedPlatforms.filter((p) => p !== currentCustom));
+      setCustomPlatformEnabled(false);
+      return;
+    }
+
+    setCustomPlatformEnabled(true);
+    if (currentCustom) {
+      syncSelectedPlatforms([...selectedPlatforms, currentCustom]);
+    }
+  };
+
+  const handleCustomPlatformNameChange = (value) => {
+    const previousCustom = customPlatformName.trim();
+    const nextCustom = value.trim();
+    setCustomPlatformName(value);
+
+    if (!customPlatformEnabled) return;
+
+    const withoutPrevious = previousCustom
+      ? selectedPlatforms.filter((p) => p !== previousCustom)
+      : selectedPlatforms;
+    syncSelectedPlatforms(nextCustom ? [...withoutPrevious, nextCustom] : withoutPrevious);
+  };
+
+  const getPlatformDefinition = (platformName) =>
+    availablePlatforms.find((p) => p.platform === platformName) || {
+      platform: platformName,
+      fields: DEFAULT_PLATFORM_FIELDS,
+    };
 
   const setGlobalField = (key, value) => {
     setGlobalValues((prev) => ({ ...prev, [key]: value }));
@@ -125,6 +204,10 @@ const Verification = () => {
 
     if (!selectedCountry) {
       setMessage({ type: 'error', text: 'Please select your country.' });
+      return;
+    }
+    if (customPlatformEnabled && !customPlatformName.trim()) {
+      setMessage({ type: 'error', text: 'Please enter your custom platform name.' });
       return;
     }
     if (selectedPlatforms.length === 0) {
@@ -316,27 +399,60 @@ const Verification = () => {
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
                       <Layers size={16} className="text-[#0066ff]" /> Select your shopping platform(s)
                     </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Hold Ctrl (Windows) or Cmd (Mac) to select multiple platforms.
-                    </p>
-                    <select
-                      multiple
-                      required={selectedPlatforms.length === 0}
-                      value={selectedPlatforms}
-                      onChange={handlePlatformSelect}
-                      size={Math.min(Math.max(availablePlatforms.length, 2), 6)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-medium focus:border-[#0066ff] focus:bg-white outline-none"
-                    >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {availablePlatforms.map((p) => (
-                        <option key={p.platform} value={p.platform}>
-                          {p.platform}
-                        </option>
+                        <label
+                          key={p.platform}
+                          className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold cursor-pointer transition-all ${
+                            selectedPlatforms.includes(p.platform)
+                              ? 'border-[#0066ff] bg-blue-50 text-[#0066ff]'
+                              : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedPlatforms.includes(p.platform)}
+                            onChange={() => handlePlatformToggle(p.platform)}
+                            className="h-4 w-4 accent-[#0066ff]"
+                          />
+                          <span>{p.platform}</span>
+                        </label>
                       ))}
-                    </select>
+                      <label
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold cursor-pointer transition-all ${
+                          customPlatformEnabled
+                            ? 'border-[#0066ff] bg-blue-50 text-[#0066ff]'
+                            : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={customPlatformEnabled}
+                          onChange={handleCustomToggle}
+                          className="h-4 w-4 accent-[#0066ff]"
+                        />
+                        <span>Custom Platform</span>
+                      </label>
+                    </div>
+                    {customPlatformEnabled && (
+                      <input
+                        value={customPlatformName}
+                        onChange={(e) => handleCustomPlatformNameChange(e.target.value)}
+                        placeholder="Enter platform name"
+                        className="mt-3 w-full bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all"
+                      />
+                    )}
                     {selectedPlatforms.length > 0 && (
-                      <p className="text-xs text-[#0066ff] font-bold mt-2">
-                        Selected: {selectedPlatforms.join(', ')}
-                      </p>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {selectedPlatforms.map((platformName) => (
+                          <span
+                            key={platformName}
+                            className="text-xs bg-blue-100 text-[#0066ff] font-bold px-2.5 py-1 rounded-full"
+                          >
+                            {platformName}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                 )}
@@ -361,7 +477,7 @@ const Verification = () => {
                 )}
 
                 {selectedPlatforms.map((platformName) => {
-                  const platDef = countryEntry?.platforms.find((p) => p.platform === platformName);
+                  const platDef = getPlatformDefinition(platformName);
                   if (!platDef?.fields?.length) return null;
                   return (
                     <div key={platformName} className="space-y-3 border-t border-gray-100 pt-4">
@@ -385,7 +501,7 @@ const Verification = () => {
 
                 <button
                   type="submit"
-                  disabled={submitLoading || selectedPlatforms.length === 0}
+                  disabled={submitLoading || (selectedPlatforms.length === 0 && !customPlatformEnabled)}
                   className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#0066ff] to-blue-600 text-white rounded-full font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all disabled:opacity-50"
                 >
                   {submitLoading ? 'Submitting...' : 'Submit Verification'}
