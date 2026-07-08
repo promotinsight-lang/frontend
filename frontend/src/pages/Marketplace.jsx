@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, Lock, ShieldAlert, Sparkles, Eye 
+  Search, Lock, ShieldAlert, Sparkles, Eye, Clock
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { formatProductMoney } from '../utils/currency';
@@ -9,6 +9,7 @@ import { formatProductMoney } from '../utils/currency';
 export default function Marketplace() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [applicationByProduct, setApplicationByProduct] = useState({});
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   
@@ -21,10 +22,11 @@ export default function Marketplace() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    let parsedUser = null;
     if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      setUser(parsed);
-      if (parsed.is_active === false || parsed.is_active === "false" || parsed.is_active === 0) setIsAccountDisabled(true);
+      parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      if (parsedUser.is_active === false || parsedUser.is_active === "false" || parsedUser.is_active === 0) setIsAccountDisabled(true);
     } else {
         // User logged in na thakle login page e pathiye dibe
         navigate('/login');
@@ -56,6 +58,29 @@ export default function Marketplace() {
       }
     };
 
+    const fetchMyApplications = async () => {
+      const token = localStorage.getItem('token');
+      if (!token || parsedUser?.role !== 'buyer') return;
+
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/my`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          credentials: 'include'
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const nextMap = {};
+        (data.data || []).forEach((app) => {
+          nextMap[String(app.product_id)] = app;
+        });
+        setApplicationByProduct(nextMap);
+      } catch (error) {
+        console.error("Error fetching buyer applications:", error);
+      }
+    };
+
     const fetchPublicProducts = async () => {
       try {
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/public`, {
@@ -76,6 +101,7 @@ export default function Marketplace() {
     };
 
     fetchLiveProfile();
+    fetchMyApplications();
     fetchPublicProducts();
   }, [navigate]);
 
@@ -100,8 +126,19 @@ export default function Marketplace() {
       }
 
       const result = await res.json();
-      if (res.ok) alert("Applied Successfully! Go to 'My Orders' & view details.");
-      else alert(result.message || "Failed to apply");
+      if (res.ok) {
+        setApplicationByProduct(prev => ({
+          ...prev,
+          [String(productId)]: {
+            ...(result.application || {}),
+            product_id: productId,
+            application_status: result.application?.status || 'pending',
+          }
+        }));
+        alert("Applied Successfully! Waiting for admin approval.");
+      } else {
+        alert(result.message || "Failed to apply");
+      }
     } catch (error) {
       alert("Error applying for product. Please try again.");
     }
@@ -225,7 +262,16 @@ export default function Marketplace() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                  {filteredProducts.map(product => <ProductCard key={product.id} product={product} user={user} onApply={handleApply} navigate={navigate} />)}
+                  {filteredProducts.map(product => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      user={user}
+                      application={applicationByProduct[String(product.id)]}
+                      onApply={handleApply}
+                      navigate={navigate}
+                    />
+                  ))}
               </div>
             )}
           </div>
@@ -243,11 +289,14 @@ export default function Marketplace() {
 }
 
 // 🌿 CLEAN PRODUCT CARD
-function ProductCard({ product, user, onApply, navigate }) {
+function ProductCard({ product, user, application, onApply, navigate }) {
   const targetQty = parseInt(product.required_orders) || 0;
   const appliedQty = parseInt(product.application_count) || 0;
   const availableQty = Math.max(0, targetQty - appliedQty);
   const isSoldOut = (targetQty > 0 && availableQty === 0) || product.status === 'stopped';
+  const applicationStatus = application?.application_status || application?.status;
+  const isWaitingForApproval = applicationStatus === 'pending';
+  const hasExistingApplication = Boolean(applicationStatus);
   const priceDisplay = formatProductMoney(product.price, product.country);
   const rewardDisplay = formatProductMoney(product.reward, product.country);
 
@@ -289,13 +338,21 @@ function ProductCard({ product, user, onApply, navigate }) {
         </div>
         
         {/* 🔥 DYNAMIC BUTTON LOGIC: Role অনুযায়ী বাটন পরিবর্তন হবে */}
-        {isSoldOut ? (
-           <button disabled className="w-full bg-gray-100 text-gray-400 font-bold py-2.5 rounded-lg cursor-not-allowed text-sm uppercase tracking-wider">
-             Closed
-           </button>
-        ) : user?.role === 'seller' ? (
+        {user?.role === 'seller' ? (
            <button onClick={() => navigate('/dashboard?tab=overview')} className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-1 shadow-sm">
              <Eye size={16} /> View Details
+           </button>
+        ) : isWaitingForApproval ? (
+           <button disabled className="w-full bg-yellow-50 border-2 border-yellow-200 text-yellow-700 font-bold py-2 rounded-lg text-sm shadow-sm cursor-not-allowed flex items-center justify-center gap-1">
+             <Clock size={16} /> Waiting for approve
+           </button>
+        ) : hasExistingApplication ? (
+           <button onClick={() => navigate('/dashboard?tab=active')} className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm shadow-sm">
+             View My Order
+           </button>
+        ) : isSoldOut ? (
+           <button disabled className="w-full bg-gray-100 text-gray-400 font-bold py-2.5 rounded-lg cursor-not-allowed text-sm uppercase tracking-wider">
+             Closed
            </button>
         ) : (
            <button onClick={() => onApply(product.id)} className="w-full bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white font-bold py-2 rounded-lg transition-colors text-sm shadow-sm">
