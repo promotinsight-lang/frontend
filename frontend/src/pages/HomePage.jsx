@@ -21,6 +21,7 @@ export default function HomePage() {
   // ⚡ Live Feed States
   const [liveFeed, setLiveFeed] = useState([]);
   const [feedLoading, setFeedLoading] = useState(true);
+  const [publicStats, setPublicStats] = useState({ sellers: 435, buyers: 4560 });
 
   // 🔥 DYNAMIC DROPDOWN STATES
   const [allConfigs, setAllConfigs] = useState([]);
@@ -71,6 +72,25 @@ export default function HomePage() {
       { id: 'lf-3', text: t('feed_5'), time: t('time_12mins') },
     ]);
   }, [language, feedLoading, t]);
+
+  useEffect(() => {
+    const fetchPublicStats = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/public-stats`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          setPublicStats({
+            sellers: Number(data.data.sellers || 435),
+            buyers: Number(data.data.buyers || 4560),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load public user stats', error);
+      }
+    };
+
+    fetchPublicStats();
+  }, []);
 
   useEffect(() => {
     const initConfigs = async () => {
@@ -461,27 +481,40 @@ export default function HomePage() {
 
       {/* LIVE ACTIVITY FEED */}
       <section className="py-10 bg-white border-y border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
-          <div className="flex items-center gap-2 text-[#0066ff] font-black uppercase tracking-widest text-sm shrink-0">
-             <Zap className="fill-current animate-pulse" size={20}/> {t('live_activity')}
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex items-center gap-2 text-[#0066ff] font-black uppercase tracking-widest text-sm shrink-0">
+               <Zap className="fill-current animate-pulse" size={20}/> {t('live_activity')}
+            </div>
+            <div className="flex-1 w-full overflow-hidden bg-blue-50 rounded-xl p-3 border border-blue-100">
+              {feedLoading ? (
+                 <p className="text-sm text-gray-500 font-medium animate-pulse">{t('loading_events')}</p>
+              ) : (
+                 <div className="flex gap-8 animate-marquee whitespace-nowrap">
+                   {liveFeed.map((feed, index) => (
+                     <span key={`feed-${index}`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                       <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
+                     </span>
+                   ))}
+                   {liveFeed.map((feed, index) => (
+                     <span key={`feed-dup-${index}`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                       <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
+                     </span>
+                   ))}
+                 </div>
+              )}
+            </div>
           </div>
-          <div className="flex-1 w-full overflow-hidden bg-blue-50 rounded-xl p-3 border border-blue-100">
-            {feedLoading ? (
-               <p className="text-sm text-gray-500 font-medium animate-pulse">{t('loading_events')}</p>
-            ) : (
-               <div className="flex gap-8 animate-marquee whitespace-nowrap">
-                 {liveFeed.map((feed, index) => (
-                   <span key={`feed-${index}`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                     <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
-                   </span>
-                 ))}
-                 {liveFeed.map((feed, index) => (
-                   <span key={`feed-dup-${index}`} className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                     <CheckCircle size={14} className="text-green-500"/> {feed.text} <span className="text-xs font-normal text-gray-400">({feed.time})</span>
-                   </span>
-                 ))}
-               </div>
-            )}
+
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-xl mx-auto mt-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-center">
+              <p className="text-2xl sm:text-3xl font-black text-gray-900">{publicStats.sellers.toLocaleString()}+</p>
+              <p className="text-xs font-black text-emerald-600 uppercase tracking-wider mt-1">Sellers</p>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 text-center">
+              <p className="text-2xl sm:text-3xl font-black text-gray-900">{publicStats.buyers.toLocaleString()}+</p>
+              <p className="text-xs font-black text-[#0066ff] uppercase tracking-wider mt-1">Buyers</p>
+            </div>
           </div>
         </div>
       </section>
