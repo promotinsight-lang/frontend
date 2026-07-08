@@ -64,10 +64,16 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     if (tab) setActiveTab(tab);
 
     const appIdParam = params.get('appId');
+    const action = params.get('action');
     if (appIdParam && applications.length > 0) {
        const appToOpen = applications.find(a => String(a.application_id) === String(appIdParam) || String(a.id) === String(appIdParam));
        if (appToOpen) {
-          setSelectedItem({ type: 'application', data: appToOpen });
+          if (action === 'order' && ['approved', 'pending'].includes(appToOpen.application_status)) {
+            setActionAppId(appToOpen.application_id);
+            setShowOrderModal(true);
+          } else {
+            setSelectedItem({ type: 'application', data: appToOpen });
+          }
        }
     }
   }, [location.search, applications]); 
@@ -618,7 +624,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                   <div className="mt-4 pt-3 border-t border-gray-100 flex gap-2">
                     <button onClick={() => setSelectedItem({ type: 'application', data: app })} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg text-xs transition-colors">Details</button>
                     
-                    {app.application_status === 'approved' && (
+                    {['approved', 'pending'].includes(app.application_status) && (
                       <button onClick={() => { setActionAppId(app.application_id); setShowOrderModal(true); }} className="flex-1 bg-[#0066ff] text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-blue-500/30">Submit Order</button>
                     )}
 
@@ -626,7 +632,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                       <button onClick={() => { setActionAppId(app.application_id); setShowReviewModal(true); }} className="flex-1 bg-purple-600 text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-purple-500/30">Submit Review</button>
                     )}
 
-                    {(app.application_status === 'pending' || app.application_status === 'order_submitted' || app.application_status === 'review_submitted' || app.application_status === 'pending_refund' || (app.application_status === 'order_approved' && app.category === 'No Review')) && (
+                    {(app.application_status === 'order_submitted' || app.application_status === 'review_submitted' || app.application_status === 'pending_refund' || (app.application_status === 'order_approved' && app.category === 'No Review')) && (
                       <button disabled className="flex-1 bg-gray-100 text-gray-400 font-bold py-2 rounded-lg text-xs cursor-not-allowed flex items-center justify-center gap-1">
                         <Clock size={14}/> Processing
                       </button>
@@ -1236,7 +1242,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                 <div className="text-right"><p className="text-xs text-gray-500">Reward</p><p className="text-lg font-bold text-green-600">+ {formatProduct(selectedItem.data.reward, selectedItem.data.country).formatted}</p></div>
               </div>
 
-              {['approved', 'order_submitted', 'order_approved', 'review_submitted', 'pending_refund', 'completed'].includes(selectedItem.data.application_status) && (
+              {['pending', 'approved', 'order_submitted', 'order_approved', 'review_submitted', 'pending_refund', 'completed'].includes(selectedItem.data.application_status) && (
                 <div className="bg-white border border-gray-200 rounded-xl p-4 mt-4 text-sm space-y-2 shadow-sm">
                   <h4 className="font-bold text-gray-700 mb-3 border-b pb-1">Search & Purchase Details</h4>
                   

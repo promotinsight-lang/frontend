@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, Lock, ShieldAlert, Sparkles, Eye, Clock
+  Search, Lock, ShieldAlert, Sparkles, Eye, ShoppingBag
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { formatProductMoney } from '../utils/currency';
@@ -132,10 +132,10 @@ export default function Marketplace() {
           [String(productId)]: {
             ...(result.application || {}),
             product_id: productId,
-            application_status: result.application?.status || 'pending',
+            application_status: result.application?.status || 'approved',
           }
         }));
-        alert("Applied Successfully! Waiting for admin approval.");
+        alert("Order is ready. Submit your order details from My Orders.");
       } else {
         alert(result.message || "Failed to apply");
       }
@@ -295,8 +295,9 @@ function ProductCard({ product, user, application, onApply, navigate }) {
   const availableQty = Math.max(0, targetQty - appliedQty);
   const isSoldOut = (targetQty > 0 && availableQty === 0) || product.status === 'stopped';
   const applicationStatus = application?.application_status || application?.status;
-  const isWaitingForApproval = applicationStatus === 'pending';
   const hasExistingApplication = Boolean(applicationStatus);
+  const canSubmitOrder = ['approved', 'pending'].includes(applicationStatus);
+  const applicationId = application?.application_id || application?.id;
   const priceDisplay = formatProductMoney(product.price, product.country);
   const rewardDisplay = formatProductMoney(product.reward, product.country);
 
@@ -342,12 +343,17 @@ function ProductCard({ product, user, application, onApply, navigate }) {
            <button onClick={() => navigate('/dashboard?tab=overview')} className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-1 shadow-sm">
              <Eye size={16} /> View Details
            </button>
-        ) : isWaitingForApproval ? (
-           <button disabled className="w-full bg-yellow-50 border-2 border-yellow-200 text-yellow-700 font-bold py-2 rounded-lg text-sm shadow-sm cursor-not-allowed flex items-center justify-center gap-1">
-             <Clock size={16} /> Waiting for approve
-           </button>
+        ) : hasExistingApplication && canSubmitOrder ? (
+           <div className="grid grid-cols-2 gap-2">
+             <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg transition-colors text-xs shadow-sm flex items-center justify-center gap-1">
+               <Eye size={14} /> View Details
+             </button>
+             <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}&action=order` : ''}`)} className="bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-xs shadow-sm flex items-center justify-center gap-1">
+               <ShoppingBag size={14} /> Submit Order
+             </button>
+           </div>
         ) : hasExistingApplication ? (
-           <button onClick={() => navigate('/dashboard?tab=active')} className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm shadow-sm">
+           <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm shadow-sm">
              View My Order
            </button>
         ) : isSoldOut ? (
@@ -356,7 +362,7 @@ function ProductCard({ product, user, application, onApply, navigate }) {
            </button>
         ) : (
            <button onClick={() => onApply(product.id)} className="w-full bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white font-bold py-2 rounded-lg transition-colors text-sm shadow-sm">
-             Apply Now
+             Order Now
            </button>
         )}
       </div>
