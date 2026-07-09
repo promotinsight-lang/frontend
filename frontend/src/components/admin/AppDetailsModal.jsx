@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, AlertTriangle, Package, Image as ImageIcon, Star, CheckCircle, Receipt } from 'lucide-react';
 
 export default function AppDetailsModal({

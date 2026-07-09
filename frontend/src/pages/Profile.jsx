@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { ChevronDown, ChevronUp, User, Mail, Lock, ShieldAlert, ShieldCheck, Clock, Loader2, Edit2, Check, X } from 'lucide-react';
@@ -24,9 +24,8 @@ const Profile = () => {
 
   const fetchProfileData = async () => {
     try {
-      const token = localStorage.getItem('token');
       const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: {},
         credentials: 'include' 
       });
       
@@ -55,13 +54,9 @@ const Profile = () => {
     
     setUpdateLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile/name`, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName })
       });
       
@@ -74,7 +69,7 @@ const Profile = () => {
       } else {
         alert(data.message || "Failed to update name");
       }
-    } catch (error) {
+    } catch {
       alert("Server error");
     } finally {
       setUpdateLoading(false);
@@ -99,7 +94,7 @@ const Profile = () => {
       const data = await res.json();
       if (res.ok) setResetMessage({ type: 'success', text: '✅ Reset link sent to your email!' });
       else setResetMessage({ type: 'error', text: data.message || 'Failed to send email.' });
-    } catch (error) {
+    } catch {
       setResetMessage({ type: 'error', text: 'Server connection error.' });
     } finally {
       setResetLoading(false);

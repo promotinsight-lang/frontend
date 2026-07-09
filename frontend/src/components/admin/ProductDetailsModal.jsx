@@ -1,5 +1,4 @@
-import React from 'react';
-import { X, Eye, Package } from 'lucide-react';
+import { X, Eye } from 'lucide-react';
 import { getCurrencyForCountry } from '../../utils/currency';
 
 export default function ProductDetailsModal({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; 
+import {  useState, useEffect  } from 'react'; 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'; 
 import HomePage from './pages/HomePage';
 import Marketplace from './pages/Marketplace'; // 🔥 NEW: Marketplace Import
@@ -28,25 +28,21 @@ import { LanguageProvider } from './i18n/LanguageContext';
 export default function App() {
   
   const [user, setUser] = useState(() => {
-    const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    return (token && storedUser) ? JSON.parse(storedUser) : null;
+    return storedUser ? JSON.parse(storedUser) : null;
   });
 
   // 🔥 Secure Session Validation on App Load (HttpOnly Cookie Fallback)
   useEffect(() => {
     const verifySession = async () => {
       try {
-        const token = localStorage.getItem('token');
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
           credentials: 'include' // Validate session via HttpOnly Cookie
         });
         
         if (res.status === 401) {
           // Token/Cookie expired or invalid
           localStorage.removeItem('user');
-          localStorage.removeItem('token');
           setUser(null);
         } else if (res.ok) {
           const data = await res.json();

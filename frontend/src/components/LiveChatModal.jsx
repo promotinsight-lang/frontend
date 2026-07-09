@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageSquare, Send, Loader2, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
@@ -30,7 +30,10 @@ const AutoReplyCard = () => (
 );
 
 export default function LiveChatModal({ isOpen, onClose, onOpen }) {
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
   const [chatStatus, setChatStatus] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -45,22 +48,60 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
     if (isOpen) setUnreadCount(0); // মডাল ওপেন করলে আনরিড মেসেজ জিরো হয়ে যাবে
   }, [isOpen]);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
-
   const isVerified = user && (user.verification_status?.toLowerCase() === 'approved' || user.verification_status?.toLowerCase() === 'verified');
 
   const getHeaders = () => ({
     withCredentials: true,
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
+
+  const triggerAlert = useCallback(() => {
+    setUnreadCount(prev => prev + 1); // ðŸ”´ à¦®à§‡à¦¸à§‡à¦œ à¦†à¦¸à¦²à§‡à¦‡ à¦•à¦¾à¦‰à¦¨à§à¦Ÿ à§§ à¦•à¦°à§‡ à¦¬à¦¾à§œà¦¬à§‡
+    try {
+      const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+      audio.play();
+    } catch {}
+  }, []);
+
+  const fetchMessages = useCallback(async (sid) => {
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/private-chat/sessions/${sid}/messages`, getHeaders());
+      const fetchedMsgs = res.data.data;
+      setMessages(fetchedMsgs);
+      
+      if (fetchedMsgs.length > 0 && !isOpenRef.current) {
+        const lastMsg = fetchedMsgs[fetchedMsgs.length - 1];
+        if (String(lastMsg.sender_user_id) !== String(user?.id)) {
+          triggerAlert();
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [triggerAlert, user?.id]);
+
+  const fetchChatStatus = useCallback(async () => {
+    setChatLoading(true);
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/private-chat/me/status`, getHeaders());
+      if (res.data.activeSession) {
+        setSessionId(res.data.activeSession.id);
+        setChatStatus('active');
+        fetchMessages(res.data.activeSession.id);
+      } else if (res.data.pendingRequest) {
+        setChatStatus('pending');
+      } else {
+        setChatStatus(null);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [fetchMessages]);
 
   useEffect(() => {
     if (user && isVerified) {
-      socket.auth = { token: localStorage.getItem('token') };
-      socket.connect();
+            socket.connect();
       fetchChatStatus();
       
       // 🟢 সকেট পুরোপুরি কানেক্ট হওয়ার পর অনলাইন সিগন্যাল পাঠাবে
@@ -78,7 +119,7 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
       socket.off('connect');
       socket.disconnect();
     };
-  }, [user, isVerified]);
+  }, [user, isVerified, fetchChatStatus]);
 
   useEffect(() => {
     let poll;
@@ -91,19 +132,11 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
             setChatStatus('active');
             fetchMessages(res.data.activeSession.id);
           }
-        } catch (err) {}
+        } catch {}
       }, 3000);
     }
     return () => clearInterval(poll);
-  }, [chatStatus]);
-
-  const triggerAlert = () => {
-    setUnreadCount(prev => prev + 1); // 🔴 মেসেজ আসলেই কাউন্ট ১ করে বাড়বে
-    try {
-      const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-      audio.play();
-    } catch (e) {}
-  };
+  }, [chatStatus, fetchMessages]);
 
   useEffect(() => {
     if (sessionId) {
@@ -127,48 +160,11 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
         socket.off('chat_closed_event', handleClose);
       };
     }
-  }, [sessionId, user]);
+  }, [sessionId, user, triggerAlert]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, chatStatus, isOpen]);
-
-  const fetchChatStatus = async () => {
-    setChatLoading(true);
-    try {
-      const res = await axios.get(`${BACKEND_URL}/api/private-chat/me/status`, getHeaders());
-      if (res.data.activeSession) {
-        setSessionId(res.data.activeSession.id);
-        setChatStatus('active');
-        fetchMessages(res.data.activeSession.id);
-      } else if (res.data.pendingRequest) {
-        setChatStatus('pending');
-      } else {
-        setChatStatus(null);
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const fetchMessages = async (sid) => {
-    try {
-      const res = await axios.get(`${BACKEND_URL}/api/private-chat/sessions/${sid}/messages`, getHeaders());
-      const fetchedMsgs = res.data.data;
-      setMessages(fetchedMsgs);
-      
-      if (fetchedMsgs.length > 0 && !isOpenRef.current) {
-        const lastMsg = fetchedMsgs[fetchedMsgs.length - 1];
-        if (String(lastMsg.sender_user_id) !== String(user?.id)) {
-          triggerAlert();
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const requestLiveChat = async () => {
     setChatLoading(true);

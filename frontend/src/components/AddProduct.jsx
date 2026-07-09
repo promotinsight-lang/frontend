@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw, Wallet } from 'lucide-react';
 
 export default function AddProduct({ onProductAdded }) {
@@ -41,9 +41,8 @@ export default function AddProduct({ onProductAdded }) {
     const initConfigs = async () => {
       setIsFeeLoading(true);
       try {
-        const token = localStorage.getItem('token');
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees/all`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          headers: {}
         });
         const data = await res.json();
         
@@ -78,9 +77,8 @@ export default function AddProduct({ onProductAdded }) {
       
       setIsFeeLoading(true);
       try {
-        const token = localStorage.getItem('token');
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees?country=${formData.country}&platform=${formData.platform}`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          headers: {}
         });
         const data = await res.json();
         
@@ -90,7 +88,7 @@ export default function AddProduct({ onProductAdded }) {
           if (Array.isArray(data.data.platform_charge)) {
             parsedTiers = data.data.platform_charge;
           } else if (typeof data.data.platform_charge === 'string') {
-            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch(e) {}
+            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch {}
           }
           data.data.parsed_platform_charge = parsedTiers;
           
@@ -104,7 +102,7 @@ export default function AddProduct({ onProductAdded }) {
         } else {
           setActiveConfig(null);
         }
-      } catch (error) {
+      } catch {
         setActiveConfig(null);
       } finally {
         setIsFeeLoading(false);
@@ -218,11 +216,9 @@ export default function AddProduct({ onProductAdded }) {
       
       // 🔥 Total Deposit-ও যদি ব্যাকএন্ড এক্সপেক্ট করে, তবে সেটিও USD তে পাঠিয়ে দিন
       submitData.append('total_deposit', totalDepositUSD.toFixed(4));
-
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: {},
         body: submitData
       });
       

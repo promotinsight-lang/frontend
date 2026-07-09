@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import { Mail, MessageSquare, Send, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
@@ -35,14 +35,10 @@ export default function Support() {
   const [activeTab, setActiveTab] = useState('email'); // 'email' or 'chat'
   
   // ইউজার ডেটা লোকাল স্টোরেজ থেকে নেওয়া হচ্ছে
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
+  const [user] = useState(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
   // ==========================================
   // TAB 1: Email Support State & Logic
@@ -80,12 +76,44 @@ export default function Support() {
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  const getHeaders = () => ({
+    withCredentials: true,
+  });
+
+  const fetchMessages = useCallback(async (sid) => {
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/private-chat/sessions/${sid}/messages`, getHeaders());
+      setMessages(res.data.data);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  }, []);
+
+  const fetchChatStatus = useCallback(async () => {
+    setChatLoading(true);
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/private-chat/me/status`, getHeaders());
+      if (res.data.activeSession) {
+        setSessionId(res.data.activeSession.id);
+        setChatStatus('active');
+        fetchMessages(res.data.activeSession.id);
+      } else if (res.data.pendingRequest) {
+        setChatStatus('pending');
+      } else {
+        setChatStatus(null);
+      }
+    } catch (error) {
+      console.error("Error fetching status:", error);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [fetchMessages]);
   
   // সকেট কানেকশন ও চ্যাট স্ট্যাটাস ফেচ করা
   useEffect(() => {
     if (activeTab === 'chat' && user) {
-      socket.auth = { token: localStorage.getItem('token') };
-      socket.connect();
+            socket.connect();
       if (user.verification_status === 'approved' || user.verification_status === 'verified') {
         fetchChatStatus();
         
@@ -102,7 +130,7 @@ export default function Support() {
       socket.off('connect');
       if (activeTab === 'chat') socket.disconnect();
     };
-  }, [activeTab, user]);
+  }, [activeTab, user, fetchChatStatus]);
 
   // সকেট ইভেন্ট লিসেনার
   useEffect(() => {
@@ -132,43 +160,7 @@ export default function Support() {
   }, [messages, activeTab]);
 
   // ✅ ১. সিকিউরিটি হেডার ফাংশন (টোকেন ও কুকি একসাথে পাঠানোর জন্য)
-  const getHeaders = () => ({
-    withCredentials: true,
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  });
 
-  // ✅ ২. চ্যাট স্ট্যাটাস চেক করার ফাংশন
-  const fetchChatStatus = async () => {
-    setChatLoading(true);
-    try {
-      const res = await axios.get(`${BACKEND_URL}/api/private-chat/me/status`, getHeaders());
-      if (res.data.activeSession) {
-        setSessionId(res.data.activeSession.id);
-        setChatStatus('active');
-        fetchMessages(res.data.activeSession.id);
-      } else if (res.data.pendingRequest) {
-        setChatStatus('pending');
-      } else {
-        setChatStatus(null);
-      }
-    } catch (error) {
-      console.error("Error fetching status:", error);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  // ✅ ৩. পুরোনো মেসেজ হিস্ট্রি নিয়ে আসার ফাংশন
-  const fetchMessages = async (sid) => {
-    try {
-      const res = await axios.get(`${BACKEND_URL}/api/private-chat/sessions/${sid}/messages`, getHeaders());
-      setMessages(res.data.data);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  };
-
-  // ✅ ৪. নতুন চ্যাট রিকোয়েস্ট পাঠানোর ফাংশন (অ্যালার্টসহ)
   const requestLiveChat = async () => {
     setChatLoading(true);
     try {

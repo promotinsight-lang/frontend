@@ -1,15 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard,
-  TrendingUp, ShieldCheck, Zap, CheckCircle, Wallet, FileText, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift 
-} from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard, TrendingUp, ShieldCheck, Zap, CheckCircle, Wallet, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export default function HomePage() {
-  const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [user, setUser] = useState(null);
   const [isAccountDisabled, setIsAccountDisabled] = useState(false);
@@ -96,8 +92,7 @@ export default function HomePage() {
     const initConfigs = async () => {
       setIsCalcLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const headers = {};
 
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees/all`, { headers });
         const data = await res.json();
@@ -134,8 +129,7 @@ export default function HomePage() {
       
       setIsCalcLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const headers = {};
 
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/config/fees?country=${calcData.country}&platform=${calcData.platform}`, { headers });
         const data = await res.json();
@@ -147,7 +141,7 @@ export default function HomePage() {
           if (Array.isArray(data.data.platform_charge)) {
             parsedTiers = data.data.platform_charge;
           } else if (typeof data.data.platform_charge === 'string') {
-            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch(e) {}
+            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch {}
           }
           data.data.parsed_platform_charge = parsedTiers;
           
@@ -159,7 +153,7 @@ export default function HomePage() {
         } else {
           setActiveConfig(null);
         }
-      } catch (error) {
+      } catch {
         setActiveConfig(null);
       } finally {
         setIsCalcLoading(false);

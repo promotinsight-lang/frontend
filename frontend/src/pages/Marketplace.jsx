@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, Lock, ShieldAlert, Sparkles, Eye, ShoppingBag
@@ -33,11 +33,10 @@ export default function Marketplace() {
     }
 
     const fetchLiveProfile = async () => {
-      const token = localStorage.getItem('token');
-      if(!token) return;
+      if(!parsedUser) return;
       try {
          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, { 
-           headers: { 'Authorization': `Bearer ${token}` },
+           headers: {},
            credentials: 'include' // 🔥 Required for HttpOnly Cookies
          });
          
@@ -59,12 +58,11 @@ export default function Marketplace() {
     };
 
     const fetchMyApplications = async () => {
-      const token = localStorage.getItem('token');
-      if (!token || parsedUser?.role !== 'buyer') return;
+      if (parsedUser?.role !== 'buyer') return;
 
       try {
         const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/my`, {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: {},
           credentials: 'include'
         });
 
@@ -111,10 +109,9 @@ export default function Marketplace() {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/apply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // 🔥 Secure session validation
         body: JSON.stringify({ product_id: productId })
       });
@@ -139,7 +136,7 @@ export default function Marketplace() {
       } else {
         alert(result.message || "Failed to apply");
       }
-    } catch (error) {
+    } catch {
       alert("Error applying for product. Please try again.");
     }
   };

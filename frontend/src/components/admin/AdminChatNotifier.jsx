@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
@@ -9,7 +9,6 @@ export default function AdminChatNotifier() {
 
   const getHeaders = () => ({
     withCredentials: true,
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
 
   useEffect(() => {
@@ -28,12 +27,12 @@ export default function AdminChatNotifier() {
             try { 
               const audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
               audio.play(); 
-            } catch(e) {}
+            } catch {}
           }
           
           setPendingCount(currentCount);
         }
-      } catch (err) {}
+      } catch {}
     };
 
     // কম্পোনেন্ট লোড হলেই একবার চেক করবে

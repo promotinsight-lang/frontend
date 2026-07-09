@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Lock, CheckCircle, AlertCircle, Loader2, ChevronLeft } from 'lucide-react';
 
@@ -48,7 +48,7 @@ export default function ResetPassword() {
       } else {
         setStatus({ loading: false, error: data.message || 'Invalid or expired token.', success: '' });
       }
-    } catch (err) {
+    } catch {
       setStatus({ loading: false, error: 'Server connection error. Please try again.', success: '' });
     }
   };

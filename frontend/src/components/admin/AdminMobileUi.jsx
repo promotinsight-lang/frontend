@@ -1,4 +1,3 @@
-import React from 'react';
 
 export function ResponsiveTableShell({ children, mobile, empty, emptyMessage = 'No records found.' }) {
   return (

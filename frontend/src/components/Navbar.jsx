@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, Home, Bell, X, ShoppingBag, FileText } from 'lucide-react'; 
 import SidebarMenu from './SidebarMenu';
@@ -27,8 +27,7 @@ const Navbar = () => {
     const fetchNotifications = async () => {
        if (!user) return;
        try {
-          const token = localStorage.getItem('token');
-          const headers = { 'Authorization': `Bearer ${token}` };
+          const headers = {};
           const credentials = 'include';
           let notifs = [];
 

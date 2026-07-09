@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, Store, ArrowLeft } from 'lucide-react';
 import Navbar from '../components/Navbar';

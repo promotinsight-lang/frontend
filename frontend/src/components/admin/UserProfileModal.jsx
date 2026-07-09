@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, X, Clock, CheckCircle, XCircle, Package, AlertTriangle, MapPin } from 'lucide-react';
 
 export default function UserProfileModal({

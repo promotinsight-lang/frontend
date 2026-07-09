@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, CheckCircle, XCircle, Users, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
@@ -24,12 +24,10 @@ export default function PrivateChatAdminPanel() {
 
   const getHeaders = () => ({
     withCredentials: true,
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
 
   useEffect(() => {
-    socket.auth = { token: localStorage.getItem('token') };
-    socket.connect();
+        socket.connect();
     fetchPendingRequests();
     fetchActiveSessions(); // 🟢 Prothomei active list-ti load hobe
 
@@ -44,7 +42,7 @@ export default function PrivateChatAdminPanel() {
 
         const resAct = await axios.get(`${BACKEND_URL}/api/private-chat/admin/sessions`, getHeaders());
         if (resAct.data.success) setActiveSessions(resAct.data.data || resAct.data.sessions || resAct.data.activeSessions || []);
-      } catch (err) {} 
+      } catch {} 
     }, 5000);
 
     return () => {
@@ -72,7 +70,7 @@ export default function PrivateChatAdminPanel() {
       } else {
         // 🔴 ব্যাকগ্রাউন্ড চ্যাটে Unread Count বাড়াবে!
         setUnreadCounts((prev) => ({ ...prev, [sId]: (prev[sId] || 0) + 1 }));
-        try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch(e) {}
+        try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch {}
       }
     };
 
@@ -142,7 +140,7 @@ export default function PrivateChatAdminPanel() {
         fetchPendingRequests();
         fetchActiveSessions(); // 🟢 Sathe sathe active list refresh korbe
       }
-    } catch (err) { alert('Failed to approve'); }
+    } catch { alert('Failed to approve'); }
   };
 
   const rejectRequest = async (id) => {
@@ -150,7 +148,7 @@ export default function PrivateChatAdminPanel() {
     try {
       await axios.post(`${BACKEND_URL}/api/private-chat/admin/requests/${id}/reject`, {}, getHeaders());
       fetchPendingRequests();
-    } catch (err) { alert('Failed to reject'); }
+    } catch { alert('Failed to reject'); }
   };
 
   const fetchMessages = async (sid) => {
@@ -174,7 +172,7 @@ export default function PrivateChatAdminPanel() {
       socket.emit('admin_ends_chat_session', activeSession.id);
       setActiveSession(null);
       setActiveTab('pending');
-    } catch (err) { alert('Failed to end chat'); }
+    } catch { alert('Failed to end chat'); }
   };
 
   const startDirectChat = async (userId) => {
@@ -186,7 +184,7 @@ export default function PrivateChatAdminPanel() {
           fetchMessages(res.data.session.id);
           fetchActiveSessions(); // 🟢 চ্যাট শুরু হওয়ার সাথে সাথে লিস্ট রিফ্রেশ হবে
        }
-     } catch (err) { alert('Failed to start chat'); }
+     } catch { alert('Failed to start chat'); }
   };
 // 🟢 100% Fail-safe: Admin active chat-e thakle ota jodi api list-e na-o ashe, client-side auto merge hobe
   const displaySessions = [...activeSessions];

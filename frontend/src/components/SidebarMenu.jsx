@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ShoppingBag, User, AlertTriangle, CheckCircle,
@@ -40,7 +40,6 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
     
     // 🔥 UPDATE: localStorage.clear() এর বদলে নির্দিষ্ট ডেটা রিমুভ করা হলো
     // এর ফলে নোটিফিকেশনের রিড (Read) হিস্ট্রি ব্রাউজারে থেকে যাবে
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('referral_code');
     

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { Mail, ChevronLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -39,7 +39,7 @@ export default function ForgotPassword() {
       } else {
         setStatus({ loading: false, msg: data.message || 'Failed to process request.', type: 'error' });
       }
-    } catch (err) {
+    } catch {
       setStatus({ loading: false, msg: 'Server connection error. Please try again.', type: 'error' });
     }
   };

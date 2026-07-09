@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { Scale, X, AlertTriangle, Eye } from 'lucide-react';
 
 export default function AppealDetailsModal({

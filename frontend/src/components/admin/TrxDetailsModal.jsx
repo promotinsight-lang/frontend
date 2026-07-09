@@ -1,4 +1,3 @@
-import React from 'react';
 import { Wallet, X, ShieldCheck } from 'lucide-react';
 
 export default function TrxDetailsModal({

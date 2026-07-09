@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import {  useState, useEffect, useRef  } from 'react';
 import { Link } from 'react-router-dom';
 import { Globe, ShieldCheck, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';

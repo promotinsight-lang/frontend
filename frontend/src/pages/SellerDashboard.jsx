@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import AddProduct from '../components/AddProduct';
 import SellerTariffsPage from '../components/SellerTariffsPage';
-import { 
-  Package, PlusCircle, LayoutDashboard, Wallet, Clock,
-  Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle,
-  Headset, MessageCircle, MessageSquare, Send, History, Settings, ShieldCheck, ShieldAlert, Snowflake, DollarSign
-} from 'lucide-react';
+import { Package, PlusCircle, Wallet, Clock, Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle, Headset, MessageCircle, MessageSquare, Send, History, ShieldCheck, ShieldAlert, Snowflake, DollarSign } from 'lucide-react';
 import { getCurrencyForCountry, getRateForCountry, buildCountryRateMap } from '../utils/currency';
 import LiveChatModal from '../components/LiveChatModal';
 // ================= SECURITY HELPER =================
@@ -136,8 +132,7 @@ export default function SellerDashboard() {
   }, [location.search]);
 
   const fetchDashboardData = async () => {
-    const token = localStorage.getItem('token');
-    const authHeaders = { 'Authorization': `Bearer ${token}` };
+    const authHeaders = {};
     try {
       const profileRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, { headers: authHeaders });
       const profileData = await profileRes.json();
@@ -181,31 +176,31 @@ export default function SellerDashboard() {
         const wRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals/my`, { headers: authHeaders });
         const wData = await wRes.json();
         if (wData.success) setWithdrawals(wData.data);
-      } catch(e) { }
+      } catch {}
 
       try {
         const dRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/deposits`, { headers: authHeaders });
         const dData = await dRes.json();
         if (dData.success) setDeposits(dData.data);
-      } catch(e) { }
+      } catch {}
 
       try {
         const rRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/refunds/my`, { headers: authHeaders });
         const rData = await rRes.json();
         if (rData.success) setRefunds(rData.data);
-      } catch(e) { }
+      } catch {}
 
       try {
         const aRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/appeals/my`, { headers: authHeaders });
         const aData = await aRes.json();
         if (aData.success) setMyAppeals(aData.data);
-      } catch(e) { }
+      } catch {}
 
       try {
         const tRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/my`, { headers: authHeaders });
         const tData = await tRes.json();
         if (tData.success) setSupportTickets(tData.data);
-      } catch(e) { }
+      } catch {}
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -222,9 +217,8 @@ export default function SellerDashboard() {
     setReviewsLoading(true);
     setProductReviews([]); 
     try {
-      const token = localStorage.getItem('token');
       const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/seller/product/${productId}/reviews`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: {}
       });
       const data = await response.json();
       if (response.ok && data.success) setProductReviews(data.data);
@@ -239,26 +233,6 @@ export default function SellerDashboard() {
     setSelectedProduct(product);
     setShowViewModal(true);
     fetchProductReviews(product.id);
-  };
-
-  const handleSellerApproveReview = async (applicationId) => {
-    if (!window.confirm("Are you sure you want to approve this order/review? It will be sent to Admin for final refund.")) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/seller/${applicationId}/approve`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert(data.message || "Approved successfully!");
-        fetchProductReviews(selectedProduct.id); 
-      } else {
-        alert(data.message || "Failed to approve.");
-      }
-    } catch (error) {
-      alert("Server error.");
-    }
   };
 
   const openSellerPayModal = (review) => {
@@ -285,7 +259,7 @@ export default function SellerDashboard() {
       if (cloudJson.secure_url) {
         setSellerPaymentProof(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
       }
-    } catch (error) {
+    } catch {
       alert("Payment screenshot upload failed!");
     } finally {
       setIsUploadingSellerPaymentProof(false);
@@ -301,10 +275,9 @@ export default function SellerDashboard() {
 
     setIsSubmittingSellerPayment(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/seller/${selectedPayReview.application_id}/payment-proof`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sellerPaymentProof)
       });
       const data = await res.json();
@@ -317,7 +290,7 @@ export default function SellerDashboard() {
       } else {
         alert(data.message || "Failed to submit payment proof.");
       }
-    } catch (error) {
+    } catch {
       alert("Server error.");
     } finally {
       setIsSubmittingSellerPayment(false);
@@ -328,10 +301,9 @@ export default function SellerDashboard() {
     e.preventDefault();
     setIsAppealing(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/appeals/order`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           application_id: appealData.application_id,
           reason: appealData.reason,
@@ -348,7 +320,7 @@ export default function SellerDashboard() {
       } else {
         alert(data.message || "Failed to submit appeal.");
       }
-    } catch (error) {
+    } catch {
       alert("Server error.");
     } finally {
       setIsAppealing(false);
@@ -378,7 +350,7 @@ export default function SellerDashboard() {
       if (cloudJson.secure_url) {
         setDepositData(prev => ({ ...prev, screenshot_url: cloudJson.secure_url }));
       }
-    } catch (error) {
+    } catch {
       alert("Screenshot upload failed!");
     } finally {
       setIsUploadingDepositProof(false);
@@ -402,7 +374,7 @@ export default function SellerDashboard() {
       if (cloudJson.secure_url) {
         setWithdrawData(prev => ({ ...prev, qr_code_url: cloudJson.secure_url }));
       }
-    } catch (error) {
+    } catch {
       alert("QR Code upload failed!");
     } finally {
       setIsUploadingWithdrawQR(false);
@@ -418,11 +390,10 @@ export default function SellerDashboard() {
   const handleDeposit = async (e) => {
     e.preventDefault();
     setIsDepositing(true);
-    const token = localStorage.getItem('token');
     try {
       const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/deposit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(depositData) 
       });
       const data = await response.json();
@@ -432,18 +403,17 @@ export default function SellerDashboard() {
         setDepositData({ amount: '', payment_method: paymentSettings.length > 0 ? paymentSettings[0].method_name : 'PayPal', transaction_id: '', screenshot_url: '' });
         fetchDashboardData();
       } else alert(data.message || 'Deposit failed');
-    } catch (error) { alert('Server error during deposit'); } 
+    } catch { alert('Server error during deposit'); } 
     finally { setIsDepositing(false); }
   };
 
   const handleWithdraw = async (e) => {
     e.preventDefault();
     setIsWithdrawing(true);
-    const token = localStorage.getItem('token');
     try {
       const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(withdrawData)
       });
       const data = await response.json();
@@ -453,32 +423,30 @@ export default function SellerDashboard() {
         setWithdrawData({ amount: '', payment_method: 'Bank', account_details: '' });
         fetchDashboardData();
       } else alert(data.message || 'Withdrawal failed');
-    } catch (error) { alert('Server error during withdrawal'); } 
+    } catch { alert('Server error during withdrawal'); } 
     finally { setIsWithdrawing(false); }
   };
 
   const handleCancel = async (productId) => {
     if (!window.confirm("Are you sure you want to cancel this product? Your deposit will be refunded to your wallet.")) return;
-    const token = localStorage.getItem('token');
     try {
       const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/${productId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: {}
       });
       const data = await response.json();
       if (response.ok) { alert(data.message); fetchDashboardData(); } 
       else alert(data.message || 'Failed to cancel product');
-    } catch (error) { alert('Server error'); }
+    } catch { alert('Server error'); }
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setIsEditing(true);
-    const token = localStorage.getItem('token');
     try {
       const response = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/${editFormData.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editFormData)
       });
       const data = await response.json();
@@ -487,7 +455,7 @@ export default function SellerDashboard() {
         setShowEditModal(false);
         fetchDashboardData();
       } else alert(data.message || 'Failed to update product');
-    } catch (error) { alert('Server error'); } 
+    } catch { alert('Server error'); } 
     finally { setIsEditing(false); }
   };
 
@@ -495,10 +463,9 @@ export default function SellerDashboard() {
     e.preventDefault();
     setIsSubmittingTicket(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ticketForm)
       });
       if(res.ok) {
@@ -509,7 +476,7 @@ export default function SellerDashboard() {
       } else {
         alert('Failed to create ticket');
       }
-    } catch (err) {
+    } catch {
       alert('Server error');
     } finally {
       setIsSubmittingTicket(false);
@@ -521,9 +488,8 @@ export default function SellerDashboard() {
     setShowTicketViewModal(true);
     setRepliesLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${ticket.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: {}
       });
       const data = await res.json();
       if(res.ok) {
@@ -542,10 +508,9 @@ export default function SellerDashboard() {
     if(!replyMessage.trim()) return;
     setIsSubmittingTicket(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${selectedTicket.id}/reply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: replyMessage })
       });
       const data = await res.json();
@@ -556,7 +521,7 @@ export default function SellerDashboard() {
       } else {
         alert('Failed to send reply');
       }
-    } catch (err) {
+    } catch {
       alert('Server error');
     } finally {
       setIsSubmittingTicket(false);

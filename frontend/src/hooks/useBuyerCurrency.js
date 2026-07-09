@@ -11,12 +11,12 @@ const API_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 let cachedRates = null;
 let cachePromise = null;
 
-async function fetchCountryRates(token) {
+async function fetchCountryRates() {
   if (cachedRates) return cachedRates;
   if (cachePromise) return cachePromise;
 
   cachePromise = fetch(`${API_BASE}/config/fees/all`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
   })
     .then((res) => res.json())
     .then((data) => {
@@ -56,15 +56,11 @@ export function useBuyerCurrency() {
         user.amazon_location || user.country || user.amazon_country || '';
 
       try {
-        const token = localStorage.getItem('token');
         const [rates, profileRes] = await Promise.all([
-          fetchCountryRates(token),
-          token
-            ? fetch(`${API_BASE}/users/profile`, {
-                headers: { Authorization: `Bearer ${token}` },
-                credentials: 'include',
-              }).then((r) => r.json())
-            : Promise.resolve(null),
+          fetchCountryRates(),
+          fetch(`${API_BASE}/users/profile`, {
+            credentials: 'include',
+          }).then((r) => r.ok ? r.json() : null),
         ]);
 
         if (profileRes?.success && profileRes.user) {

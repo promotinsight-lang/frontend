@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { User, ShoppingBag, FileText, X, RefreshCcw } from 'lucide-react'; 
+import { FileText, X, RefreshCcw } from 'lucide-react'; 
 
 // 🔥 Firebase Imports (আপনার firebase.js ফাইলের লোকেশন অনুযায়ী পাথ ঠিক আছে)
 import { signInWithPopup } from 'firebase/auth';
@@ -36,7 +36,7 @@ export default function SellerAuth({ onAuthSuccess }) {
 
   const [whatsapp, setWhatsapp] = useState('');
   const [country, setCountry] = useState('');
-  const [profileLink, setProfileLink] = useState(''); 
+  const [profileLink] = useState(''); 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
@@ -129,7 +129,7 @@ export default function SellerAuth({ onAuthSuccess }) {
       } else {
         setError(data.message || "Failed to send OTP.");
       }
-    } catch (err) {
+    } catch {
       setError("Server connection error.");
     } finally {
       setOtpLoading(false);
@@ -162,7 +162,6 @@ export default function SellerAuth({ onAuthSuccess }) {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         if (referredByCode) localStorage.removeItem('referral_code'); // Clean up
         
@@ -216,7 +215,6 @@ export default function SellerAuth({ onAuthSuccess }) {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         if (!isLogin && referredByCode) localStorage.removeItem('referral_code'); // Clean up
         
@@ -226,7 +224,7 @@ export default function SellerAuth({ onAuthSuccess }) {
         setError(data.message || 'Authentication failed');
         if (isLogin) fetchCaptcha();
       }
-    } catch (err) {
+    } catch {
       setError('Server Error. Please try again.');
       if (isLogin) fetchCaptcha();
     } finally {

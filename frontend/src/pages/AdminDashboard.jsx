@@ -1,12 +1,7 @@
 import AdminChatNotifier from '../components/admin/AdminChatNotifier';
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  RefreshCcw, CheckCircle, XCircle, Eye, Search, X, 
-  ShieldCheck, ShieldAlert, Snowflake, Play, Star, Users, User, Trash2, Scale, Clock, Package, AlertTriangle, Wallet, Image as ImageIcon,
-  BarChart3, Calendar, Headset, MessageCircle, Send, History, Megaphone, MapPin, FileText, Settings, Edit,
-  Briefcase, LayoutDashboard, MessageSquare
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { RefreshCcw, CheckCircle, XCircle, Eye, Search, ShieldCheck, ShieldAlert, Snowflake, Play, Star, Users, Trash2, Scale, Package, Wallet, Image as ImageIcon, BarChart3, Calendar, Headset, MessageCircle, History, Megaphone, MapPin, FileText, Settings, Edit, Briefcase, LayoutDashboard, MessageSquare } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { ResponsiveTableShell, AdminMobileCard, AdminField } from '../components/admin/AdminMobileUi';
 import VerificationFieldsGuide from '../components/admin/VerificationFieldsGuide';
@@ -60,7 +55,6 @@ const getVerificationPlatformDetails = (verification) => {
 
 export default function AdminDashboard() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   
   const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, pendingDeposits: 0, pendingWithdrawals: 0 });
@@ -75,11 +69,10 @@ export default function AdminDashboard() {
   const [historyDeposits, setHistoryDeposits] = useState([]);
   const [historyRefunds, setHistoryRefunds] = useState([]); 
   
-  const [paymentSettings, setPaymentSettings] = useState([]);
+  const [, setPaymentSettings] = useState([]);
   const [applications, setApplications] = useState([]); 
   const [verifications, setVerifications] = useState([]); 
   const [appeals, setAppeals] = useState([]); 
-  const [loading, setLoading] = useState(false);
 
   const [usersList, setUsersList] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -97,7 +90,6 @@ export default function AdminDashboard() {
 
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [selectedUserProfile, setSelectedUserProfile] = useState(null);
-  const [profileContextProduct, setProfileContextProduct] = useState(null); 
   const [userAppStats, setUserAppStats] = useState({ listed: 0, active: 0, success: 0, failed: 0 });
   const [selectedUserApps, setSelectedUserApps] = useState([]); 
   const [sellerProductsList, setSellerProductsList] = useState([]); 
@@ -115,12 +107,10 @@ export default function AdminDashboard() {
   const [trxType, setTrxType] = useState('');
 
   const [supportTickets, setSupportTickets] = useState([]);
-  const [selectedTicket, setSelectedTicket] = useState(null);
-  const [ticketReplies, setTicketReplies] = useState([]);
-  const [replyMessage, setReplyMessage] = useState('');
+  const [, setSelectedTicket] = useState(null);
+  const [, setTicketReplies] = useState([]);
   const [showTicketViewModal, setShowTicketViewModal] = useState(false);
-  const [repliesLoading, setRepliesLoading] = useState(false);
-  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [, setRepliesLoading] = useState(false);
 
   const [announcements, setAnnouncements] = useState([]);
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '' });
@@ -157,11 +147,8 @@ export default function AdminDashboard() {
   const [feeLoading, setFeeLoading] = useState(false);
   const [globalVerificationFields, setGlobalVerificationFields] = useState([]);
   const [verificationConfigLoading, setVerificationConfigLoading] = useState(false);
-
-  const token = localStorage.getItem('token');
   const getAuthHeaders = () => {
     const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
     return headers;
   };
 
@@ -212,7 +199,7 @@ export default function AdminDashboard() {
           try {
             const parsed = JSON.parse(data.data.platform_charge);
             if (Array.isArray(parsed)) parsedTiers = parsed;
-          } catch(e) { }
+          } catch {}
         }
 
         const fetchedRate = data.data.exchange_rate || 1;
@@ -233,7 +220,7 @@ export default function AdminDashboard() {
           try {
             const parsed = JSON.parse(data.data.verification_fields);
             if (Array.isArray(parsed) && parsed.length > 0) parsedVerificationFields = parsed;
-          } catch (e) { /* keep defaults */ }
+          } catch { /* keep defaults */ }
         }
 
         let platformVerFields = parsedVerificationFields;
@@ -248,7 +235,7 @@ export default function AdminDashboard() {
               platformVerFields = vData.data;
             }
           }
-        } catch (e) { /* use fee row fields */ }
+        } catch { /* use fee row fields */ }
 
         const localReward = data.data.buyer_reward ? (parseFloat(data.data.buyer_reward) * fetchedRate).toFixed(2) : '';
 
@@ -309,7 +296,7 @@ export default function AdminDashboard() {
       try {
         const parsed = JSON.parse(config.platform_charge);
         if (Array.isArray(parsed)) parsedTiers = parsed;
-      } catch(e) { }
+      } catch {}
     }
 
     const rate = config.exchange_rate || 1;
@@ -330,7 +317,7 @@ export default function AdminDashboard() {
       try {
         const parsed = JSON.parse(config.verification_fields);
         if (Array.isArray(parsed) && parsed.length > 0) parsedVerificationFields = parsed;
-      } catch (e) { /* keep defaults */ }
+      } catch { /* keep defaults */ }
     }
 
     const localReward = config.buyer_reward ? (parseFloat(config.buyer_reward) * rate).toFixed(2) : '';
@@ -494,7 +481,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/admin/monthly-stats?month=${selectedMonth}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setMonthlyReport(data.data);
-    } catch (err) { }
+    } catch { }
   };
 
   const fetchStats = async () => {
@@ -502,7 +489,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/admin/stats`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setStats(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchDeposits = async () => {
@@ -510,7 +497,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/admin/deposits`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setDeposits(data.data.filter(d => d.status === 'pending')); setHistoryDeposits(data.data); }
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchWithdrawals = async () => {
@@ -518,7 +505,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/withdrawals/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setWithdrawals(data.data.filter(w => w.status === 'pending')); setHistoryWithdrawals(data.data); }
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchRefunds = async () => {
@@ -526,7 +513,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/products/refunds/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setHistoryRefunds(data.data); 
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchProducts = async () => {
@@ -534,7 +521,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/products`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) { setAllProducts(data.data); setPendingProducts(data.data.filter(p => p.status === 'pending')); }
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchSettings = async () => {
@@ -542,7 +529,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/users/payment-settings`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setPaymentSettings(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchApplications = async () => {
@@ -550,7 +537,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/applications/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setApplications(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchVerifications = async () => {
@@ -558,7 +545,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/admin/verifications`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setVerifications(data.data.filter(v => v.verification_status === 'pending'));
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchUsers = async (role) => {
@@ -566,7 +553,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/users/admin/role/${role}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setUsersList(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchAppeals = async () => {
@@ -574,7 +561,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/admin/appeals`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAppeals(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchSupportTickets = async () => {
@@ -582,7 +569,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/support/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setSupportTickets(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchAnnouncements = async () => {
@@ -590,7 +577,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/announcements/admin/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAnnouncements(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchAdminBlogs = async () => {
@@ -598,7 +585,7 @@ export default function AdminDashboard() {
       const res = await fetch(`${API_BASE}/api/blogs/admin/all`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (data.success) setAdminBlogs(data.data);
-    } catch (err) {}
+    } catch {}
   };
 
   const fetchAndShowUserProfile = async (userId) => {
@@ -637,10 +624,10 @@ export default function AdminDashboard() {
                  setUserAppStats({ listed, active, success, failed });
              }
           }
-        } catch (e) {}
+        } catch {}
         setShowUserProfileModal(true);
       }
-    } catch (err) {}
+    } catch {}
   };
 
   useEffect(() => {
@@ -671,7 +658,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (res.ok) { alert(data.message || 'Action successful'); return true; } 
       else { alert(data.message || 'Action failed'); return false; }
-    } catch (err) { alert('Connection Error.'); return false; }
+    } catch { alert('Connection Error.'); return false; }
   };
 
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`${API_BASE}/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
@@ -727,37 +714,13 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateSetting = async (id, newDetails) => {
-    if (!newDetails) return alert("Account details cannot be empty");
-    if (await handleAction(`${API_BASE}/api/admin/payment-settings/${id}`, 'PATCH', { account_details: newDetails })) fetchSettings();
-  };
-
   const openTicketView = async (ticket) => {
     setSelectedTicket(ticket); setShowTicketViewModal(true); setRepliesLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/support/${ticket.id}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if(res.ok) { setTicketReplies(data.data.replies || []); setSelectedTicket(data.data.ticket); }
-    } catch (err) {} finally { setRepliesLoading(false); }
-  };
-
-  const handleReplyTicket = async (e) => {
-    e.preventDefault();
-    if(!replyMessage.trim()) return;
-    setIsSubmittingTicket(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/support/${selectedTicket.id}/reply`, { method: 'POST', headers: getAuthHeaders(), credentials: 'include', body: JSON.stringify({ message: replyMessage }) });
-      const data = await res.json();
-      if(res.ok) { setTicketReplies([...ticketReplies, data.data]); setReplyMessage(''); fetchSupportTickets(); setSelectedTicket(prev => ({...prev, status: 'answered'})); }
-    } catch (err) {} finally { setIsSubmittingTicket(false); }
-  };
-
-  const handleCloseTicket = async (ticketId) => {
-    if(!window.confirm("Are you sure you want to close this ticket? It will be marked as resolved.")) return;
-    try {
-      const res = await fetch(`${API_BASE}/api/support/${ticketId}/close`, { method: 'PATCH', headers: getAuthHeaders(), credentials: 'include' });
-      if(res.ok) { alert("Ticket closed successfully"); setShowTicketViewModal(false); fetchSupportTickets(); }
-    } catch(err) {}
+    } catch {} finally { setRepliesLoading(false); }
   };
 
   const handleCreateAnnouncement = async (e) => {
@@ -829,7 +792,7 @@ export default function AdminDashboard() {
         resetBlogForm();
         fetchAdminBlogs();
       } else alert(data.message || (editingBlog ? "Failed to update blog." : "Failed to publish blog."));
-    } catch (err) {}
+    } catch {}
     setIsPublishingBlog(false);
   };
 
@@ -1378,7 +1341,7 @@ export default function AdminDashboard() {
                     try {
                       const parsed = JSON.parse(conf.platform_charge);
                       if (Array.isArray(parsed)) tierCount = parsed.length;
-                    } catch (e) {}
+                    } catch {}
                   }
                   return (
                     <AdminMobileCard
@@ -1420,7 +1383,7 @@ export default function AdminDashboard() {
                         try {
                           const parsed = JSON.parse(conf.platform_charge);
                           if(Array.isArray(parsed)) tierCount = parsed.length;
-                        } catch(e) {}
+                        } catch {}
                       }
 
                       return (

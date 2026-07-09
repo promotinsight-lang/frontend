@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import {  useState, useEffect, useMemo  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { CheckCircle, Clock, Globe, Layers, Image as ImageIcon, X } from 'lucide-react';
@@ -47,9 +47,7 @@ const Verification = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
         const res = await fetch(`${API}/api/users/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
           credentials: 'include',
         });
         if (res.status === 429) return;
@@ -298,12 +296,10 @@ const Verification = () => {
 
     setSubmitLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${API}/api/users/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           country: selectedCountry,

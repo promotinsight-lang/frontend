@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { 
-  ShoppingBag, CheckCircle, Clock, ChevronRight, X, ShieldAlert, 
-  XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon,
-  Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Users 
-} from 'lucide-react';
+import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Users } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
 import LiveChatModal from '../components/LiveChatModal';
@@ -89,10 +85,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       
       const profileRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: {},
         credentials: 'include'
       });
       
@@ -120,7 +115,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
       try {
         const annRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/announcements`, {
-           headers: { 'Authorization': `Bearer ${token}` },
+           headers: {},
            credentials: 'include'
         });
         const annData = await annRes.json();
@@ -128,7 +123,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       } catch (e) { console.error("Announcement fetch error", e); }
 
       const appRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/my`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: {},
         credentials: 'include'
       });
       const appData = await appRes.json();
@@ -136,7 +131,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       
       if (activeTab === 'wallet') {
          const wRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals/my`, {
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: {},
             credentials: 'include'
          });
          const wData = await wRes.json();
@@ -144,7 +139,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
          // Fetch dynamic payment methods
          const pmRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/payment-methods/list`, {
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: {},
             credentials: 'include'
          });
          const pmData = await pmRes.json();
@@ -155,7 +150,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
       if (activeTab === 'support') {
          const tRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/my`, {
-            headers: { 'Authorization': `Bearer ${token}` },
+            headers: {},
             credentials: 'include'
          });
          const tData = await tRes.json();
@@ -236,7 +231,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       if (cloudJson.secure_url) {
         setWithdrawForm(prev => ({ ...prev, qr_code_url: cloudJson.secure_url }));
       }
-    } catch (error) {
+    } catch {
       alert("QR Code upload failed!");
     } finally {
       setIsUploadingWithdrawQR(false);
@@ -247,10 +242,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/${actionAppId}/order`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(orderForm)
       });
@@ -263,7 +257,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
         const data = await res.json().catch(() => ({}));
         alert(data.message || 'Failed to submit order');
       }
-    } catch (err) {
+    } catch {
       alert('Server error');
     } finally {
       setIsSubmitting(false);
@@ -274,10 +268,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/${actionAppId}/review`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(reviewForm)
       });
@@ -289,7 +282,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       } else {
         alert('Failed to submit review');
       }
-    } catch (err) {
+    } catch {
       alert('Server error');
     } finally {
       setIsSubmitting(false);
@@ -328,10 +321,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
      setIsSubmitting(true);
      try {
-       const token = localStorage.getItem('token');
        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals`, {
          method: 'POST',
-         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+         headers: { 'Content-Type': 'application/json' },
          credentials: 'include',
          body: JSON.stringify(withdrawForm)
        });
@@ -343,7 +335,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
        } else {
          alert(data.message || 'Failed to request withdrawal');
        }
-     } catch (err) {
+     } catch {
        alert('Server error');
      } finally {
        setIsSubmitting(false);
@@ -354,10 +346,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(ticketForm)
       });
@@ -369,7 +360,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       } else {
         alert('Failed to create ticket');
       }
-    } catch (err) {
+    } catch {
       alert('Server error');
     } finally {
       setIsSubmitting(false);
@@ -381,9 +372,8 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     setShowTicketViewModal(true);
     setRepliesLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${ticket.id}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: {},
         credentials: 'include'
       });
       const data = await res.json();
@@ -403,10 +393,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     if(!replyMessage.trim()) return;
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/${selectedTicket.id}/reply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ message: replyMessage })
       });
@@ -418,7 +407,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       } else {
         alert('Failed to send reply');
       }
-    } catch (err) {
+    } catch {
       alert('Server error');
     } finally {
       setIsSubmitting(false);

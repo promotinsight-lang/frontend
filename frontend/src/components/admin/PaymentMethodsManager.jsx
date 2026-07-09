@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Edit, Trash2, Plus, ChevronDown, ChevronUp, Network, DollarSign, X } from 'lucide-react';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
@@ -11,10 +11,7 @@ export default function PaymentMethodsManager() {
   const [editData, setEditData] = useState({});
   const [showNewNetwork, setShowNewNetwork] = useState({});
   const [isUploadingQR, setIsUploadingQR] = useState(false);
-
-  const token = localStorage.getItem('token');
   const getAuthHeaders = () => ({
-    'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
   });
 
@@ -50,7 +47,7 @@ export default function PaymentMethodsManager() {
         setEditingId(null);
         fetchMethods();
       }
-    } catch (err) {
+    } catch {
       alert('Error updating payment method');
     }
   };
@@ -67,7 +64,7 @@ export default function PaymentMethodsManager() {
         fetchMethods();
         setShowNewNetwork({});
       }
-    } catch (err) {
+    } catch {
       alert('Error adding network');
     }
   };
@@ -83,7 +80,7 @@ export default function PaymentMethodsManager() {
         if (data.success) {
           fetchMethods();
         }
-      } catch (err) {
+      } catch {
         alert('Error deleting network');
       }
     }
@@ -107,7 +104,7 @@ export default function PaymentMethodsManager() {
       if (cloudJson.secure_url) {
         setEditData(prev => ({ ...prev, qr_code_url: cloudJson.secure_url }));
       }
-    } catch (error) {
+    } catch {
       alert("QR Code upload failed!");
     } finally {
       setIsUploadingQR(false);
