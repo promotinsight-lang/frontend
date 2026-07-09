@@ -252,24 +252,15 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
                 </div>
               )}
 
-              {user && isVerified && chatStatus === 'pending' && (
-                <div className="flex flex-col items-center justify-center h-full text-center py-6">
-                  <Loader2 className="animate-spin text-[#0066ff] w-16 h-16 mb-4" />
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Request Sent Successfully!</h3>
-                  <p className="text-gray-500 text-sm mb-6">Waiting for an admin to accept your request...</p>
-                  <div className="max-w-md mx-auto">
-                    <AutoReplyCard />
-                  </div>
-                </div>
-              )}
-
-              {user && isVerified && (chatStatus === 'active' || chatStatus === 'ended') && (
+              {user && isVerified && (chatStatus === 'pending' || chatStatus === 'active' || chatStatus === 'ended') && (
                 <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-inner">
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {messages.length === 0 ? (
                       <div className="space-y-4">
                         <AutoReplyCard />
-                        <p className="text-center text-gray-400 text-sm">Chat started! Say hello.</p>
+                        <p className="text-center text-gray-400 text-sm">
+                          {chatStatus === 'pending' ? 'Your live chat request is waiting for admin approval.' : 'Chat started! Say hello.'}
+                        </p>
                       </div>
                     ) : (
                       messages.map((msg, idx) => (
@@ -287,6 +278,11 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
                     {chatStatus === 'ended' ? (
                       <div className="text-center p-2 bg-red-50 text-red-600 text-sm font-bold rounded-lg border border-red-100">
                         Chat closed by Admin.
+                      </div>
+                    ) : chatStatus === 'pending' ? (
+                      <div className="text-center p-3 bg-blue-50 text-[#0066ff] text-sm font-bold rounded-xl border border-blue-100 flex items-center justify-center gap-2">
+                        <Loader2 className="animate-spin w-4 h-4" />
+                        Admin approval pending. You can start typing after an admin accepts.
                       </div>
                     ) : (
                       <form onSubmit={sendChatMessage} className="flex gap-2 items-center">
