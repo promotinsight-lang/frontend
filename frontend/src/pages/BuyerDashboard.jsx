@@ -639,6 +639,11 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                       </button>
                     )}
                   </div>
+                  {['order_submitted', 'order_approved', 'review_submitted', 'pending_refund'].includes(app.application_status) && app.category !== 'No Review' && (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 font-semibold leading-relaxed">
+                      Do not submit your review immediately. Reviews can only be submitted after 4-7 days from the order date.
+                    </div>
+                  )}
                 </div>
               ))
             )}
