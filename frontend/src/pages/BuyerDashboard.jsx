@@ -725,7 +725,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                    })()}
                  </div>
                </div>
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
                  <div className="bg-green-50 border border-green-100 rounded-xl p-3">
                    <p className="text-[10px] font-black uppercase text-green-700 mb-1">Reward Balance</p>
                    <p className="text-lg font-black text-green-800">{formatWallet(walletBreakdown.reward_balance || 0).primary}</p>
@@ -740,6 +740,13 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                      {walletBreakdown.signup_bonus_unlocked
                        ? 'Unlocked'
                        : `${walletBreakdown.completed_orders || 0}/${walletBreakdown.signup_bonus_min_completed_orders || 5} orders completed`}
+                   </p>
+                 </div>
+                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
+                   <p className="text-[10px] font-black uppercase text-purple-700 mb-1">Referral Bonus</p>
+                   <p className="text-lg font-black text-purple-800">{formatWallet(walletBreakdown.other_bonus_balance || 0).primary}</p>
+                   <p className="text-[10px] text-purple-700 font-semibold mt-1">
+                     Buyer referral: $10. Seller referral: $15 after seller completes 5 orders.
                    </p>
                  </div>
                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">

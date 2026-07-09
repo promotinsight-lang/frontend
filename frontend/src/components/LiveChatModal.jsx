@@ -6,6 +6,29 @@ import { io } from 'socket.io-client';
 const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 
+const AUTO_REPLY_MESSAGES = [
+  'Welcome to PromotInsight! You are in the right place to earn rewards, get signup bonuses, and grow with trusted campaigns.',
+  'Buyers can earn product rewards, unlock the $10 signup bonus after 5 completed orders, and get referral bonuses. Sellers can reach real verified buyers for authentic engagement.',
+  'Your trust matters here: verified users, admin-reviewed orders, wallet tracking, and support are all designed to keep the process clear and secure.',
+  'Tell us what you need today: earning as a buyer, promoting as a seller, referral bonuses, wallet help, or order support.'
+];
+
+const AutoReplyCard = () => (
+  <div className="w-full text-left space-y-3">
+    <div className="inline-flex items-center gap-2 bg-blue-50 text-[#0066ff] border border-blue-100 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wide">
+      <MessageSquare size={14} />
+      PromotInsight Assistant
+    </div>
+    <div className="space-y-2">
+      {AUTO_REPLY_MESSAGES.map((message, index) => (
+        <div key={index} className="bg-white border border-blue-100 shadow-sm rounded-2xl rounded-tl-none p-3 text-sm text-gray-700 font-semibold leading-relaxed">
+          {message}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function LiveChatModal({ isOpen, onClose, onOpen }) {
   const [user, setUser] = useState(null);
   const [chatStatus, setChatStatus] = useState(null);
@@ -215,12 +238,14 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
               )}
 
               {user && isVerified && chatStatus === null && (
-                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                <div className="flex flex-col items-center justify-center h-full text-center py-6">
                   <div className="bg-blue-50 p-6 rounded-full mb-6">
                     <MessageSquare className="text-[#0066ff] w-12 h-12" />
                   </div>
                   <h3 className="text-3xl font-black text-gray-900 mb-4">Instant Live Support</h3>
-                  <p className="text-gray-500 mb-8 max-w-sm mx-auto">Connect directly with an admin for immediate assistance.</p>
+                  <div className="max-w-md mx-auto mb-6">
+                    <AutoReplyCard />
+                  </div>
                   <button onClick={requestLiveChat} disabled={chatLoading} className="bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all flex items-center gap-3">
                     {chatLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Request Live Chat Now'}
                   </button>
@@ -228,10 +253,13 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
               )}
 
               {user && isVerified && chatStatus === 'pending' && (
-                <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                <div className="flex flex-col items-center justify-center h-full text-center py-6">
                   <Loader2 className="animate-spin text-[#0066ff] w-16 h-16 mb-4" />
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Request Sent Successfully!</h3>
-                  <p className="text-gray-500 text-sm">Waiting for an admin to accept your request...</p>
+                  <p className="text-gray-500 text-sm mb-6">Waiting for an admin to accept your request...</p>
+                  <div className="max-w-md mx-auto">
+                    <AutoReplyCard />
+                  </div>
                 </div>
               )}
 
@@ -239,7 +267,10 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
                 <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-inner">
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {messages.length === 0 ? (
-                      <p className="text-center text-gray-400 text-sm mt-10">Chat started! Say hello.</p>
+                      <div className="space-y-4">
+                        <AutoReplyCard />
+                        <p className="text-center text-gray-400 text-sm">Chat started! Say hello.</p>
+                      </div>
                     ) : (
                       messages.map((msg, idx) => (
                         <div key={idx} className={`flex ${String(msg.sender_user_id) === String(user.id) ? 'justify-end' : 'justify-start'}`}>
