@@ -48,7 +48,7 @@ export default function Footer() {
   const socialLinks = [
     {
       label: 'Facebook',
-      href: 'https://facebook.com/promotinsight',
+      href: 'https://www.facebook.com/promotinsight',
       shortLabel: 'f',
       className: 'bg-[#1877f2] text-white shadow-blue-500/25 hover:bg-[#0f6ee9]',
     },
