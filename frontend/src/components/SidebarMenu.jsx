@@ -375,6 +375,20 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
+              <div className="ml-9 mr-4 mb-2 border-l border-gray-200 pl-3 space-y-1">
+                <Link to="/dashboard?tab=active" onClick={() => setIsOpen(false)} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-blue-50 hover:text-[#0066ff] transition-colors">
+                  <span>Active Orders</span>
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                </Link>
+                <Link to="/dashboard?tab=completed" onClick={() => setIsOpen(false)} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-green-50 hover:text-green-600 transition-colors">
+                  <span>Completed Orders</span>
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                </Link>
+                <Link to="/dashboard?tab=failed" onClick={() => setIsOpen(false)} className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors">
+                  <span>Failed Orders</span>
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                </Link>
+              </div>
               
               <Link to="/dashboard?tab=wallet" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">

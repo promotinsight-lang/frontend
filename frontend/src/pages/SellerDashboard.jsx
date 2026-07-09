@@ -1163,6 +1163,8 @@ export default function SellerDashboard() {
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Order Details</p>
                             <div className="flex flex-col gap-2">
                               {review.order_number ? <p className="font-mono text-gray-800 font-bold bg-white px-2 py-1 rounded border shadow-sm w-fit truncate max-w-full">{review.order_number}</p> : <p className="text-gray-400 italic text-xs">No Order ID</p>}
+                              {review.order_total_amount && <p className="text-green-700 font-black bg-green-50 px-2 py-1 rounded border border-green-100 w-fit">Order Total: ${Number(review.order_total_amount).toFixed(2)}</p>}
+                              {(review.order_paypal_address || review.paypal_account) && <p className="text-blue-700 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-100 break-all w-fit">PayPal: {review.order_paypal_address || review.paypal_account}</p>}
                               {review.screenshot_url && <a href={review.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 1</a>}
                               {review.screenshot_url_2 && <a href={review.screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 2</a>}
                             </div>
@@ -1277,8 +1279,11 @@ export default function SellerDashboard() {
             <form onSubmit={submitSellerPaymentProof} className="p-5 space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm space-y-2">
                 <p className="font-black text-blue-800 mb-2">Buyer Payment Details</p>
-                {selectedPayReview.paypal_account ? (
-                  <p className="break-all"><span className="font-bold text-gray-500">PayPal:</span> {selectedPayReview.paypal_account}</p>
+                {selectedPayReview.order_total_amount && (
+                  <p><span className="font-bold text-gray-500">Order Total:</span> <span className="font-black text-green-700">${Number(selectedPayReview.order_total_amount).toFixed(2)}</span></p>
+                )}
+                {(selectedPayReview.order_paypal_address || selectedPayReview.paypal_account) ? (
+                  <p className="break-all"><span className="font-bold text-gray-500">PayPal:</span> {selectedPayReview.order_paypal_address || selectedPayReview.paypal_account}</p>
                 ) : (
                   <p className="text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-2 font-semibold">No payment details provided by buyer.</p>
                 )}

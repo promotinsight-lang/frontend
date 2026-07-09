@@ -32,7 +32,7 @@ const BuyerDashboard = () => {
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
 
-  const [orderForm, setOrderForm] = useState({ order_number: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
+  const [orderForm, setOrderForm] = useState({ order_number: '', order_total_amount: '', order_paypal_address: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
   const [reviewForm, setReviewForm] = useState({ review_link: '', review_screenshot_url: '', review_screenshot_url_2: '' });
   
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -257,10 +257,11 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       if(res.ok) {
         alert('Order submitted successfully!');
         setShowOrderModal(false);
-        setOrderForm({ order_number: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
+        setOrderForm({ order_number: '', order_total_amount: '', order_paypal_address: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
         fetchData();
       } else {
-        alert('Failed to submit order');
+        const data = await res.json().catch(() => ({}));
+        alert(data.message || 'Failed to submit order');
       }
     } catch (err) {
       alert('Server error');
@@ -1023,6 +1024,16 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                 <label className="block text-xs font-bold text-gray-600 mb-1">Amazon Order Number</label>
                 <input required type="text" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_number} onChange={e => setOrderForm({...orderForm, order_number: e.target.value})} placeholder="e.g. 114-1234567-8901234" />
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount</label>
+                <input required type="number" min="0.01" step="0.01" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_total_amount} onChange={e => setOrderForm({...orderForm, order_total_amount: e.target.value})} placeholder="e.g. 25.99" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">PayPal Email Address</label>
+                <input required type="email" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_paypal_address} onChange={e => setOrderForm({...orderForm, order_paypal_address: e.target.value})} placeholder="buyer@example.com" />
+              </div>
               
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Upload Screenshot 1 (Optional)</label>
@@ -1275,11 +1286,17 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                 </div>
               )}
 
-              {(selectedItem.data.order_number || selectedItem.data.screenshot_url || selectedItem.data.screenshot_url_2 || selectedItem.data.review_link || selectedItem.data.review_screenshot_url || selectedItem.data.review_screenshot_url_2) && (
+              {(selectedItem.data.order_number || selectedItem.data.order_total_amount || selectedItem.data.order_paypal_address || selectedItem.data.screenshot_url || selectedItem.data.screenshot_url_2 || selectedItem.data.review_link || selectedItem.data.review_screenshot_url || selectedItem.data.review_screenshot_url_2) && (
                 <div className="mt-6 border-t border-gray-100 pt-4">
                   <h4 className="font-bold text-gray-700 text-sm mb-3">Your Submissions</h4>
                   {selectedItem.data.order_number && (
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order ID</p><p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded inline-block border border-gray-200">{selectedItem.data.order_number}</p></div>
+                  )}
+                  {selectedItem.data.order_total_amount && (
+                    <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order Total Amount</p><p className="text-sm font-bold bg-green-50 text-green-700 px-2 py-1 rounded inline-block border border-green-100">${Number(selectedItem.data.order_total_amount).toFixed(2)}</p></div>
+                  )}
+                  {selectedItem.data.order_paypal_address && (
+                    <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">PayPal Email</p><p className="text-sm font-mono bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block border border-blue-100 break-all">{selectedItem.data.order_paypal_address}</p></div>
                   )}
                   {(selectedItem.data.screenshot_url || selectedItem.data.screenshot_url_2) && (
                     <div className="mt-2 flex flex-col gap-2">
