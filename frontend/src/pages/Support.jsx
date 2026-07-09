@@ -8,6 +8,29 @@ import { io } from 'socket.io-client';
 const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 
+const AUTO_REPLY_MESSAGES = [
+  'Welcome to PromotInsight! You are in the right place to earn rewards, get signup bonuses, and grow with trusted campaigns.',
+  'Buyers can earn product rewards, unlock the $10 signup bonus after 5 completed orders, and get referral bonuses. Sellers can reach real verified buyers for authentic engagement.',
+  'Your trust matters here: verified users, admin-reviewed orders, wallet tracking, and support are all designed to keep the process clear and secure.',
+  'Tell us what you need today: earning as a buyer, promoting as a seller, referral bonuses, wallet help, or order support.'
+];
+
+const AutoReplyCard = () => (
+  <div className="w-full text-left space-y-3">
+    <div className="inline-flex items-center gap-2 bg-blue-50 text-[#0066ff] border border-blue-100 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-wide">
+      <MessageSquare size={14} />
+      PromotInsight Assistant
+    </div>
+    <div className="space-y-2">
+      {AUTO_REPLY_MESSAGES.map((message, index) => (
+        <div key={index} className="bg-white border border-blue-100 shadow-sm rounded-2xl rounded-tl-none p-3 text-sm text-gray-700 font-semibold leading-relaxed">
+          {message}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function Support() {
   const [activeTab, setActiveTab] = useState('email'); // 'email' or 'chat'
   
@@ -152,7 +175,6 @@ export default function Support() {
       const res = await axios.post(`${BACKEND_URL}/api/private-chat/request`, {}, getHeaders());
       if (res.data && res.data.success) {
         setChatStatus('pending');
-        alert("✅ Chat request sent successfully!");
       } else {
         alert("⚠️ Request sent, but no success response: " + JSON.stringify(res.data));
         setChatStatus('pending');
@@ -325,24 +347,18 @@ export default function Support() {
                   </div>
                 )}
 
-                {/* ✅ সঠিক কন্ডিশন: Pending Approval */}
-                {user && (user.verification_status === 'approved' || user.verification_status === 'verified') && chatStatus === 'pending' && (
-                  <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                    <Loader2 className="animate-spin text-[#0066ff] w-16 h-16 mb-6" />
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Request Sent Successfully!</h3>
-                    <p className="text-gray-500">Waiting for an admin to accept your request. Your chat interface will open here automatically.</p>
-                  </div>
-                )}
-
-                {/* ✅ সঠিক কন্ডিশন: Active Chat Interface */}
-                {user && (user.verification_status === 'approved' || user.verification_status === 'verified') && (chatStatus === 'active' || chatStatus === 'ended') && (
+                {/* ✅ সঠিক কন্ডিশন: Pending / Active Chat Interface */}
+                {user && (user.verification_status === 'approved' || user.verification_status === 'verified') && (chatStatus === 'pending' || chatStatus === 'active' || chatStatus === 'ended') && (
                   <div className="flex flex-col h-[500px] bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-inner">
                     
                     {/* Chat Area */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
                       {messages.length === 0 ? (
-                        <div className="h-full flex items-center justify-center">
-                          <p className="text-center text-gray-400 font-medium bg-white px-6 py-2 rounded-full shadow-sm">Chat started! Say hello to the Admin.</p>
+                        <div className="space-y-4">
+                          <AutoReplyCard />
+                          <p className="text-center text-gray-400 font-medium bg-white px-6 py-2 rounded-full shadow-sm">
+                            {chatStatus === 'pending' ? 'Your live chat request is waiting for admin approval.' : 'Chat started! Say hello to the Admin.'}
+                          </p>
                         </div>
                       ) : (
                         messages.map((msg, idx) => (
@@ -361,6 +377,11 @@ export default function Support() {
                       {chatStatus === 'ended' ? (
                         <div className="text-center p-3 bg-red-50 text-red-600 font-bold rounded-xl border border-red-100">
                           Chat session has been closed by the Admin.
+                        </div>
+                      ) : chatStatus === 'pending' ? (
+                        <div className="text-center p-3 bg-blue-50 text-[#0066ff] text-sm font-bold rounded-xl border border-blue-100 flex items-center justify-center gap-2">
+                          <Loader2 className="animate-spin w-4 h-4" />
+                          Admin approval pending. You can start typing after an admin accepts.
                         </div>
                       ) : (
                         <form onSubmit={sendChatMessage} className="flex gap-2 items-center">
