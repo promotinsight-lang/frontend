@@ -470,6 +470,11 @@ export default function HomePage() {
                 </div>
                 <p className="text-yellow-800 font-bold text-xs uppercase mb-1">{t('refer_earn')}</p>
                 <h3 className="text-2xl font-black text-gray-900 mb-2">{t('get_10_bonus')}</h3>
+                <p className="text-xs text-gray-600 font-semibold mb-3 leading-relaxed">{t('signup_bonus_desc')}</p>
+                <div className="bg-white border border-emerald-100 rounded-xl p-3 mb-3">
+                  <p className="text-sm font-black text-emerald-700">{t('seller_referral_bonus_title')}</p>
+                  <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-relaxed">{t('seller_referral_bonus_desc')}</p>
+                </div>
                 <Link to="/dashboard?tab=referral" className="inline-block bg-gray-900 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors shadow-sm mt-1">
                    {t('get_your_link')}
                 </Link>

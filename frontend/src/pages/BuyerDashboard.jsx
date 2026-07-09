@@ -525,9 +525,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
             <div className="w-20 h-20 bg-blue-50 text-[#0066ff] rounded-full flex items-center justify-center mx-auto mb-4">
               <Users size={40} />
             </div>
-            <h2 className="text-2xl font-black text-gray-800 mb-2">Invite Friends & Earn USD $10!</h2>
+            <h2 className="text-2xl font-black text-gray-800 mb-2">Invite Friends & Earn Bonuses!</h2>
             <p className="text-gray-500 text-sm mb-8 max-w-md mx-auto leading-relaxed">
-              Share your referral link. When your friend signs up and completes 5 orders (and you also have 5 completed orders), you get a <strong className="text-green-600">USD $10 {formatWallet(10).secondary ? `(${formatWallet(10).primary}) ` : ''}bonus</strong> instantly in your wallet!
+              Share your referral link. Refer a buyer and earn <strong className="text-green-600">USD $10 {formatWallet(10).secondary ? `(${formatWallet(10).primary}) ` : ''}bonus</strong> after the buyer completes 5 orders and you also have 5 completed orders. Refer a seller and earn <strong className="text-green-600">USD $15</strong> after that seller completes 5 orders.
             </p>
             
             <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 max-w-md mx-auto">
