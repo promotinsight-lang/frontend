@@ -87,9 +87,9 @@ export default function UserProfileModal({
             <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2 text-sm overflow-x-auto">
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Acc:</span> <span className="break-all">{selectedUserProfile.amazon_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Loc:</span> <span className="break-all">{selectedUserProfile.amazon_location || 'N/A'}</span></p>
-              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">PayPal Account:</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
+              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Email Address:</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WhatsApp:</span> <span className="break-all">{selectedUserProfile.whatsapp_account || 'N/A'}</span></p>
-              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Facebook:</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
+              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WeChat ID:</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Telegram:</span> <span className="break-all">{selectedUserProfile.telegram_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
               

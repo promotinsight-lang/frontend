@@ -454,7 +454,7 @@ const Verification = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                    <Globe size={16} className="text-[#0066ff]" /> Select your country
+                    <Globe size={16} className="text-[#0066ff]" /> Select your target country
                   </label>
                   <select
                     required
@@ -474,7 +474,7 @@ const Verification = () => {
                 {selectedCountry && countryEntry && (
                   <div>
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                      <Layers size={16} className="text-[#0066ff]" /> Select your shopping platform(s)
+                      <Layers size={16} className="text-[#0066ff]" /> Select your target platform(s)
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {availablePlatforms.map((p) => (
@@ -542,7 +542,11 @@ const Verification = () => {
                     {formConfig.global_fields.map((field) => {
                       const fieldDef = field.key === 'whatsapp_account'
                         ? { ...field, required: false }
-                        : field;
+                        : field.key === 'paypal_account'
+                          ? { ...field, label: 'Email Address', placeholder: 'yourname@email.com' }
+                          : field.key === 'facebook_account'
+                            ? { ...field, label: 'WeChat ID', type: 'text', placeholder: 'Enter your WeChat ID' }
+                            : field;
                       return (
                         <div key={fieldDef.key}>
                           <label className="block text-xs font-bold text-gray-600 mb-1">

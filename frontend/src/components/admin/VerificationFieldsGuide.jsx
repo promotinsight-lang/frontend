@@ -50,7 +50,7 @@ export default function VerificationFieldsGuide({ variant = 'global' }) {
                 <tbody className="font-mono">
                   <tr>
                     <td className="py-1 pr-2">paypal_account</td>
-                    <td>PayPal Email Address</td>
+                    <td>Email Address</td>
                     <td>yourname@email.com</td>
                   </tr>
                   <tr>
@@ -60,7 +60,7 @@ export default function VerificationFieldsGuide({ variant = 'global' }) {
                   </tr>
                   <tr>
                     <td className="py-1 pr-2">facebook_account</td>
-                    <td>Facebook Profile URL</td>
+                    <td>WeChat ID</td>
                     <td>https://facebook.com/...</td>
                   </tr>
                 </tbody>
