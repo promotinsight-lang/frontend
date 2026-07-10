@@ -40,6 +40,16 @@ const getVerificationPlatforms = (verification) => {
 const getVerificationResponses = (verification) =>
   parseMaybeJson(verification?.verification_responses, {});
 
+const getVerificationGlobalDetails = (verification) => {
+  const global = getVerificationResponses(verification)?.global || {};
+  return {
+    email: global.paypal_account || verification?.paypal_account || '',
+    whatsapp: global.whatsapp_account || verification?.whatsapp_account || '',
+    wechat: global.facebook_account || verification?.facebook_account || '',
+    telegram: global.telegram_account || verification?.telegram_account || '',
+  };
+};
+
 const getVerificationPlatformDetails = (verification) => {
   const responses = getVerificationResponses(verification);
   const platforms = getVerificationPlatforms(verification);
@@ -1297,7 +1307,7 @@ export default function AdminDashboard() {
               <h3 className="font-bold text-xl text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
                 <ShieldCheck size={22} className="text-green-600" /> Global Buyer Verification Fields
               </h3>
-              <p className="text-xs text-gray-500 mb-2">PayPal, WhatsApp, Facebook, etc. — buyer যেকোনো country/platform বেছে নিলেও দেখাবে।</p>
+              <p className="text-xs text-gray-500 mb-2">Email, WhatsApp, WeChat, Telegram, etc. — buyer যেকোনো country/platform বেছে নিলেও দেখাবে।</p>
               <VerificationFieldsGuide variant="global" />
               {verificationConfigLoading ? (
                 <p className="text-sm text-gray-500">Loading...</p>
@@ -1307,7 +1317,7 @@ export default function AdminDashboard() {
                     {globalVerificationFields.map((field, index) => (
                       <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 bg-gray-50 p-3 rounded-lg border items-end">
                         <div><label className="text-[10px] font-bold text-gray-500">Key</label><input value={field.key} onChange={(e) => handleGlobalVerificationFieldChange(index, 'key', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="paypal_account" /></div>
-                        <div className="sm:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleGlobalVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="PayPal Email Address" /></div>
+                        <div className="sm:col-span-2"><label className="text-[10px] font-bold text-gray-500">Label</label><input value={field.label} onChange={(e) => handleGlobalVerificationFieldChange(index, 'label', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="Email Address" /></div>
                         <div><label className="text-[10px] font-bold text-gray-500">Type</label><select value={field.type} onChange={(e) => handleGlobalVerificationFieldChange(index, 'type', e.target.value)} className="w-full p-2 border rounded text-sm bg-white"><option value="text">Text</option><option value="email">Email</option><option value="url">URL</option><option value="tel">Phone</option></select></div>
                         <div><label className="text-[10px] font-bold text-gray-500">Placeholder</label><input value={field.placeholder || ''} onChange={(e) => handleGlobalVerificationFieldChange(index, 'placeholder', e.target.value)} className="w-full p-2 border rounded text-sm bg-white" placeholder="yourname@email.com" /></div>
                         <div className="flex items-center justify-between lg:justify-start gap-2 pb-1">
@@ -1623,7 +1633,9 @@ export default function AdminDashboard() {
               <span className="bg-pink-100 text-pink-800 text-xs px-3 py-1 rounded-full font-bold">{verifications.length} Requests</span>
             </div>
             <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {verifications.length > 0 ? verifications.map(v => (
+              {verifications.length > 0 ? verifications.map(v => {
+                const contactDetails = getVerificationGlobalDetails(v);
+                return (
                 <div key={v.id} className="bg-white border rounded-xl shadow-sm hover:shadow-md p-4 sm:p-5 transition-shadow">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xl shrink-0">
@@ -1656,7 +1668,7 @@ export default function AdminDashboard() {
                           return (
                             <div key={name} className="bg-gray-50 border border-gray-100 rounded-lg p-2">
                               <p className="font-bold text-gray-700">{name}</p>
-                              <p className="text-xs text-gray-600 break-all">Account: {accountName}</p>
+                              <p className="text-xs text-gray-600 break-all"><span className="font-semibold">Store Name:</span> {accountName}</p>
                               {profileUrl ? (
                                 <a href={profileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate block max-w-full text-xs font-bold">
                                   View Profile
@@ -1694,8 +1706,10 @@ export default function AdminDashboard() {
                     )}
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Payment & Contacts</p>
-                      <p className="font-medium text-gray-700 break-all">PayPal: {v.paypal_account || 'N/A'}</p>
-                      <p className="font-medium text-gray-700 break-all">WA: {v.whatsapp_account || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">Email Address: {contactDetails.email || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">WhatsApp: {contactDetails.whatsapp || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">WeChat ID: {contactDetails.wechat || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">Telegram: {contactDetails.telegram || 'N/A'}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -1707,7 +1721,8 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                 </div>
-              )) : (
+                );
+              }) : (
                 <div className="col-span-full py-10 text-center text-gray-500">No pending verification requests at the moment.</div>
               )}
             </div>

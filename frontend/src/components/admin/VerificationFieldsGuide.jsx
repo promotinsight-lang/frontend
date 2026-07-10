@@ -61,7 +61,7 @@ export default function VerificationFieldsGuide({ variant = 'global' }) {
                   <tr>
                     <td className="py-1 pr-2">facebook_account</td>
                     <td>WeChat ID</td>
-                    <td>https://facebook.com/...</td>
+                    <td>your_wechat_id</td>
                   </tr>
                 </tbody>
               </table>
