@@ -1668,7 +1668,7 @@ export default function AdminDashboard() {
                           return (
                             <div key={name} className="bg-gray-50 border border-gray-100 rounded-lg p-2">
                               <p className="font-bold text-gray-700">{name}</p>
-                              <p className="text-xs text-gray-600 break-all"><span className="font-semibold">Store Name:</span> {accountName}</p>
+                              <p className="text-xs text-gray-600 break-all"><span className="font-semibold">{v.role === 'seller' ? 'Store Name' : 'Profile Name'}:</span> {accountName}</p>
                               {profileUrl ? (
                                 <a href={profileUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate block max-w-full text-xs font-bold">
                                   View Profile
@@ -1706,9 +1706,9 @@ export default function AdminDashboard() {
                     )}
                     <div>
                       <p className="text-xs font-semibold text-gray-400">Payment & Contacts</p>
-                      <p className="font-medium text-gray-700 break-all">Email Address: {contactDetails.email || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">{v.role === 'seller' ? 'Email Address' : 'PayPal Email'}: {contactDetails.email || 'N/A'}</p>
                       <p className="font-medium text-gray-700 break-all">WhatsApp: {contactDetails.whatsapp || 'N/A'}</p>
-                      <p className="font-medium text-gray-700 break-all">WeChat ID: {contactDetails.wechat || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">{v.role === 'seller' ? 'WeChat ID' : 'Facebook ID'}: {contactDetails.wechat || 'N/A'}</p>
                       <p className="font-medium text-gray-700 break-all">Telegram: {contactDetails.telegram || 'N/A'}</p>
                     </div>
                   </div>

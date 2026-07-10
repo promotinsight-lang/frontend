@@ -107,17 +107,17 @@ export default function UserProfileModal({
           {profileViewMode === 'details' ? (
             <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2 text-sm overflow-x-auto">
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Target Country:</span> <span className="break-all">{selectedUserProfile.verification_country || selectedUserProfile.amazon_location || 'N/A'}</span></p>
-              {platformStoreNames.length > 0 ? platformStoreNames.map(({ platform, storeName }) => (
+              {selectedUserProfile.role === 'seller' && platformStoreNames.length > 0 ? platformStoreNames.map(({ platform, storeName }) => (
                 <p key={platform} className="flex flex-col sm:flex-row">
                   <span className="font-bold text-gray-700 w-32 shrink-0">{platform} Store Name:</span>
                   <span className="break-all">{storeName || 'N/A'}</span>
                 </p>
               )) : (
-                <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Store Name:</span> <span className="break-all">{selectedUserProfile.amazon_account || 'N/A'}</span></p>
+                <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">{selectedUserProfile.role === 'seller' ? 'Store Name:' : 'Profile Name:'}</span> <span className="break-all">{selectedUserProfile.amazon_account || 'N/A'}</span></p>
               )}
-              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Email Address:</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
+              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">{selectedUserProfile.role === 'seller' ? 'Email Address:' : 'PayPal Email:'}</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WhatsApp:</span> <span className="break-all">{selectedUserProfile.whatsapp_account || 'N/A'}</span></p>
-              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WeChat ID:</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
+              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">{selectedUserProfile.role === 'seller' ? 'WeChat ID:' : 'Facebook ID:'}</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Telegram:</span> <span className="break-all">{selectedUserProfile.telegram_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
               
