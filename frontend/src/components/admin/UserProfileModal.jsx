@@ -1,5 +1,15 @@
 import { User, X, Clock, CheckCircle, XCircle, Package, AlertTriangle, MapPin } from 'lucide-react';
 
+const parseMaybeJson = (value, fallback) => {
+  if (!value) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+};
+
 export default function UserProfileModal({
   selectedUserProfile,
   userAppStats,
@@ -12,6 +22,17 @@ export default function UserProfileModal({
   onViewApp
 }) {
   if (!selectedUserProfile) return null;
+
+  const verificationResponses = parseMaybeJson(selectedUserProfile.verification_responses, {});
+  const verificationPlatforms = parseMaybeJson(selectedUserProfile.verification_platforms, []);
+  const platformStoreNames = (Array.isArray(verificationPlatforms) ? verificationPlatforms : [])
+    .map((platform) => ({
+      platform,
+      storeName:
+        verificationResponses?.platforms?.[platform]?.account_name ||
+        verificationResponses?.platforms?.[platform]?.amazon_account ||
+        '',
+    }));
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4 backdrop-blur-sm">
@@ -85,8 +106,15 @@ export default function UserProfileModal({
 
           {profileViewMode === 'details' ? (
             <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2 text-sm overflow-x-auto">
-              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Acc:</span> <span className="break-all">{selectedUserProfile.amazon_account || 'N/A'}</span></p>
-              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Amazon Loc:</span> <span className="break-all">{selectedUserProfile.amazon_location || 'N/A'}</span></p>
+              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Target Country:</span> <span className="break-all">{selectedUserProfile.verification_country || selectedUserProfile.amazon_location || 'N/A'}</span></p>
+              {platformStoreNames.length > 0 ? platformStoreNames.map(({ platform, storeName }) => (
+                <p key={platform} className="flex flex-col sm:flex-row">
+                  <span className="font-bold text-gray-700 w-32 shrink-0">{platform} Store Name:</span>
+                  <span className="break-all">{storeName || 'N/A'}</span>
+                </p>
+              )) : (
+                <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Store Name:</span> <span className="break-all">{selectedUserProfile.amazon_account || 'N/A'}</span></p>
+              )}
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Email Address:</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WhatsApp:</span> <span className="break-all">{selectedUserProfile.whatsapp_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WeChat ID:</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
