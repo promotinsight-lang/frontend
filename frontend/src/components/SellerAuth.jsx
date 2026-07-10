@@ -34,8 +34,6 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
 
-  const [whatsapp, setWhatsapp] = useState('');
-  const [country, setCountry] = useState('');
   const [profileLink] = useState(''); 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -203,7 +201,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     
     const payload = isLogin 
       ? { email, password, captchaId: captchaData?.captchaId, captchaInput } 
-      : { fullName, email, password, role, whatsapp, country, profileLink, otp: otpCode, referred_by_code: referredByCode };
+      : { fullName, email, password, role, profileLink, otp: otpCode, referred_by_code: referredByCode };
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${endpoint}`, {
@@ -407,19 +405,6 @@ export default function SellerAuth({ onAuthSuccess }) {
                     <RefreshCcw size={18} />
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {!isLogin && role === 'seller' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">WhatsApp</label>
-                <input required type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="+123456789" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Country</label>
-                <input required type="text" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. USA" />
               </div>
             </div>
           )}
