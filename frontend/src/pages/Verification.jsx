@@ -21,7 +21,7 @@ const DEFAULT_SHOPPING_PLATFORMS = [
 ];
 
 const DEFAULT_PLATFORM_FIELDS = [
-  { key: 'account_name', label: 'Account Details', type: 'text', required: true, placeholder: 'Account details on this platform' },
+  { key: 'account_name', label: 'Store Name', type: 'text', required: true, placeholder: 'Store name on this platform' },
   { key: 'profile_url', label: 'Profile URL', type: 'url', required: false, placeholder: 'Profile URL on this platform' },
   { key: 'verification_image_url', label: 'Profile Screenshot', type: 'image', required: false, placeholder: '' },
 ];
@@ -223,9 +223,12 @@ const Verification = () => {
   };
 
   const renderPlatformFieldInput = (platformName, field) => {
-    const fieldDef = ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key)
-      ? { ...field, required: false }
+    const normalizedField = field.key === 'account_name'
+      ? { ...field, label: 'Store Name', placeholder: 'Store name on this platform' }
       : field;
+    const fieldDef = ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(normalizedField.key)
+      ? { ...normalizedField, required: false }
+      : normalizedField;
     const displayField = fieldDef.key === 'verification_image_url'
       ? { ...fieldDef, label: 'Profile Screenshot' }
       : fieldDef;
@@ -551,7 +554,9 @@ const Verification = () => {
                         <div key={fieldDef.key}>
                           <label className="block text-xs font-bold text-gray-600 mb-1">
                             {fieldDef.label}
-                            {fieldDef.required && <span className="text-red-500"> *</span>}
+                            {fieldDef.required
+                              ? <span className="text-red-500"> *</span>
+                              : <span className="ml-1 text-[10px] font-medium text-gray-400">(Optional)</span>}
                           </label>
                           {renderFieldInput(fieldDef, globalValues[fieldDef.key], (v) =>
                             setGlobalField(fieldDef.key, v)
@@ -569,13 +574,23 @@ const Verification = () => {
                     <div key={platformName} className="space-y-3 border-t border-gray-100 pt-4">
                       <h3 className="text-sm font-bold text-gray-800">{platformName} details</h3>
                       {platDef.fields.map((field) => (
-                        <div key={`${platformName}-${field.key}`}>
-                          <label className="block text-xs font-bold text-gray-600 mb-1">
-                            {field.key === 'verification_image_url' ? 'Profile Screenshot' : field.label}
-                            {field.required && !['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key) && <span className="text-red-500"> *</span>}
-                          </label>
-                          {renderPlatformFieldInput(platformName, field)}
-                        </div>
+                        (() => {
+                          const isOptional = !field.required || ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key);
+                          const label = field.key === 'verification_image_url'
+                            ? 'Profile Screenshot'
+                            : field.key === 'account_name' ? 'Store Name' : field.label;
+                          return (
+                            <div key={`${platformName}-${field.key}`}>
+                              <label className="block text-xs font-bold text-gray-600 mb-1">
+                                {label}
+                                {isOptional
+                                  ? <span className="ml-1 text-[10px] font-medium text-gray-400">(Optional)</span>
+                                  : <span className="text-red-500"> *</span>}
+                              </label>
+                              {renderPlatformFieldInput(platformName, field)}
+                            </div>
+                          );
+                        })()
                       ))}
                     </div>
                   );
