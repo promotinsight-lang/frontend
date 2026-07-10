@@ -1,7 +1,7 @@
 import {  useState, useEffect, useMemo  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { CheckCircle, Clock, Globe, Layers, Image as ImageIcon, X, MapPin, User, Link as LinkIcon, DollarSign, Send, MessageCircle, Phone } from 'lucide-react';
+import { CheckCircle, Clock, Globe, Layers, Image as ImageIcon, X } from 'lucide-react';
 import {
   buildCountriesFromFeeConfigs,
   mergeVerificationFields,
@@ -47,15 +47,6 @@ const Verification = () => {
   const [globalValues, setGlobalValues] = useState({});
   const [platformValues, setPlatformValues] = useState({});
   const [uploadingImages, setUploadingImages] = useState({});
-  const [buyerFormData, setBuyerFormData] = useState({
-    amazon_location: '',
-    amazon_account: '',
-    amazon_profile_url: '',
-    paypal_account: '',
-    facebook_account: '',
-    whatsapp_account: '',
-    telegram_account: '',
-  });
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -239,10 +230,36 @@ const Verification = () => {
     }
   };
 
+  const isBuyer = userRole === 'buyer';
+  const countryLabel = isBuyer ? 'Select your country' : 'Select your target country';
+  const platformLabel = isBuyer ? 'Select your platform(s)' : 'Select your target platform(s)';
+
+  const normalizePlatformField = (field) => {
+    if (field.key === 'account_name') {
+      return isBuyer
+        ? { ...field, label: 'Profile Name', placeholder: 'Profile name on this platform' }
+        : { ...field, label: 'Store Name', placeholder: 'Store name on this platform' };
+    }
+    return field;
+  };
+
+  const normalizeGlobalField = (field) => {
+    if (field.key === 'whatsapp_account') return { ...field, required: false };
+    if (field.key === 'paypal_account') {
+      return isBuyer
+        ? { ...field, label: 'PayPal Email Address', placeholder: 'yourname@email.com' }
+        : { ...field, label: 'Email Address', placeholder: 'yourname@email.com' };
+    }
+    if (field.key === 'facebook_account') {
+      return isBuyer
+        ? { ...field, label: 'Facebook ID', type: 'text', placeholder: 'Enter your Facebook ID' }
+        : { ...field, label: 'WeChat ID', type: 'text', placeholder: 'Enter your WeChat ID' };
+    }
+    return field;
+  };
+
   const renderPlatformFieldInput = (platformName, field) => {
-    const normalizedField = field.key === 'account_name'
-      ? { ...field, label: 'Store Name', placeholder: 'Store name on this platform' }
-      : field;
+    const normalizedField = normalizePlatformField(field);
     const fieldDef = ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(normalizedField.key)
       ? { ...normalizedField, required: false }
       : normalizedField;
@@ -352,32 +369,6 @@ const Verification = () => {
     }
   };
 
-  const handleBuyerSubmit = async (e) => {
-    e.preventDefault();
-    setMessage({ type: '', text: '' });
-    setSubmitLoading(true);
-    try {
-      const res = await fetch(`${API}/api/users/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buyerFormData),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: 'error', text: data.message || 'Submission failed.' });
-        return;
-      }
-      setUserStatus('pending');
-      const storedUser = JSON.parse(localStorage.getItem('user'));
-      localStorage.setItem('user', JSON.stringify({ ...storedUser, verification_status: 'pending' }));
-      setMessage({ type: 'success', text: 'Verification submitted successfully! Waiting for admin approval.' });
-    } catch {
-      setMessage({ type: 'error', text: 'Server error. Please try again.' });
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
   const renderFieldInput = (field, value, onChange) => {
     const inputType =
       field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'tel' ? 'tel' : 'text';
@@ -473,54 +464,6 @@ const Verification = () => {
               Browse Products
             </button>
           </div>
-        ) : userRole === 'buyer' ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fade-in-up">
-            <div className="mb-6 border-b border-gray-100 pb-4">
-              <h2 className="text-lg font-bold text-gray-800 mb-1">Submit Your Details</h2>
-              <p className="text-xs text-gray-500">Please provide accurate information. This is required to process your cashbacks.</p>
-            </div>
-
-            {message.text && (
-              <div className={`mb-4 p-3 rounded-lg text-sm font-bold ${message.type === 'error' ? 'bg-red-100 text-red-600 border border-red-200' : 'bg-green-100 text-green-600 border border-green-200'}`}>
-                {message.text}
-              </div>
-            )}
-
-            <form onSubmit={handleBuyerSubmit} className="space-y-4">
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-[#0066ff] uppercase tracking-wider mb-2 border-b border-blue-100 pb-1">Mandatory Fields</h3>
-                {[
-                  { name: 'amazon_location', type: 'text', placeholder: 'Amazon Account Location (e.g., USA, UK)', Icon: MapPin },
-                  { name: 'amazon_account', type: 'text', placeholder: 'Profile Name', Icon: User },
-                  { name: 'amazon_profile_url', type: 'url', placeholder: 'Amazon Profile URL', Icon: LinkIcon },
-                  { name: 'paypal_account', type: 'email', placeholder: 'PayPal Email Address', Icon: DollarSign },
-                ].map(({ name, type, placeholder, Icon }) => (
-                  <div key={name} className="relative">
-                    <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input required name={name} value={buyerFormData[name]} onChange={(e) => setBuyerFormData((prev) => ({ ...prev, [name]: e.target.value }))} type={type} placeholder={placeholder} className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all" />
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-3 pt-4">
-                <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">Social Accounts (Optional)</h3>
-                {[
-                  { name: 'facebook_account', placeholder: 'Facebook ID', Icon: MessageCircle },
-                  { name: 'whatsapp_account', placeholder: 'WhatsApp Number (with country code)', Icon: Phone },
-                  { name: 'telegram_account', placeholder: 'Telegram Username (@username)', Icon: Send },
-                ].map(({ name, placeholder, Icon }) => (
-                  <div key={name} className="relative">
-                    <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input name={name} value={buyerFormData[name]} onChange={(e) => setBuyerFormData((prev) => ({ ...prev, [name]: e.target.value }))} type="text" placeholder={placeholder} className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 pl-10 pr-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all" />
-                  </div>
-                ))}
-              </div>
-
-              <button type="submit" disabled={submitLoading} className="w-full mt-6 py-3.5 bg-gradient-to-r from-[#0066ff] to-blue-600 text-white rounded-full font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all disabled:opacity-50">
-                {submitLoading ? 'Submitting...' : 'Submit Verification'}
-              </button>
-            </form>
-          </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fade-in-up">
             <div className="mb-6 border-b border-gray-100 pb-4">
@@ -548,7 +491,7 @@ const Verification = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                    <Globe size={16} className="text-[#0066ff]" /> Select your target country
+                    <Globe size={16} className="text-[#0066ff]" /> {countryLabel}
                   </label>
                   <select
                     required
@@ -568,7 +511,7 @@ const Verification = () => {
                 {selectedCountry && countryEntry && (
                   <div>
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-                      <Layers size={16} className="text-[#0066ff]" /> Select your target platform(s)
+                      <Layers size={16} className="text-[#0066ff]" /> {platformLabel}
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {availablePlatforms.map((p) => (
@@ -634,13 +577,7 @@ const Verification = () => {
                       Account &amp; contact details
                     </h3>
                     {formConfig.global_fields.map((field) => {
-                      const fieldDef = field.key === 'whatsapp_account'
-                        ? { ...field, required: false }
-                        : field.key === 'paypal_account'
-                          ? { ...field, label: 'Email Address', placeholder: 'yourname@email.com' }
-                          : field.key === 'facebook_account'
-                            ? { ...field, label: 'WeChat ID', type: 'text', placeholder: 'Enter your WeChat ID' }
-                            : field;
+                      const fieldDef = normalizeGlobalField(field);
                       return (
                         <div key={fieldDef.key}>
                           <label className="block text-xs font-bold text-gray-600 mb-1">
@@ -669,7 +606,7 @@ const Verification = () => {
                           const isOptional = !field.required || ['profile_url', 'amazon_profile_url', 'verification_image_url'].includes(field.key);
                           const label = field.key === 'verification_image_url'
                             ? 'Profile Screenshot'
-                            : field.key === 'account_name' ? 'Store Name' : field.label;
+                            : normalizePlatformField(field).label;
                           return (
                             <div key={`${platformName}-${field.key}`}>
                               <label className="block text-xs font-bold text-gray-600 mb-1">
