@@ -25,12 +25,19 @@ import Blogs from './pages/Blogs';
 import BlogDetails from './pages/BlogDetails';
 import { LanguageProvider } from './i18n/LanguageContext';
 
-export default function App() {
-  
-  const [user, setUser] = useState(() => {
+const getStoredUser = () => {
+  try {
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
-  });
+  } catch {
+    localStorage.removeItem('user');
+    return null;
+  }
+};
+
+export default function App() {
+  const [user, setUser] = useState(getStoredUser);
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
 
   // 🔥 Secure Session Validation on App Load (HttpOnly Cookie Fallback)
   useEffect(() => {
@@ -40,8 +47,7 @@ export default function App() {
           credentials: 'include' // Validate session via HttpOnly Cookie
         });
         
-        if (res.status === 401) {
-          // Token/Cookie expired or invalid
+        if (res.status === 401 || res.status === 403) {
           localStorage.removeItem('user');
           setUser(null);
         } else if (res.ok) {
@@ -53,17 +59,21 @@ export default function App() {
         }
       } catch (err) {
         console.error("Session verification failed:", err);
+      } finally {
+        setIsSessionLoading(false);
       }
     };
 
-    if (user) {
-      verifySession();
-    }
+    verifySession();
   }, []);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
   };
+
+  if (isSessionLoading) {
+    return <div className="min-h-screen bg-slate-950" aria-busy="true" />;
+  }
 
   return (
     <LanguageProvider>
