@@ -113,6 +113,14 @@ export default function AppDetailsModal({
                <div className="bg-indigo-50 p-4 sm:p-5 rounded-xl border border-indigo-200 shadow-sm">
                  <h4 className="font-bold text-indigo-800 mb-3 border-b border-indigo-200 pb-2 flex items-center gap-2"><ImageIcon size={18}/> Order Submission</h4>
                  <p className="text-sm flex flex-col sm:flex-row sm:items-center"><span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Order No:</span> <span className="font-mono font-bold bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">{selectedAppDetails.order_number || 'N/A'}</span></p>
+                 {selectedAppDetails.order_submitted_at && (
+                   <p className="text-sm flex flex-col sm:flex-row sm:items-center mt-2">
+                     <span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Submitted:</span>
+                     <span className="font-bold text-indigo-700 bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">
+                       {new Date(selectedAppDetails.order_submitted_at).toLocaleString()}
+                     </span>
+                   </p>
+                 )}
                  
                  <div className="mt-3 flex flex-wrap gap-2">
                    {selectedAppDetails.screenshot_url && (

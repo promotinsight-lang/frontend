@@ -1108,6 +1108,11 @@ export default function SellerDashboard() {
                               </span>
                             </div>
                             <p className="text-xs text-gray-500 font-medium">Applied: {new Date(review.created_at).toLocaleDateString()}</p>
+                            {review.order_submitted_at && (
+                              <p className="text-xs text-indigo-600 font-bold mt-1">
+                                Order submitted: {new Date(review.order_submitted_at).toLocaleString()}
+                              </p>
+                            )}
                             
                             {review.profile_link ? (
                               <a href={review.profile_link} target="_blank" rel="noreferrer" className="text-[10px] text-[#0066ff] hover:underline mt-2 inline-block font-bold bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
@@ -1128,6 +1133,7 @@ export default function SellerDashboard() {
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Order Details</p>
                             <div className="flex flex-col gap-2">
                               {review.order_number ? <p className="font-mono text-gray-800 font-bold bg-white px-2 py-1 rounded border shadow-sm w-fit truncate max-w-full">{review.order_number}</p> : <p className="text-gray-400 italic text-xs">No Order ID</p>}
+                              {review.order_submitted_at && <p className="text-indigo-700 font-bold bg-indigo-50 px-2 py-1 rounded border border-indigo-100 w-fit">Submitted: {new Date(review.order_submitted_at).toLocaleString()}</p>}
                               {review.order_total_amount && <p className="text-green-700 font-black bg-green-50 px-2 py-1 rounded border border-green-100 w-fit">Order Total: ${Number(review.order_total_amount).toFixed(2)}</p>}
                               {(review.order_paypal_address || review.paypal_account) && <p className="text-blue-700 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-100 break-all w-fit">PayPal: {review.order_paypal_address || review.paypal_account}</p>}
                               {review.screenshot_url && <a href={review.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 1</a>}

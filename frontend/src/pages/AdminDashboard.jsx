@@ -1879,6 +1879,9 @@ export default function AdminDashboard() {
                   <AdminField label="Buyer email">{app.buyer_email}</AdminField>
                   <AdminField label="Reward"><span className="text-green-600">${app.reward}</span></AdminField>
                   <AdminField label="Status">{renderStatusBadge(app.status)}</AdminField>
+                  {app.order_submitted_at && (
+                    <AdminField label="Order submitted">{new Date(app.order_submitted_at).toLocaleString()}</AdminField>
+                  )}
                 </AdminMobileCard>
               ))}
             >
@@ -1888,6 +1891,7 @@ export default function AdminDashboard() {
                     <th className="p-4">Buyer Info</th>
                     <th className="p-4">Product</th>
                     <th className="p-4">Status</th>
+                    <th className="p-4">Order Submitted</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1923,6 +1927,13 @@ export default function AdminDashboard() {
                       </td>
                       <td className="p-4">
                         {renderStatusBadge(app.status)}
+                      </td>
+                      <td className="p-4 text-xs text-gray-600">
+                        {app.order_submitted_at ? (
+                          <span className="font-semibold">{new Date(app.order_submitted_at).toLocaleString()}</span>
+                        ) : (
+                          <span className="text-gray-400">Not submitted</span>
+                        )}
                       </td>
                       <td className="p-4 flex justify-end gap-2">
                         {app.status === 'rejected' && (

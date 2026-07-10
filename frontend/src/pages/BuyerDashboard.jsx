@@ -608,6 +608,11 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                       <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${app.application_status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
                         {(app.application_status || '').replace('_', ' ')}
                       </span>
+                      {app.order_submitted_at && (
+                        <p className="text-[10px] text-gray-500 font-semibold mt-2">
+                          Order submitted: {new Date(app.order_submitted_at).toLocaleString()}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1292,6 +1297,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                   <h4 className="font-bold text-gray-700 text-sm mb-3">Your Submissions</h4>
                   {selectedItem.data.order_number && (
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order ID</p><p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded inline-block border border-gray-200">{selectedItem.data.order_number}</p></div>
+                  )}
+                  {selectedItem.data.order_submitted_at && (
+                    <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order Submitted Date</p><p className="text-sm font-bold bg-indigo-50 text-indigo-700 px-2 py-1 rounded inline-block border border-indigo-100">{new Date(selectedItem.data.order_submitted_at).toLocaleString()}</p></div>
                   )}
                   {selectedItem.data.order_total_amount && (
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order Total Amount</p><p className="text-sm font-bold bg-green-50 text-green-700 px-2 py-1 rounded inline-block border border-green-100">${Number(selectedItem.data.order_total_amount).toFixed(2)}</p></div>
