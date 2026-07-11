@@ -1882,6 +1882,9 @@ export default function AdminDashboard() {
                   {app.order_submitted_at && (
                     <AdminField label="Order submitted">{new Date(app.order_submitted_at).toLocaleString()}</AdminField>
                   )}
+                  {app.review_submitted_at && (
+                    <AdminField label="Review submitted">{new Date(app.review_submitted_at).toLocaleString()}</AdminField>
+                  )}
                 </AdminMobileCard>
               ))}
             >
@@ -1892,6 +1895,7 @@ export default function AdminDashboard() {
                     <th className="p-4">Product</th>
                     <th className="p-4">Status</th>
                     <th className="p-4">Order Submitted</th>
+                    <th className="p-4">Review Submitted</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1931,6 +1935,13 @@ export default function AdminDashboard() {
                       <td className="p-4 text-xs text-gray-600">
                         {app.order_submitted_at ? (
                           <span className="font-semibold">{new Date(app.order_submitted_at).toLocaleString()}</span>
+                        ) : (
+                          <span className="text-gray-400">Not submitted</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-xs text-gray-600">
+                        {app.review_submitted_at ? (
+                          <span className="font-semibold text-purple-700">{new Date(app.review_submitted_at).toLocaleString()}</span>
                         ) : (
                           <span className="text-gray-400">Not submitted</span>
                         )}

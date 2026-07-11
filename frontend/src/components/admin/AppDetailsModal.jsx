@@ -1,4 +1,26 @@
-import { X, AlertTriangle, Package, Image as ImageIcon, Star, CheckCircle, Receipt } from 'lucide-react';
+import { X, AlertTriangle, Package, Image as ImageIcon, Star, CheckCircle, Receipt, Clock } from 'lucide-react';
+
+const formatDateTime = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString();
+};
+
+const isReviewRequiredCategory = (category) => {
+  const normalizedCategory = String(category || '').trim().toLowerCase();
+  return normalizedCategory === 'review' || normalizedCategory === 'need review';
+};
+
+const hasReviewSubmission = (application) => {
+  return Boolean(
+    application?.review_submitted_at ||
+    application?.review_link ||
+    application?.review_screenshot_url ||
+    application?.review_screenshot_url_2 ||
+    ['review_submitted', 'forwarded_to_seller', 'pending_refund', 'completed'].includes(application?.status)
+  );
+};
 
 export default function AppDetailsModal({
   selectedAppDetails,
@@ -117,7 +139,7 @@ export default function AppDetailsModal({
                    <p className="text-sm flex flex-col sm:flex-row sm:items-center mt-2">
                      <span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Submitted:</span>
                      <span className="font-bold text-indigo-700 bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">
-                       {new Date(selectedAppDetails.order_submitted_at).toLocaleString()}
+                       {formatDateTime(selectedAppDetails.order_submitted_at)}
                      </span>
                    </p>
                  )}
@@ -153,6 +175,14 @@ export default function AppDetailsModal({
                      <a href={selectedAppDetails.review_link} target="_blank" rel="noreferrer" className="text-[#0066ff] font-bold hover:underline break-all bg-white px-2 py-1 border border-pink-100 rounded inline-block w-full sm:w-auto">Open Review ↗</a>
                    </p>
                  )}
+                 {formatDateTime(selectedAppDetails.review_submitted_at) && (
+                   <p className="text-sm mb-3 flex flex-col sm:flex-row sm:items-center">
+                     <span className="font-semibold text-gray-600 sm:w-24 shrink-0 mb-1 sm:mb-0">Submitted:</span>
+                     <span className="font-bold text-pink-700 bg-white px-2 py-0.5 border border-pink-100 rounded w-max">
+                       {formatDateTime(selectedAppDetails.review_submitted_at)}
+                     </span>
+                   </p>
+                 )}
                  
                  <div className="mt-2 flex flex-wrap gap-2">
                    {selectedAppDetails.review_screenshot_url && (
@@ -169,6 +199,26 @@ export default function AppDetailsModal({
                </div>
              )}
 
+             {isReviewRequiredCategory(selectedAppDetails.category) && hasReviewSubmission(selectedAppDetails) && (
+               <div className="bg-blue-50 p-4 sm:p-5 rounded-xl border border-blue-200 shadow-sm">
+                 <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2"><Clock size={18}/> Review Timeline</h4>
+                 <p className="text-sm text-blue-900 font-black mb-3">
+                   Please wait for 24/72 hours for seller verification and refund.
+                 </p>
+                 <div className="space-y-2 text-xs text-blue-900 font-semibold">
+                   {selectedAppDetails.order_number && (
+                     <p><span className="font-black">Order No:</span> <span className="font-mono bg-white px-2 py-0.5 rounded border border-blue-100">{selectedAppDetails.order_number}</span></p>
+                   )}
+                   {formatDateTime(selectedAppDetails.review_submitted_at) && (
+                     <p><span className="font-black">Review submitted:</span> {formatDateTime(selectedAppDetails.review_submitted_at)}</p>
+                   )}
+                   {formatDateTime(selectedAppDetails.seller_paid_at) && (
+                     <p><span className="font-black">Seller refund paid:</span> {formatDateTime(selectedAppDetails.seller_paid_at)}</p>
+                   )}
+                 </div>
+               </div>
+             )}
+
              {(selectedAppDetails.seller_payment_transaction_id || selectedAppDetails.seller_payment_screenshot_url) && (
                <div className="bg-green-50 p-4 sm:p-5 rounded-xl border border-green-200 shadow-sm">
                  <h4 className="font-bold text-green-800 mb-3 border-b border-green-200 pb-2 flex items-center gap-2"><Receipt size={18}/> Seller Payment Proof</h4>
@@ -179,7 +229,7 @@ export default function AppDetailsModal({
                    </p>
                  )}
                  {selectedAppDetails.seller_paid_at && (
-                   <p className="text-xs text-green-700 font-semibold mb-2">Paid: {new Date(selectedAppDetails.seller_paid_at).toLocaleString()}</p>
+                   <p className="text-xs text-green-700 font-semibold mb-2">Seller refund paid: {formatDateTime(selectedAppDetails.seller_paid_at)}</p>
                  )}
                  {selectedAppDetails.seller_payment_screenshot_url && (
                    <a href={selectedAppDetails.seller_payment_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-green-700 font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-green-100 shadow-sm">

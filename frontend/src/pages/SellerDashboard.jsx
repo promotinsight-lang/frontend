@@ -44,6 +44,23 @@ const isSellerPaymentReady = (application, category) => {
   return hasReceivedProductProof && ['order_submitted', 'order_approved', 'review_submitted', 'forwarded_to_seller', 'pending_refund'].includes(application.status);
 };
 
+const formatDateTime = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString();
+};
+
+const hasReviewSubmission = (application) => {
+  return Boolean(
+    application?.review_submitted_at ||
+    application?.review_link ||
+    application?.review_screenshot_url ||
+    application?.review_screenshot_url_2 ||
+    ['review_submitted', 'forwarded_to_seller', 'pending_refund', 'completed'].includes(application?.status)
+  );
+};
+
 export default function SellerDashboard() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
@@ -1131,7 +1148,12 @@ export default function SellerDashboard() {
                             <p className="text-xs text-gray-500 font-medium">Applied: {new Date(review.created_at).toLocaleDateString()}</p>
                             {review.order_submitted_at && (
                               <p className="text-xs text-indigo-600 font-bold mt-1">
-                                Order submitted: {new Date(review.order_submitted_at).toLocaleString()}
+                                Order submitted: {formatDateTime(review.order_submitted_at)}
+                              </p>
+                            )}
+                            {formatDateTime(review.review_submitted_at) && (
+                              <p className="text-xs text-purple-600 font-bold mt-1">
+                                Review submitted: {formatDateTime(review.review_submitted_at)}
                               </p>
                             )}
                             
@@ -1154,7 +1176,7 @@ export default function SellerDashboard() {
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Order Details</p>
                             <div className="flex flex-col gap-2">
                               {review.order_number ? <p className="font-mono text-gray-800 font-bold bg-white px-2 py-1 rounded border shadow-sm w-fit truncate max-w-full">{review.order_number}</p> : <p className="text-gray-400 italic text-xs">No Order ID</p>}
-                              {review.order_submitted_at && <p className="text-indigo-700 font-bold bg-indigo-50 px-2 py-1 rounded border border-indigo-100 w-fit">Submitted: {new Date(review.order_submitted_at).toLocaleString()}</p>}
+                              {review.order_submitted_at && <p className="text-indigo-700 font-bold bg-indigo-50 px-2 py-1 rounded border border-indigo-100 w-fit">Submitted: {formatDateTime(review.order_submitted_at)}</p>}
                               {review.order_total_amount && <p className="text-green-700 font-black bg-green-50 px-2 py-1 rounded border border-green-100 w-fit">Order Total: ${Number(review.order_total_amount).toFixed(2)}</p>}
                               {(review.order_paypal_address || review.paypal_account) && <p className="text-blue-700 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-100 break-all w-fit">PayPal: {review.order_paypal_address || review.paypal_account}</p>}
                               {review.screenshot_url && <a href={review.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-emerald-600 font-bold hover:underline text-xs bg-emerald-50 px-2 py-1 rounded border border-emerald-100 w-fit"><ImageIcon size={14} /> View Order Proof 1</a>}
@@ -1166,11 +1188,23 @@ export default function SellerDashboard() {
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2">Review Details</p>
                             <div className="flex flex-col gap-2">
                               {review.review_link ? <a href={review.review_link} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-blue-600 font-bold hover:underline text-xs bg-blue-50 px-2 py-1 rounded border border-blue-100 w-fit"><LinkIcon size={14} /> View Review Link</a> : <p className="text-gray-400 italic text-xs">No Review Link</p>}
+                              {formatDateTime(review.review_submitted_at) && <p className="text-purple-700 font-bold bg-purple-50 px-2 py-1 rounded border border-purple-100 w-fit">Review submitted: {formatDateTime(review.review_submitted_at)}</p>}
                               {review.review_screenshot_url && <a href={review.review_screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-600 font-bold hover:underline text-xs bg-purple-50 px-2 py-1 rounded border border-purple-100 w-fit"><ImageIcon size={14} /> View Review Proof 1</a>}
                               {review.review_screenshot_url_2 && <a href={review.review_screenshot_url_2} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-purple-600 font-bold hover:underline text-xs bg-purple-50 px-2 py-1 rounded border border-purple-100 w-fit"><ImageIcon size={14} /> View Review Proof 2</a>}
                             </div>
                           </div>
                         </div>
+
+                        {isReviewRequiredForPayment(selectedProduct.category) && hasReviewSubmission(review) && (
+                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                            <p className="text-sm text-blue-900 font-black mb-2">Please wait for 24/72 hours for seller verification and refund.</p>
+                            <div className="space-y-1 text-xs text-blue-800 font-semibold">
+                              {review.order_number && <p><span className="font-black">Order No:</span> {review.order_number}</p>}
+                              {formatDateTime(review.review_submitted_at) && <p><span className="font-black">Review submitted:</span> {formatDateTime(review.review_submitted_at)}</p>}
+                              {formatDateTime(review.seller_paid_at) && <p><span className="font-black">Seller refund paid:</span> {formatDateTime(review.seller_paid_at)}</p>}
+                            </div>
+                          </div>
+                        )}
 
                         {review.seller_payment_transaction_id ? (
                           <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
@@ -1178,6 +1212,9 @@ export default function SellerDashboard() {
                               <CheckCircle size={16}/> Payment Submitted
                             </p>
                             <p className="text-xs text-green-700 font-semibold break-all">Transaction ID: {review.seller_payment_transaction_id}</p>
+                            {formatDateTime(review.seller_paid_at) && (
+                              <p className="text-xs text-green-700 font-bold mt-2">Seller refund paid: {formatDateTime(review.seller_paid_at)}</p>
+                            )}
                             {review.seller_payment_screenshot_url && (
                               <a href={review.seller_payment_screenshot_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-green-700 font-bold hover:underline text-xs bg-white px-2 py-1 rounded border border-green-100">
                                 <ImageIcon size={14} /> View Payment Screenshot
