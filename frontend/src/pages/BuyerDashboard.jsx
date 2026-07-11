@@ -418,6 +418,28 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     return data?.instruction || data?.instructions || "Please follow standard guidelines. Search the item on Amazon after admin approval.";
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleString();
+  };
+
+  const isReviewTask = (app) => {
+    const category = String(app?.category || '').trim().toLowerCase();
+    return category !== 'no review';
+  };
+
+  const isReviewSubmitted = (app) => {
+    return Boolean(
+      app?.review_submitted_at ||
+      app?.review_link ||
+      app?.review_screenshot_url ||
+      app?.review_screenshot_url_2 ||
+      ['review_submitted', 'forwarded_to_seller', 'pending_refund', 'completed'].includes(app?.application_status)
+    );
+  };
+
   if (isAccountDisabled) {
     return (
       <div className="min-h-screen bg-gray-50 font-sans pb-10 flex flex-col">
@@ -633,7 +655,18 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                       </button>
                     )}
                   </div>
-                  {['order_submitted', 'order_approved', 'review_submitted', 'pending_refund'].includes(app.application_status) && app.category !== 'No Review' && (
+                  {['review_submitted', 'forwarded_to_seller', 'pending_refund'].includes(app.application_status) && isReviewTask(app) && (
+                    <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-xs text-blue-800 font-semibold leading-relaxed">
+                      <p className="font-black text-blue-900 mb-2">Please wait for 24/72 hours for seller verification and refund.</p>
+                      <div className="space-y-1 text-[11px]">
+                        {app.order_number && <p><span className="font-black">Order No:</span> {app.order_number}</p>}
+                        {formatDateTime(app.review_submitted_at) && <p><span className="font-black">Review submitted:</span> {formatDateTime(app.review_submitted_at)}</p>}
+                        {formatDateTime(app.seller_paid_at) && <p><span className="font-black">Seller refund paid:</span> {formatDateTime(app.seller_paid_at)}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {['order_submitted', 'order_approved'].includes(app.application_status) && isReviewTask(app) && !isReviewSubmitted(app) && (
                     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 font-semibold leading-relaxed">
                       Do not submit your review immediately. Reviews can only be submitted after 4-7 days from the order date.
                     </div>
@@ -1301,6 +1334,9 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                   {selectedItem.data.order_submitted_at && (
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order Submitted Date</p><p className="text-sm font-bold bg-indigo-50 text-indigo-700 px-2 py-1 rounded inline-block border border-indigo-100">{new Date(selectedItem.data.order_submitted_at).toLocaleString()}</p></div>
                   )}
+                  {selectedItem.data.review_submitted_at && (
+                    <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Review Submitted Date</p><p className="text-sm font-bold bg-purple-50 text-purple-700 px-2 py-1 rounded inline-block border border-purple-100">{new Date(selectedItem.data.review_submitted_at).toLocaleString()}</p></div>
+                  )}
                   {selectedItem.data.order_total_amount && (
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order Total Amount</p><p className="text-sm font-bold bg-green-50 text-green-700 px-2 py-1 rounded inline-block border border-green-100">${Number(selectedItem.data.order_total_amount).toFixed(2)}</p></div>
                   )}
@@ -1340,6 +1376,28 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                       )}
                     </div>
                   )}
+                </div>
+              )}
+
+              {isReviewTask(selectedItem.data) && isReviewSubmitted(selectedItem.data) && selectedItem.data.application_status !== 'completed' && (
+                <div className="mt-6 border border-blue-200 bg-blue-50 p-4 rounded-xl shadow-sm">
+                  <h4 className="font-bold text-blue-900 text-sm mb-2 flex items-center gap-1">
+                    <Clock size={16} /> Review Submitted
+                  </h4>
+                  <p className="text-xs text-blue-800 font-semibold leading-relaxed mb-3">
+                    Please wait for 24/72 hours for seller verification and refund.
+                  </p>
+                  <div className="space-y-2 text-xs text-blue-900">
+                    {selectedItem.data.order_number && (
+                      <p><span className="font-black">Order No:</span> <span className="font-mono bg-white px-2 py-0.5 rounded border border-blue-100">{selectedItem.data.order_number}</span></p>
+                    )}
+                    {formatDateTime(selectedItem.data.review_submitted_at) && (
+                      <p><span className="font-black">Review submitted:</span> {formatDateTime(selectedItem.data.review_submitted_at)}</p>
+                    )}
+                    {formatDateTime(selectedItem.data.seller_paid_at) && (
+                      <p><span className="font-black">Seller refund paid:</span> {formatDateTime(selectedItem.data.seller_paid_at)}</p>
+                    )}
+                  </div>
                 </div>
               )}
 
