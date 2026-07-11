@@ -23,6 +23,27 @@ const secureFetch = async (url, options = {}) => {
 };
 // ===================================================
 
+const isReviewRequiredForPayment = (category) => {
+  const normalizedCategory = String(category || '').trim().toLowerCase();
+  return normalizedCategory === 'review' || normalizedCategory === 'need review';
+};
+
+const isSellerPaymentReady = (application, category) => {
+  if (!application || application.refund_comment) return false;
+
+  if (isReviewRequiredForPayment(category)) {
+    const hasReviewProof = Boolean(
+      application.review_link ||
+      application.review_screenshot_url ||
+      application.review_screenshot_url_2
+    );
+    return hasReviewProof && ['review_submitted', 'forwarded_to_seller', 'pending_refund'].includes(application.status);
+  }
+
+  const hasReceivedProductProof = Boolean(application.screenshot_url || application.screenshot_url_2);
+  return hasReceivedProductProof && ['order_submitted', 'order_approved', 'review_submitted', 'forwarded_to_seller', 'pending_refund'].includes(application.status);
+};
+
 export default function SellerDashboard() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
@@ -1163,7 +1184,7 @@ export default function SellerDashboard() {
                               </a>
                             )}
                           </div>
-                        ) : (review.status === 'review_submitted' || review.status === 'forwarded_to_seller' || review.status === 'pending_refund' || review.status === 'order_submitted' || review.status === 'order_approved') && !review.refund_comment && (
+                        ) : isSellerPaymentReady(review, selectedProduct.category) && (
                           <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                             <div>
                                <p className="text-sm text-green-800 font-bold flex items-center gap-1.5">
