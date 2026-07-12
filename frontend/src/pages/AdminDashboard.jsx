@@ -19,6 +19,26 @@ import AppDetailsModal from '../components/admin/AppDetailsModal';
 import { getCurrencyForCountry } from '../utils/currency';
 import PrivateChatAdminPanel from '../components/admin/PrivateChatAdminPanel';
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
+
+const exchangeRateCache = {};
+
+const fetchUsdExchangeRateForCountry = async (country) => {
+  const currencyCode = getCurrencyForCountry(country).code;
+  if (!currencyCode || currencyCode === 'USD') return { rate: 1, currencyCode };
+  if (exchangeRateCache[currencyCode]) return { rate: exchangeRateCache[currencyCode], currencyCode };
+
+  const response = await fetch(EXCHANGE_RATE_API);
+  const data = await response.json();
+  const rate = Number(data?.rates?.[currencyCode]);
+
+  if (!response.ok || !rate || Number.isNaN(rate)) {
+    throw new Error(`Exchange rate unavailable for ${currencyCode}`);
+  }
+
+  exchangeRateCache[currencyCode] = rate;
+  return { rate, currencyCode };
+};
 
 const parseMaybeJson = (value, fallback) => {
   if (!value) return fallback;
@@ -155,6 +175,8 @@ export default function AdminDashboard() {
   });
   const [allFeeConfigs, setAllFeeConfigs] = useState([]);
   const [feeLoading, setFeeLoading] = useState(false);
+  const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
+  const [exchangeRateStatus, setExchangeRateStatus] = useState('');
   const [globalVerificationFields, setGlobalVerificationFields] = useState([]);
   const [verificationConfigLoading, setVerificationConfigLoading] = useState(false);
   const getAuthHeaders = () => {
@@ -191,6 +213,34 @@ export default function AdminDashboard() {
     } catch (err) { console.error(err); }
   };
 
+  const autofillExchangeRateForCountry = async (country, options = {}) => {
+    const normalizedCountry = country.trim();
+    if (!normalizedCountry) return null;
+
+    setExchangeRateLoading(true);
+    setExchangeRateStatus('');
+    try {
+      const { rate, currencyCode } = await fetchUsdExchangeRateForCountry(normalizedCountry);
+      const formattedRate = rate.toFixed(4);
+
+      setFeeConfig(prev => ({
+        ...prev,
+        exchange_rate: formattedRate,
+      }));
+      setExchangeRateStatus(`Auto-filled latest USD to ${currencyCode} rate.`);
+      return formattedRate;
+    } catch (err) {
+      console.error(err);
+      setExchangeRateStatus('Live rate unavailable. Please enter the exchange rate manually.');
+      if (options.resetOnFailure) {
+        setFeeConfig(prev => ({ ...prev, exchange_rate: prev.exchange_rate || 1 }));
+      }
+      return null;
+    } finally {
+      setExchangeRateLoading(false);
+    }
+  };
+
   // 🔥 FETCH SPECIFIC FEE CONFIG ON BLUR OR SEARCH
   const fetchFeeConfig = async (country, platform) => {
     if (!country.trim() || !platform.trim()) return;
@@ -213,6 +263,7 @@ export default function AdminDashboard() {
         }
 
         const fetchedRate = data.data.exchange_rate || 1;
+        setExchangeRateStatus('Using saved exchange rate for this country/platform.');
         // 🔥 NEW: Tiers গুলোকে UI এর জন্য Local Currency তে কনভার্ট করা
         parsedTiers = parsedTiers.map(t => ({
             min: t.min ? (parseFloat(t.min) * fetchedRate).toFixed(2) : '',
@@ -257,8 +308,15 @@ export default function AdminDashboard() {
           verification_fields: platformVerFields,
         });
       } else {
+        const autoRate = await autofillExchangeRateForCountry(country, { resetOnFailure: true });
         setFeeConfig(prev => ({
-          ...prev, platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: '', exchange_rate: 1
+          ...prev,
+          platform_charge: [{ min: '', max: '', fee: '' }],
+          buyer_reward: '',
+          buyer_refund_fee: '',
+          seller_deposit_fee: '',
+          seller_withdrawal_fee: '',
+          exchange_rate: autoRate || prev.exchange_rate || 1
         }));
       }
     } catch (err) { console.error(err); } 
@@ -295,6 +353,8 @@ export default function AdminDashboard() {
   const handleFeeBlur = () => {
     if (feeConfig.country && feeConfig.platform) {
       fetchFeeConfig(feeConfig.country, feeConfig.platform);
+    } else if (feeConfig.country) {
+      autofillExchangeRateForCountry(feeConfig.country);
     }
   };
 
@@ -1220,8 +1280,37 @@ export default function AdminDashboard() {
 
                   {/* 🔥 NEW: Exchange Rate Input */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1">Exchange Rate (1 USD = ?)</label>
-                    <input type="number" step="0.0001" min="0.0001" required placeholder="e.g. 1.0000" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.exchange_rate} onChange={(e) => handleFeeSelectorChange('exchange_rate', e.target.value)} />
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <label className="block text-xs font-bold text-gray-600">Exchange Rate (1 USD = ?)</label>
+                      <button
+                        type="button"
+                        onClick={() => autofillExchangeRateForCountry(feeConfig.country)}
+                        disabled={!feeConfig.country || exchangeRateLoading}
+                        className="text-[10px] font-black text-[#0066ff] disabled:text-gray-300 flex items-center gap-1"
+                        title="Fetch latest exchange rate"
+                      >
+                        <RefreshCcw size={12} className={exchangeRateLoading ? 'animate-spin' : ''} />
+                        Auto
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      min="0.0001"
+                      required
+                      placeholder="e.g. 1.0000"
+                      className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]"
+                      value={feeConfig.exchange_rate}
+                      onChange={(e) => {
+                        setExchangeRateStatus('Manual exchange rate entered.');
+                        handleFeeSelectorChange('exchange_rate', e.target.value);
+                      }}
+                    />
+                    {exchangeRateStatus && (
+                      <p className={`mt-1 text-[10px] font-bold ${exchangeRateStatus.includes('unavailable') ? 'text-amber-600' : 'text-green-600'}`}>
+                        {exchangeRateStatus}
+                      </p>
+                    )}
                   </div>
                   {(() => {
                     const currentCurrency = getCurrencyForCountry(feeConfig.country);
