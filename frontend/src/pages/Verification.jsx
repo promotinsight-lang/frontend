@@ -439,7 +439,7 @@ const Verification = () => {
             </div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">Verification Pending</h2>
             <p className="text-gray-500 text-sm mb-6">
-              Your details have been submitted. Please wait while our admin reviews your application.
+              We are reviewing your verification request. It will be completed within 24 hours. Thank you for your patience and cooperation.
             </p>
             <button
               onClick={() => navigate('/dashboard')}
