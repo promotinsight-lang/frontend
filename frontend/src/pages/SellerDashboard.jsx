@@ -629,6 +629,42 @@ export default function SellerDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4 md:p-6 animate-fade-in">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-amber-200 bg-amber-50 shadow-sm">
+          <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-stretch">
+            <div className="flex flex-1 items-start gap-3">
+              <div className="mt-0.5 rounded-xl bg-amber-100 p-2 text-amber-700">
+                <AlertTriangle size={22} />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider text-amber-700">Important Seller Payment Rule</p>
+                <h2 className="mt-1 text-lg font-black text-gray-900 sm:text-xl">Wallet deductions and buyer refunds are separate.</h2>
+                <p className="mt-2 text-sm font-semibold leading-relaxed text-gray-700">
+                  PromotInsight deducts only the platform charge and buyer reward from your seller wallet balance.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-emerald-200 bg-white p-3">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <Wallet size={18} />
+                  <p className="text-xs font-black uppercase tracking-wider">Deducted From Wallet</p>
+                </div>
+                <p className="mt-2 text-sm font-bold text-gray-800">Platform charge + buyer reward only.</p>
+              </div>
+
+              <div className="rounded-xl border border-red-200 bg-white p-3">
+                <div className="flex items-center gap-2 text-red-600">
+                  <Clock size={18} />
+                  <p className="text-xs font-black uppercase tracking-wider">Paid By Seller</p>
+                </div>
+                <p className="mt-2 text-sm font-bold leading-relaxed text-gray-800">
+                  Buyer refund/order total must be paid by you within the required time. Order total includes product price, tax, shipping cost, and PayPal fees.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
         
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
