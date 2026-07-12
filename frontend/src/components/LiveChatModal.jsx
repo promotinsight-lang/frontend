@@ -99,6 +99,19 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
     }
   }, [fetchMessages]);
 
+  const handlePrivateChatApproved = useCallback((payload) => {
+    if (payload?.userId && String(payload.userId) !== String(user?.id)) return;
+
+    if (payload?.session?.id) {
+      setSessionId(payload.session.id);
+      setChatStatus(payload.session.status || 'active');
+      fetchMessages(payload.session.id);
+      return;
+    }
+
+    fetchChatStatus();
+  }, [fetchChatStatus, fetchMessages, user?.id]);
+
   useEffect(() => {
     if (user && isVerified) {
             socket.connect();
@@ -120,6 +133,16 @@ export default function LiveChatModal({ isOpen, onClose, onOpen }) {
       socket.disconnect();
     };
   }, [user, isVerified, fetchChatStatus]);
+
+  useEffect(() => {
+    if (!user || !isVerified) return;
+
+    socket.on('private_chat_approved', handlePrivateChatApproved);
+
+    return () => {
+      socket.off('private_chat_approved', handlePrivateChatApproved);
+    };
+  }, [user, isVerified, handlePrivateChatApproved]);
 
   useEffect(() => {
     let poll;

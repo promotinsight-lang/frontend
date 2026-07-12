@@ -109,6 +109,19 @@ export default function Support() {
       setChatLoading(false);
     }
   }, [fetchMessages]);
+
+  const handlePrivateChatApproved = useCallback((payload) => {
+    if (payload?.userId && String(payload.userId) !== String(user?.id)) return;
+
+    if (payload?.session?.id) {
+      setSessionId(payload.session.id);
+      setChatStatus(payload.session.status || 'active');
+      fetchMessages(payload.session.id);
+      return;
+    }
+
+    fetchChatStatus();
+  }, [fetchChatStatus, fetchMessages, user?.id]);
   
   // সকেট কানেকশন ও চ্যাট স্ট্যাটাস ফেচ করা
   useEffect(() => {
@@ -131,6 +144,16 @@ export default function Support() {
       if (activeTab === 'chat') socket.disconnect();
     };
   }, [activeTab, user, fetchChatStatus]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    socket.on('private_chat_approved', handlePrivateChatApproved);
+
+    return () => {
+      socket.off('private_chat_approved', handlePrivateChatApproved);
+    };
+  }, [user, handlePrivateChatApproved]);
 
   // সকেট ইভেন্ট লিসেনার
   useEffect(() => {
