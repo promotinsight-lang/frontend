@@ -20,7 +20,9 @@ import PrivateChatAdminPanel from '../components/admin/PrivateChatAdminPanel';
 import {
   PLATFORM_CHARGE_CONDITION_KEYS,
   buildDefaultPlatformChargeConditions,
+  buildDefaultBuyerRewardConditions,
   getPlatformChargeConditionLabel,
+  parseBuyerRewardConditions,
   parsePlatformChargeConditions,
 } from '../utils/campaignCategories';
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
@@ -65,12 +67,12 @@ const parseMaybeJson = (value, fallback) => {
   }
 };
 
-const blankPlatformTier = () => ({ min: '', max: '', fee: '' });
 const conditionOptions = PLATFORM_CHARGE_CONDITION_KEYS.map((key) => ({
   key,
   label: getPlatformChargeConditionLabel(key),
 }));
 
+const blankPlatformTier = () => ({ min: '', max: '', fee: '' });
 const ensureEditableTiers = (tiers) => (Array.isArray(tiers) && tiers.length > 0 ? tiers : [blankPlatformTier()]);
 
 const buildEditableConditionCharges = (value) => {
@@ -78,6 +80,15 @@ const buildEditableConditionCharges = (value) => {
   const defaults = buildDefaultPlatformChargeConditions();
   conditionOptions.forEach(({ key }) => {
     defaults[key] = ensureEditableTiers(parsed[key]);
+  });
+  return defaults;
+};
+
+const buildEditableBuyerRewardConditions = (value) => {
+  const parsed = parseBuyerRewardConditions(value);
+  const defaults = buildDefaultBuyerRewardConditions();
+  conditionOptions.forEach(({ key }) => {
+    defaults[key] = parsed[key] === '' || parsed[key] === undefined || parsed[key] === null ? '' : String(parsed[key]);
   });
   return defaults;
 };
@@ -223,9 +234,10 @@ export default function AdminDashboard() {
 
   // 🔥 DYNAMIC FEE CONFIGURATION STATES
   const [feeConfig, setFeeConfig] = useState({
-    country: '', platform: '', platform_charge: [{ min: '', max: '', fee: '' }], buyer_reward: '', 
+    country: '', platform: '', platform_charge: [], buyer_reward: '', 
     buyer_refund_fee: '', seller_deposit_fee: '', seller_withdrawal_fee: '', exchange_rate: 1,
     platform_charge_conditions: buildDefaultPlatformChargeConditions(),
+    buyer_reward_conditions: buildDefaultBuyerRewardConditions(),
     verification_fields: [
       { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
       { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
@@ -298,18 +310,8 @@ export default function AdminDashboard() {
         headers: getAuthHeaders(), credentials: 'include' 
       });
       const data = await res.json();
-      if (data.success && data.data) {
+        if (data.success && data.data) {
         
-        let parsedTiers = [{ min: '', max: '', fee: '' }];
-        if (Array.isArray(data.data.platform_charge) && data.data.platform_charge.length > 0) {
-          parsedTiers = data.data.platform_charge;
-        } else if (typeof data.data.platform_charge === 'string') {
-          try {
-            const parsed = JSON.parse(data.data.platform_charge);
-            if (Array.isArray(parsed)) parsedTiers = parsed;
-          } catch {}
-        }
-
         let parsedVerificationFields = [
           { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
           { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
@@ -337,23 +339,25 @@ export default function AdminDashboard() {
           }
         } catch { /* use fee row fields */ }
         setFeeConfig({
-          country: data.data.country, platform: data.data.platform, platform_charge: parsedTiers,
+          country: data.data.country, platform: data.data.platform, platform_charge: [],
           buyer_reward: data.data.buyer_reward, buyer_refund_fee: data.data.buyer_refund_fee,
           seller_deposit_fee: data.data.seller_deposit_fee, seller_withdrawal_fee: data.data.seller_withdrawal_fee,
           exchange_rate: data.data.exchange_rate || 1,
           platform_charge_conditions: buildEditableConditionCharges(data.data.platform_charge_conditions),
+          buyer_reward_conditions: buildEditableBuyerRewardConditions(data.data.buyer_reward_conditions),
           verification_fields: platformVerFields,
         });
       } else {
         const autoRate = await autofillExchangeRateForCountry(country, { resetOnFailure: true });
         setFeeConfig(prev => ({
           ...prev,
-          platform_charge: [{ min: '', max: '', fee: '' }],
+          platform_charge: [],
           buyer_reward: '',
           buyer_refund_fee: '',
           seller_deposit_fee: '',
           seller_withdrawal_fee: '',
           platform_charge_conditions: buildDefaultPlatformChargeConditions(),
+          buyer_reward_conditions: buildDefaultBuyerRewardConditions(),
           exchange_rate: autoRate || prev.exchange_rate || 1
         }));
       }
@@ -430,6 +434,16 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleConditionRewardChange = (value) => {
+    setFeeConfig(prev => ({
+      ...prev,
+      buyer_reward_conditions: {
+        ...prev.buyer_reward_conditions,
+        [activePlatformCondition]: value,
+      },
+    }));
+  };
+
   const handleFeeBlur = () => {
     if (feeConfig.country && feeConfig.platform) {
       fetchFeeConfig(feeConfig.country, feeConfig.platform);
@@ -439,16 +453,6 @@ export default function AdminDashboard() {
   };
 
   const handleEditFeeClick = (config) => {
-    let parsedTiers = [{ min: '', max: '', fee: '' }];
-    if (Array.isArray(config.platform_charge) && config.platform_charge.length > 0) {
-      parsedTiers = config.platform_charge;
-    } else if (typeof config.platform_charge === 'string') {
-      try {
-        const parsed = JSON.parse(config.platform_charge);
-        if (Array.isArray(parsed)) parsedTiers = parsed;
-      } catch {}
-    }
-
     let parsedVerificationFields = [
       { key: 'account_name', label: 'Account Name', type: 'text', required: true, placeholder: 'Account name on this platform' },
       { key: 'profile_url', label: 'Profile URL', type: 'url', required: true, placeholder: 'Profile URL on this platform' },
@@ -463,11 +467,12 @@ export default function AdminDashboard() {
     }
 
     setFeeConfig({
-      country: config.country, platform: config.platform, platform_charge: parsedTiers,
+      country: config.country, platform: config.platform, platform_charge: [],
       buyer_reward: config.buyer_reward, buyer_refund_fee: config.buyer_refund_fee,
       seller_deposit_fee: config.seller_deposit_fee, seller_withdrawal_fee: config.seller_withdrawal_fee,
       exchange_rate: config.exchange_rate || 1,
       platform_charge_conditions: buildEditableConditionCharges(config.platform_charge_conditions),
+      buyer_reward_conditions: buildEditableBuyerRewardConditions(config.buyer_reward_conditions),
       verification_fields: parsedVerificationFields,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -572,17 +577,23 @@ export default function AdminDashboard() {
       return;
     }
     
-    const usdReward = feeConfig.buyer_reward ? parseFloat(feeConfig.buyer_reward).toFixed(4) : '';
-    let usdTiers = [];
     let conditionCharges = {};
+    let buyerRewardCharges = {};
 
     try {
-      usdTiers = serializeTierList(feeConfig.platform_charge, { label: 'default platform charge tier' });
       conditionCharges = conditionOptions.reduce((acc, { key, label }) => {
         acc[key] = serializeTierList(feeConfig.platform_charge_conditions?.[key] || [], {
-          allowEmpty: true,
+          allowEmpty: false,
           label: `${label} condition tier`,
         });
+        return acc;
+      }, {});
+      buyerRewardCharges = conditionOptions.reduce((acc, { key, label }) => {
+        const value = feeConfig.buyer_reward_conditions?.[key];
+        if (value === '' || value === null || value === undefined || Number.isNaN(Number(value))) {
+          throw new Error(`Please enter a buyer reward for ${label}.`);
+        }
+        acc[key] = parseFloat(value).toFixed(4);
         return acc;
       }, {});
     } catch (error) {
@@ -592,9 +603,10 @@ export default function AdminDashboard() {
 
     const payload = {
       ...feeConfig,
-      buyer_reward: usdReward,
-      platform_charge: JSON.stringify(usdTiers),
+      buyer_reward: '',
+      platform_charge: JSON.stringify([]),
       platform_charge_conditions: JSON.stringify(conditionCharges),
+      buyer_reward_conditions: JSON.stringify(buyerRewardCharges),
       verification_fields: feeConfig.verification_fields,
     };
     
@@ -1332,35 +1344,12 @@ export default function AdminDashboard() {
                     <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center text-sm font-bold text-[#0066ff]">Fetching active configurations...</div>
                   )}
                   
-                  <div className="col-span-full mb-2 bg-gray-50 border p-4 rounded-xl overflow-x-auto">
-                    <div className="flex justify-between items-center mb-4 min-w-[300px]">
-                      <div>
-                        <label className="block text-sm font-bold text-gray-800">Dynamic Tier-Based Platform Charge (USD)</label>
-                        <p className="text-[10px] text-gray-500">Set fixed fees based on the product price range. Values are stored in USD.</p>
-                      </div>
-                      <button type="button" onClick={handleAddTier} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-200 transition-colors shrink-0">+ Add Tier</button>
-                    </div>
-                    
-                    {feeConfig.platform_charge.map((tier, index) => {
-                      return (
-                      <div key={index} className="flex flex-col sm:flex-row gap-3 mb-3 sm:items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm min-w-[300px]">
-                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price (USD)</label><input type="number" step="0.01" min="0" required value={tier.min} onChange={(e) => handleTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 1" /></div>
-                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Max Price (USD)</label><input type="number" step="0.01" min="0" required value={tier.max} onChange={(e) => handleTierChange(index, 'max', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 20" /></div>
-                        <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Fixed Fee (USD)</label><input type="number" step="0.01" min="0" required value={tier.fee} onChange={(e) => handleTierChange(index, 'fee', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-[#0066ff]" placeholder="e.g. 2" /></div>
-                        {feeConfig.platform_charge.length > 1 && (
-                          <div className="pb-1 mt-2 sm:mt-0"><button type="button" onClick={() => handleRemoveTier(index)} className="p-2 w-full sm:w-auto bg-red-50 text-red-600 border border-red-100 rounded-lg hover:bg-red-100 transition-colors flex justify-center" title="Remove Tier"><Trash2 size={16} /></button></div>
-                        )}
-                      </div>
-                    )})}
-                  </div>
-
                   <div className="col-span-full mb-2 bg-emerald-50 border border-emerald-100 p-4 rounded-xl overflow-x-auto">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 min-w-[300px]">
                       <div>
-                        <label className="block text-sm font-bold text-gray-800">Condition-Based Platform Charge (USD)</label>
-                        <p className="text-[10px] text-gray-500">These rules override the default platform charge when seller selects the matching campaign condition.</p>
+                        <label className="block text-sm font-bold text-gray-800">Condition-Based Tariffs (USD)</label>
+                        <p className="text-[10px] text-gray-500">Set a platform charge and buyer reward for each campaign condition.</p>
                       </div>
-                      <button type="button" onClick={handleAddConditionTier} className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-200 transition-colors shrink-0">+ Add Tier</button>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-4 min-w-[300px]">
@@ -1376,6 +1365,21 @@ export default function AdminDashboard() {
                       ))}
                     </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 min-w-[300px]">
+                      <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-sm">
+                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">{getPlatformChargeConditionLabel(activePlatformCondition)} Buyer Reward (USD)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={feeConfig.buyer_reward_conditions?.[activePlatformCondition] || ''}
+                          onChange={(e) => handleConditionRewardChange(e.target.value)}
+                          className="w-full p-2 border rounded-lg text-sm outline-none focus:border-emerald-500"
+                          placeholder="e.g. 5"
+                        />
+                      </div>
+                    </div>
+
                     {ensureEditableTiers(feeConfig.platform_charge_conditions?.[activePlatformCondition]).map((tier, index) => (
                       <div key={`${activePlatformCondition}-${index}`} className="flex flex-col sm:flex-row gap-3 mb-3 sm:items-end bg-white p-3 rounded-lg border border-emerald-100 shadow-sm min-w-[300px]">
                         <div className="flex-1 w-full"><label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">Min Price (USD)</label><input type="number" step="0.01" min="0" value={tier.min} onChange={(e) => handleConditionTierChange(index, 'min', e.target.value)} className="w-full p-2 border rounded-lg text-sm outline-none focus:border-emerald-500" placeholder="e.g. 1" /></div>
@@ -1386,31 +1390,8 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     ))}
-                    <p className="text-[10px] text-emerald-800 font-semibold mt-2">Leave a condition blank to use the default platform charge above.</p>
+                    <button type="button" onClick={handleAddConditionTier} className="mt-2 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-200 transition-colors shrink-0">+ Add Tier</button>
                   </div>
-                  {(() => {
-                    return (
-                      <div>
-                        <label className="block text-xs font-bold text-gray-600 mb-1">
-                          Buyer Reward (USD)
-                        </label>
-                        <div className="relative">
-                          <input 
-                            type="number" 
-                            step="0.01" 
-                            required 
-                            placeholder="0.00" 
-                            className="w-full pr-12 p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" 
-                            value={feeConfig.buyer_reward} 
-                            onChange={(e) => handleFeeSelectorChange('buyer_reward', e.target.value)} 
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">
-                            USD
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Refund Fee (%)</label>
                     <input type="number" step="0.01" required placeholder="0.00" className="w-full p-2.5 border rounded-lg font-semibold text-sm outline-none focus:border-[#0066ff]" value={feeConfig.buyer_refund_fee} onChange={(e) => handleFeeSelectorChange('buyer_refund_fee', e.target.value)} />

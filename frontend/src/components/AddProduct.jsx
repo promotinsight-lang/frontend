@@ -3,8 +3,10 @@ import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw, Wallet } from
 import {
   CAMPAIGN_CATEGORY_OPTIONS,
   normalizeCampaignCategory,
+  parseBuyerRewardConditions,
   parsePlatformChargeConditions,
   parsePlatformChargeTiers,
+  resolveBuyerRewardForCategory,
   resolvePlatformChargeTiersForCategory,
 } from '../utils/campaignCategories';
 
@@ -93,12 +95,14 @@ export default function AddProduct({ onProductAdded }) {
           // JSON Tier Parsing fix
           data.data.parsed_platform_charge = parsePlatformChargeTiers(data.data.platform_charge);
           data.data.parsed_platform_charge_conditions = parsePlatformChargeConditions(data.data.platform_charge_conditions);
+          data.data.parsed_buyer_reward_conditions = parseBuyerRewardConditions(data.data.buyer_reward_conditions);
           
           setActiveConfig(data.data);
           
-          if (parseFloat(data.data.buyer_reward) > 0) {
-              const fetchedRate = data.data.exchange_rate ? parseFloat(data.data.exchange_rate) : 1;
-              const localReward = (parseFloat(data.data.buyer_reward) * fetchedRate).toFixed(2);
+          const fetchedRate = data.data.exchange_rate ? parseFloat(data.data.exchange_rate) : 1;
+          const rewardValue = resolveBuyerRewardForCategory(data.data, formData.category);
+          if (rewardValue > 0) {
+              const localReward = (rewardValue * fetchedRate).toFixed(2);
               setFormData(prev => ({ ...prev, reward: localReward }));
           }
         } else {
@@ -112,6 +116,15 @@ export default function AddProduct({ onProductAdded }) {
     };
     fetchDynamicFee();
   }, [formData.country, formData.platform]);
+
+  useEffect(() => {
+    if (!activeConfig) return;
+    const fetchedRate = activeConfig.exchange_rate ? parseFloat(activeConfig.exchange_rate) : 1;
+    const rewardValue = resolveBuyerRewardForCategory(activeConfig, formData.category);
+    if (rewardValue > 0) {
+      setFormData(prev => ({ ...prev, reward: (rewardValue * fetchedRate).toFixed(2) }));
+    }
+  }, [activeConfig, formData.category]);
 
   const handleCountryChange = (e) => {
     const selectedCountry = e.target.value;
@@ -152,6 +165,8 @@ export default function AddProduct({ onProductAdded }) {
   // 🔥 2. Local Price ke USD te convert kora holo jate Database er USD Tier er sathe compare kora jay
   const priceNumUSD = priceNum / exchangeRate;
   const platformChargeTiers = resolvePlatformChargeTiersForCategory(activeConfig, formData.category);
+  const categoryRewardUSD = activeConfig ? resolveBuyerRewardForCategory(activeConfig, formData.category) : 0;
+  const buyerRewardLocked = activeConfig && categoryRewardUSD > 0;
   
   const platformCommissionUSD = (() => {
     if (activeConfig && platformChargeTiers && platformChargeTiers.length > 0) {
@@ -335,7 +350,7 @@ export default function AddProduct({ onProductAdded }) {
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1 flex items-center justify-between">
                  <span>Buyer Reward ({currency}) *</span>
-                 {activeConfig && parseFloat(activeConfig.buyer_reward) > 0 && <span className="text-[9px] bg-gray-200 text-gray-600 px-1 rounded">Fixed by Admin</span>}
+                 {buyerRewardLocked && <span className="text-[9px] bg-gray-200 text-gray-600 px-1 rounded">Fixed by Admin</span>}
               </label>
               <input 
                 required 
@@ -345,8 +360,8 @@ export default function AddProduct({ onProductAdded }) {
                 name="reward" 
                 value={formData.reward} 
                 onChange={handleChange} 
-                readOnly={activeConfig && parseFloat(activeConfig.buyer_reward) > 0}
-                className={`w-full p-3 border rounded-xl outline-none transition-all text-lg font-bold ${activeConfig && parseFloat(activeConfig.buyer_reward) > 0 ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-50 focus:bg-white text-green-600 focus:border-green-500'}`} 
+                readOnly={buyerRewardLocked}
+                className={`w-full p-3 border rounded-xl outline-none transition-all text-lg font-bold ${buyerRewardLocked ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-50 focus:bg-white text-green-600 focus:border-green-500'}`} 
                 placeholder="0.00" 
               />
             </div>
@@ -419,7 +434,7 @@ export default function AddProduct({ onProductAdded }) {
                        <span>Platform Charge:</span> 
                        <b className="text-[#0066ff]">{platformChargeTiers?.length > 0 ? 'Tiered Fee' : `${activeConfig.platform_charge}%`}</b>
                      </li>
-                     <li className="flex justify-between"><span>Buyer Reward:</span> <b>{parseFloat(activeConfig.buyer_reward) > 0 ? `${currency}${activeConfig.buyer_reward}` : 'Custom'}</b></li>
+                     <li className="flex justify-between"><span>Buyer Reward:</span> <b>{categoryRewardUSD > 0 ? `${currency}${(categoryRewardUSD * exchangeRate).toFixed(2)}` : 'Custom'}</b></li>
                      <li className="flex justify-between"><span>Deposit Fee:</span> <b>{activeConfig.seller_deposit_fee}%</b></li>
                      <li className="flex justify-between"><span>W.Draw Fee:</span> <b>{activeConfig.seller_withdrawal_fee}%</b></li>
                      <li className="flex justify-between mt-1 pt-1 border-t border-gray-100">

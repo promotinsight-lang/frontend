@@ -50,6 +50,12 @@ export const buildDefaultPlatformChargeConditions = () =>
     return acc;
   }, {});
 
+export const buildDefaultBuyerRewardConditions = () =>
+  PLATFORM_CHARGE_CONDITION_KEYS.reduce((acc, key) => {
+    acc[key] = '';
+    return acc;
+  }, {});
+
 const buildEmptyPlatformChargeConditions = () =>
   PLATFORM_CHARGE_CONDITION_KEYS.reduce((acc, key) => {
     acc[key] = [];
@@ -97,12 +103,39 @@ export const parsePlatformChargeConditions = (value) => {
   return defaults;
 };
 
+export const parseBuyerRewardConditions = (value) => {
+  const parsed = typeof value === 'string' ? (() => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  })() : value;
+
+  const defaults = buildDefaultBuyerRewardConditions();
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return defaults;
+  PLATFORM_CHARGE_CONDITION_KEYS.forEach((key) => {
+    const reward = Number(parsed[key]);
+    defaults[key] = Number.isFinite(reward) && reward >= 0 ? reward : '';
+  });
+  return defaults;
+};
+
 export const resolvePlatformChargeTiersForCategory = (config, category) => {
   const categoryKey = normalizeCampaignCategoryKey(category);
   const conditionMap = parsePlatformChargeConditions(config?.platform_charge_conditions);
   const conditionTiers = categoryKey ? conditionMap[categoryKey] : [];
   if (Array.isArray(conditionTiers) && conditionTiers.length > 0) return conditionTiers;
   return parsePlatformChargeTiers(config?.platform_charge);
+};
+
+export const resolveBuyerRewardForCategory = (config, category) => {
+  const categoryKey = normalizeCampaignCategoryKey(category);
+  const conditionMap = parseBuyerRewardConditions(config?.buyer_reward_conditions);
+  const conditionReward = categoryKey ? Number(conditionMap[categoryKey]) : NaN;
+  if (Number.isFinite(conditionReward) && conditionReward >= 0) return conditionReward;
+  const fixedReward = Number(config?.buyer_reward);
+  return Number.isFinite(fixedReward) ? fixedReward : 0;
 };
 
 export const getPlatformChargeConditionLabel = (conditionKey) => CATEGORY_LABELS[conditionKey] || conditionKey;
