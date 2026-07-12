@@ -1,4 +1,8 @@
 import { X, AlertTriangle, Package, Image as ImageIcon, Star, CheckCircle, Receipt, Clock } from 'lucide-react';
+import {
+  isReviewRequiredCampaignCategory,
+  normalizeCampaignCategoryKey,
+} from '../../utils/campaignCategories';
 
 const formatDateTime = (value) => {
   if (!value) return null;
@@ -8,8 +12,11 @@ const formatDateTime = (value) => {
 };
 
 const isReviewRequiredCategory = (category) => {
-  const normalizedCategory = String(category || '').trim().toLowerCase();
-  return normalizedCategory === 'review' || normalizedCategory === 'need review';
+  return isReviewRequiredCampaignCategory(category);
+};
+
+const isNoReviewCategory = (category) => {
+  return normalizeCampaignCategoryKey(category) === 'no_need_review';
 };
 
 const hasReviewSubmission = (application) => {
@@ -264,7 +271,7 @@ export default function AppDetailsModal({
           {selectedAppDetails.status === 'order_submitted' && (
             <>
               <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-order')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Order</button>
-              {selectedAppDetails.category === 'No Review' ? (
+              {isNoReviewCategory(selectedAppDetails.category) ? (
                 <button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Forward to Seller</button>
               ) : (
                 <button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Approve Order</button>

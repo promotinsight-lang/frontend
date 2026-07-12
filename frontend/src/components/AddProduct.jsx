@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw, Wallet } from 'lucide-react';
+import {
+  CAMPAIGN_CATEGORY_OPTIONS,
+  normalizeCampaignCategory,
+  parsePlatformChargeConditions,
+  parsePlatformChargeTiers,
+  resolvePlatformChargeTiersForCategory,
+} from '../utils/campaignCategories';
 
 export default function AddProduct({ onProductAdded }) {
   const [formData, setFormData] = useState({
@@ -84,13 +91,8 @@ export default function AddProduct({ onProductAdded }) {
         
         if (data.success && data.data) {
           // JSON Tier Parsing fix
-          let parsedTiers = [];
-          if (Array.isArray(data.data.platform_charge)) {
-            parsedTiers = data.data.platform_charge;
-          } else if (typeof data.data.platform_charge === 'string') {
-            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch {}
-          }
-          data.data.parsed_platform_charge = parsedTiers;
+          data.data.parsed_platform_charge = parsePlatformChargeTiers(data.data.platform_charge);
+          data.data.parsed_platform_charge_conditions = parsePlatformChargeConditions(data.data.platform_charge_conditions);
           
           setActiveConfig(data.data);
           
@@ -149,11 +151,11 @@ export default function AddProduct({ onProductAdded }) {
   
   // 🔥 2. Local Price ke USD te convert kora holo jate Database er USD Tier er sathe compare kora jay
   const priceNumUSD = priceNum / exchangeRate;
+  const platformChargeTiers = resolvePlatformChargeTiersForCategory(activeConfig, formData.category);
   
   const platformCommissionUSD = (() => {
-    if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
-      // MXN noy, USD price er sathe USD min/max compare hochche
-      const matchedTier = activeConfig.parsed_platform_charge.find(t => priceNumUSD >= Number(t.min) && priceNumUSD <= Number(t.max));
+    if (activeConfig && platformChargeTiers && platformChargeTiers.length > 0) {
+      const matchedTier = platformChargeTiers.find(t => priceNumUSD >= Number(t.min) && priceNumUSD <= Number(t.max));
       return matchedTier ? Number(matchedTier.fee) : 0;
     }
     if (activeConfig && !isNaN(activeConfig.platform_charge)) {
@@ -176,8 +178,8 @@ export default function AddProduct({ onProductAdded }) {
     if (!imageFile) return alert("Please upload a product image.");
     if (!formData.country.trim() || !formData.platform.trim()) return alert("Country and Platform are required fields.");
 
-    if (activeConfig?.parsed_platform_charge?.length > 0 && platformCommissionLocal === 0 && priceNum > 0) {
-       return alert(`The product price (${currency}${priceNum}) does not match any valid fixed fee tier for ${formData.platform}. Please adjust the price.`);
+    if (platformChargeTiers?.length > 0 && platformCommissionLocal === 0 && priceNum > 0) {
+       return alert(`The product price (${currency}${priceNum}) does not match any valid fee tier for ${normalizeCampaignCategory(formData.category)} on ${formData.platform}. Please adjust the price.`);
     }
 
     setLoading(true);
@@ -315,10 +317,9 @@ export default function AddProduct({ onProductAdded }) {
             <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Campaign Category</label>
             <select name="category" value={formData.category} onChange={handleChange} 
               className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 font-semibold cursor-pointer">
-              <option value="Need Review">Need Review (Standard)</option>
-              <option value="Pre-Pay">Pre-Pay (External Funding)</option>
-              <option value="No Review">No Review (Buy Only)</option>
-              <option value="Feedback Only">Feedback Only</option>
+              {CAMPAIGN_CATEGORY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -396,24 +397,27 @@ export default function AddProduct({ onProductAdded }) {
           )}
 
           <div className="flex justify-between items-start mb-3">
-             <h3 className="font-bold text-yellow-800 flex items-center gap-2">
-               <AlertTriangle size={18}/> Financial Summary & Tariffs
-             </h3>
-             {formData.country && formData.platform && !isFeeLoading && (
-                <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold uppercase tracking-wider">
-                  Target: {formData.country} - {formData.platform}
-                </span>
-             )}
-          </div>
+              <h3 className="font-bold text-yellow-800 flex items-center gap-2">
+                <AlertTriangle size={18}/> Financial Summary & Tariffs
+              </h3>
+              {formData.country && formData.platform && !isFeeLoading && (
+                 <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold uppercase tracking-wider">
+                   Target: {formData.country} - {formData.platform}
+                 </span>
+              )}
+           </div>
+           <p className="text-[11px] text-gray-500 font-semibold mb-3">
+             Platform charge and buyer reward are stored in USD. Seller price and reward inputs stay in the selected country's local currency.
+           </p>
 
-          <div className="flex flex-col md:flex-row gap-4">
+           <div className="flex flex-col md:flex-row gap-4">
              {activeConfig && (
                <div className="bg-white p-3 rounded-xl border border-yellow-200 w-full md:w-1/3">
                   <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">Active Tariffs Overview</h4>
                   <ul className="text-xs text-gray-700 space-y-1.5 font-medium">
                      <li className="flex justify-between">
                        <span>Platform Charge:</span> 
-                       <b className="text-[#0066ff]">{activeConfig.parsed_platform_charge?.length > 0 ? 'Tiered Fee' : `${activeConfig.platform_charge}%`}</b>
+                       <b className="text-[#0066ff]">{platformChargeTiers?.length > 0 ? 'Tiered Fee' : `${activeConfig.platform_charge}%`}</b>
                      </li>
                      <li className="flex justify-between"><span>Buyer Reward:</span> <b>{parseFloat(activeConfig.buyer_reward) > 0 ? `${currency}${activeConfig.buyer_reward}` : 'Custom'}</b></li>
                      <li className="flex justify-between"><span>Deposit Fee:</span> <b>{activeConfig.seller_deposit_fee}%</b></li>
@@ -435,7 +439,7 @@ export default function AddProduct({ onProductAdded }) {
                   
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-500 flex items-center gap-1">
-                      Platform Tariff {activeConfig?.parsed_platform_charge?.length > 0 ? '(Fixed Tier)' : ''}
+                      Platform Tariff {platformChargeTiers?.length > 0 ? '(Fixed Tier)' : ''}
                     </span>
                     <span className="font-bold text-red-500">+{currency}{platformCommissionLocal.toFixed(2)}</span>
                   </div>

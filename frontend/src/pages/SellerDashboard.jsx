@@ -6,6 +6,7 @@ import SellerTariffsPage from '../components/SellerTariffsPage';
 import { Package, PlusCircle, Wallet, Clock, Eye, Edit, XCircle, Link as LinkIcon, Image as ImageIcon, Landmark, X, Receipt, AlertTriangle, Scale, CheckCircle, Headset, MessageCircle, MessageSquare, Send, History, ShieldCheck, ShieldAlert, Snowflake, DollarSign } from 'lucide-react';
 import { getCurrencyForCountry, getRateForCountry, buildCountryRateMap } from '../utils/currency';
 import LiveChatModal from '../components/LiveChatModal';
+import { isReviewRequiredCampaignCategory } from '../utils/campaignCategories';
 // ================= SECURITY HELPER =================
 const secureFetch = async (url, options = {}) => {
   options.credentials = 'include';
@@ -24,8 +25,7 @@ const secureFetch = async (url, options = {}) => {
 // ===================================================
 
 const isReviewRequiredForPayment = (category) => {
-  const normalizedCategory = String(category || '').trim().toLowerCase();
-  return normalizedCategory === 'review' || normalizedCategory === 'need review';
+  return isReviewRequiredCampaignCategory(category);
 };
 
 const isSellerPaymentReady = (application, category) => {

@@ -5,6 +5,7 @@ import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, 
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
 import LiveChatModal from '../components/LiveChatModal';
+import { isReviewRequiredCampaignCategory } from '../utils/campaignCategories';
 
 const BuyerDashboard = () => {
   const { formatWallet, formatProduct } = useBuyerCurrency();
@@ -426,8 +427,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   };
 
   const isReviewTask = (app) => {
-    const category = String(app?.category || '').trim().toLowerCase();
-    return category !== 'no review';
+    return isReviewRequiredCampaignCategory(app?.category);
   };
 
   const isReviewSubmitted = (app) => {
@@ -645,11 +645,11 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                       <button onClick={() => { setActionAppId(app.application_id); setShowOrderModal(true); }} className="flex-1 bg-[#0066ff] text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-blue-500/30">Submit Order</button>
                     )}
 
-                    {app.application_status === 'order_approved' && app.category !== 'No Review' && (
+                    {app.application_status === 'order_approved' && isReviewTask(app) && (
                       <button onClick={() => { setActionAppId(app.application_id); setShowReviewModal(true); }} className="flex-1 bg-purple-600 text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-purple-500/30">Submit Review</button>
                     )}
 
-                    {(app.application_status === 'order_submitted' || app.application_status === 'review_submitted' || app.application_status === 'pending_refund' || (app.application_status === 'order_approved' && app.category === 'No Review')) && (
+                    {(app.application_status === 'order_submitted' || app.application_status === 'review_submitted' || app.application_status === 'pending_refund' || (app.application_status === 'order_approved' && !isReviewTask(app))) && (
                       <button disabled className="flex-1 bg-gray-100 text-gray-400 font-bold py-2 rounded-lg text-xs cursor-not-allowed flex items-center justify-center gap-1">
                         <Clock size={14}/> Processing
                       </button>
