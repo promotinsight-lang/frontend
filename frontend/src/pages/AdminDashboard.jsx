@@ -19,7 +19,6 @@ import AppDetailsModal from '../components/admin/AppDetailsModal';
 import { getCurrencyForCountry } from '../utils/currency';
 import PrivateChatAdminPanel from '../components/admin/PrivateChatAdminPanel';
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
-const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 const exchangeRateCache = {};
 
@@ -28,16 +27,18 @@ const fetchUsdExchangeRateForCountry = async (country) => {
   if (!currencyCode || currencyCode === 'USD') return { rate: 1, currencyCode };
   if (exchangeRateCache[currencyCode]) return { rate: exchangeRateCache[currencyCode], currencyCode };
 
-  const response = await fetch(EXCHANGE_RATE_API);
+  const response = await fetch(`${API_BASE}/api/config/fees/exchange-rate?currency=${encodeURIComponent(currencyCode)}`, {
+    credentials: 'include',
+  });
   const data = await response.json();
-  const rate = Number(data?.rates?.[currencyCode]);
+  const rate = Number(data?.rate);
 
   if (!response.ok || !rate || Number.isNaN(rate)) {
-    throw new Error(`Exchange rate unavailable for ${currencyCode}`);
+    throw new Error(data?.message || `Exchange rate unavailable for ${currencyCode}`);
   }
 
   exchangeRateCache[currencyCode] = rate;
-  return { rate, currencyCode };
+  return { rate, currencyCode, source: data?.source };
 };
 
 const parseMaybeJson = (value, fallback) => {
@@ -220,14 +221,14 @@ export default function AdminDashboard() {
     setExchangeRateLoading(true);
     setExchangeRateStatus('');
     try {
-      const { rate, currencyCode } = await fetchUsdExchangeRateForCountry(normalizedCountry);
+      const { rate, currencyCode, source } = await fetchUsdExchangeRateForCountry(normalizedCountry);
       const formattedRate = rate.toFixed(4);
 
       setFeeConfig(prev => ({
         ...prev,
         exchange_rate: formattedRate,
       }));
-      setExchangeRateStatus(`Auto-filled latest USD to ${currencyCode} rate.`);
+      setExchangeRateStatus(`Auto-filled latest USD to ${currencyCode} rate${source ? ` from ${source}` : ''}.`);
       return formattedRate;
     } catch (err) {
       console.error(err);
