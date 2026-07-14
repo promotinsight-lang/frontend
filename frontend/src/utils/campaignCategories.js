@@ -138,4 +138,14 @@ export const resolveBuyerRewardForCategory = (config, category) => {
   return Number.isFinite(fixedReward) ? fixedReward : 0;
 };
 
+export const getConfiguredCampaignCategoryOptions = (config) => {
+  const conditionMap = parsePlatformChargeConditions(config?.platform_charge_conditions);
+  const configuredOptions = CAMPAIGN_CATEGORY_OPTIONS.filter((option) => {
+    const key = normalizeCampaignCategoryKey(option.value);
+    return key && Array.isArray(conditionMap[key]) && conditionMap[key].length > 0;
+  });
+
+  return configuredOptions.length > 0 ? configuredOptions : CAMPAIGN_CATEGORY_OPTIONS;
+};
+
 export const getPlatformChargeConditionLabel = (conditionKey) => CATEGORY_LABELS[conditionKey] || conditionKey;

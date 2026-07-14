@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw, Wallet } from 'lucide-react';
 import {
-  CAMPAIGN_CATEGORY_OPTIONS,
+  getConfiguredCampaignCategoryOptions,
   normalizeCampaignCategory,
   parseBuyerRewardConditions,
   parsePlatformChargeConditions,
@@ -167,6 +167,16 @@ export default function AddProduct({ onProductAdded }) {
   const platformChargeTiers = resolvePlatformChargeTiersForCategory(activeConfig, formData.category);
   const categoryRewardUSD = activeConfig ? resolveBuyerRewardForCategory(activeConfig, formData.category) : 0;
   const buyerRewardLocked = activeConfig && categoryRewardUSD > 0;
+  const availableCategoryOptions = useMemo(
+    () => getConfiguredCampaignCategoryOptions(activeConfig),
+    [activeConfig]
+  );
+
+  useEffect(() => {
+    if (!availableCategoryOptions.some((option) => option.value === formData.category)) {
+      setFormData(prev => ({ ...prev, category: availableCategoryOptions[0]?.value || 'Need Review' }));
+    }
+  }, [activeConfig, formData.category, availableCategoryOptions]);
   
   const platformCommissionUSD = (() => {
     if (activeConfig && platformChargeTiers && platformChargeTiers.length > 0) {
@@ -332,7 +342,7 @@ export default function AddProduct({ onProductAdded }) {
             <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Campaign Category</label>
             <select name="category" value={formData.category} onChange={handleChange} 
               className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] bg-gray-50 font-semibold cursor-pointer">
-              {CAMPAIGN_CATEGORY_OPTIONS.map((option) => (
+              {availableCategoryOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>

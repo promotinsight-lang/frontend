@@ -444,6 +444,20 @@ export default function AdminDashboard() {
     }));
   };
 
+  const handleClearCondition = () => {
+    setFeeConfig(prev => ({
+      ...prev,
+      platform_charge_conditions: {
+        ...prev.platform_charge_conditions,
+        [activePlatformCondition]: [blankPlatformTier()],
+      },
+      buyer_reward_conditions: {
+        ...prev.buyer_reward_conditions,
+        [activePlatformCondition]: '',
+      },
+    }));
+  };
+
   const handleFeeBlur = () => {
     if (feeConfig.country && feeConfig.platform) {
       fetchFeeConfig(feeConfig.country, feeConfig.platform);
@@ -582,20 +596,35 @@ export default function AdminDashboard() {
 
     try {
       conditionCharges = conditionOptions.reduce((acc, { key, label }) => {
-        acc[key] = serializeTierList(feeConfig.platform_charge_conditions?.[key] || [], {
+        const tiers = feeConfig.platform_charge_conditions?.[key] || [];
+        const rewardValue = feeConfig.buyer_reward_conditions?.[key];
+        const hasRewardValue = rewardValue !== '' && rewardValue !== null && rewardValue !== undefined;
+        const hasAnyTierValue = tiers.some(hasTierValues);
+
+        if (!hasAnyTierValue && !hasRewardValue) return acc;
+        if (!hasAnyTierValue && hasRewardValue) {
+          throw new Error(`Please add at least one fee tier for ${label}, or clear its buyer reward.`);
+        }
+
+        acc[key] = serializeTierList(tiers, {
           allowEmpty: false,
           label: `${label} condition tier`,
         });
         return acc;
       }, {});
       buyerRewardCharges = conditionOptions.reduce((acc, { key, label }) => {
+        if (!conditionCharges[key]) return acc;
         const value = feeConfig.buyer_reward_conditions?.[key];
-        if (value === '' || value === null || value === undefined || Number.isNaN(Number(value))) {
-          throw new Error(`Please enter a buyer reward for ${label}.`);
+        if (value !== '' && value !== null && value !== undefined && Number.isNaN(Number(value))) {
+          throw new Error(`Please enter a valid buyer reward for ${label}.`);
         }
-        acc[key] = parseFloat(value).toFixed(4);
+        acc[key] = parseFloat(value || 0).toFixed(4);
         return acc;
       }, {});
+
+      if (Object.keys(conditionCharges).length === 0) {
+        throw new Error('Please configure at least one condition with a fee tier.');
+      }
     } catch (error) {
       alert(error.message);
       return;
@@ -1354,16 +1383,19 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-4 min-w-[300px]">
-                      {conditionOptions.map(({ key, label }) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setActivePlatformCondition(key)}
-                          className={`px-3 py-2 rounded-lg text-xs font-black border transition-colors ${activePlatformCondition === key ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-gray-600 border-emerald-100 hover:bg-emerald-100'}`}
-                        >
-                          {label}
-                        </button>
-                      ))}
+                      {conditionOptions.map(({ key, label }) => {
+                        const isConfigured = ensureEditableTiers(feeConfig.platform_charge_conditions?.[key]).some(hasTierValues);
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setActivePlatformCondition(key)}
+                            className={`px-3 py-2 rounded-lg text-xs font-black border transition-colors ${activePlatformCondition === key ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : isConfigured ? 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-100' : 'bg-white text-gray-600 border-emerald-100 hover:bg-emerald-100'}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 min-w-[300px]">
@@ -1391,7 +1423,10 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     ))}
-                    <button type="button" onClick={handleAddConditionTier} className="mt-2 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-200 transition-colors shrink-0">+ Add Tier</button>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={handleAddConditionTier} className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-200 transition-colors shrink-0">+ Add Tier</button>
+                      <button type="button" onClick={handleClearCondition} className="bg-white text-red-600 border border-red-100 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 transition-colors shrink-0">Clear Condition</button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Refund Fee (%)</label>
