@@ -316,7 +316,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
      }
 
      if (requestedAmount > withdrawableBalance) {
-         alert(`You can withdraw up to $${withdrawableBalance.toFixed(2)} USD now. Reward balance must reach $${Number(walletBreakdown.reward_min_withdrawal || 20).toFixed(2)}, and signup bonus unlocks after ${walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.`);
+         alert(`You can withdraw up to $${withdrawableBalance.toFixed(2)} USD now. Reward balance must reach $${Number(walletBreakdown.reward_min_withdrawal || 10).toFixed(2)}, and signup bonus unlocks after ${walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.`);
          return;
      }
 
@@ -757,7 +757,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                    <p className="text-[10px] font-black uppercase text-green-700 mb-1">Reward Balance</p>
                    <p className="text-lg font-black text-green-800">{formatWallet(walletBreakdown.reward_balance || 0).primary}</p>
                    <p className="text-[10px] text-green-700 font-semibold mt-1">
-                     Withdraw when reward reaches ${Number(walletBreakdown.reward_min_withdrawal || 20).toFixed(2)}
+                     Withdraw when reward reaches ${Number(walletBreakdown.reward_min_withdrawal || 10).toFixed(2)}
                    </p>
                  </div>
                  <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-3">
@@ -795,10 +795,10 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                        className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" 
                        value={withdrawForm.amount} 
                        onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} 
-                       placeholder={withdrawableBalance > 0 ? `e.g. ${Math.min(20, withdrawableBalance).toFixed(2)}` : 'No eligible balance'} 
+                       placeholder={withdrawableBalance > 0 ? `e.g. ${Math.min(10, withdrawableBalance).toFixed(2)}` : 'No eligible balance'} 
                      />
                      <p className="text-[10px] text-gray-500 font-bold mt-1">
-                       Reward needs at least USD ${Number(walletBreakdown.reward_min_withdrawal || 20).toFixed(2)}. Signup bonus unlocks after {walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.
+                       Reward needs at least USD ${Number(walletBreakdown.reward_min_withdrawal || 10).toFixed(2)}. Signup bonus unlocks after {walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.
                      </p>
                      {withdrawForm.amount && (() => {
                        const est = formatWallet(withdrawForm.amount);
