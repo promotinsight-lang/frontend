@@ -29,10 +29,6 @@ const getUserMapUrl = (user) => {
     return `https://www.google.com/maps?q=${encodeURIComponent(`${user.geo_latitude},${user.geo_longitude}`)}`;
   }
 
-  if (user?.last_ip && user.last_ip !== 'Unknown') {
-    return `https://ipinfo.io/${encodeURIComponent(user.last_ip)}`;
-  }
-
   return '';
 };
 
@@ -158,7 +154,7 @@ export default function UserProfileModal({
                     <div className="flex items-center flex-wrap gap-2">
                       <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">{hasLastIp ? selectedUserProfile.last_ip : 'Not available'}</span>
                       {mapUrl && (
-                        <a href={mapUrl} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> {hasGeoCoordinates(selectedUserProfile) ? 'View Map' : 'Track Map'}</a>
+                        <a href={mapUrl} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> View Map</a>
                       )}
                     </div>
                   </div>

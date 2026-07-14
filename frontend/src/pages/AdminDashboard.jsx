@@ -86,10 +86,6 @@ const getUserMapUrl = (user) => {
     return `https://www.google.com/maps?q=${encodeURIComponent(`${user.geo_latitude},${user.geo_longitude}`)}`;
   }
 
-  if (user?.last_ip && user.last_ip !== 'Unknown') {
-    return `https://ipinfo.io/${encodeURIComponent(user.last_ip)}`;
-  }
-
   return '';
 };
 
@@ -1211,14 +1207,18 @@ export default function AdminDashboard() {
                     {(hasGeoCoordinates(user) || (user.last_ip && user.last_ip !== 'Unknown')) && (
                       <AdminField label="IP" align="start">
                         <span className="text-xs">{getUserLocationLabel(user)}</span>
-                        <a
-                          href={getUserMapUrl(user)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#0066ff] text-xs font-bold inline-flex items-center gap-1 mt-1"
-                        >
-                          <MapPin size={12} /> {hasGeoCoordinates(user) ? 'View Map' : user.last_ip}
-                        </a>
+                        {hasGeoCoordinates(user) ? (
+                          <a
+                            href={getUserMapUrl(user)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#0066ff] text-xs font-bold inline-flex items-center gap-1 mt-1"
+                          >
+                            <MapPin size={12} /> View Map
+                          </a>
+                        ) : (
+                          <span className="text-[10px] font-bold text-gray-500 mt-1">{user.last_ip}</span>
+                        )}
                       </AdminField>
                     )}
                   </AdminMobileCard>
@@ -1245,15 +1245,19 @@ export default function AdminDashboard() {
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
                                <MapPin size={10} /> {getUserLocationLabel(user)}
                              </span>
-                             <a 
-                               href={getUserMapUrl(user)}
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-                               title={hasGeoCoordinates(user) ? 'Click to view map' : 'Click to view full IP details'}
-                             >
-                               <MapPin size={10} /> {hasGeoCoordinates(user) ? 'View Map' : user.last_ip}
-                             </a>
+                             {hasGeoCoordinates(user) ? (
+                               <a
+                                 href={getUserMapUrl(user)}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                                 title="Click to view map"
+                               >
+                                 <MapPin size={10} /> View Map
+                               </a>
+                             ) : (
+                               <span className="text-[10px] font-bold text-gray-500 px-2">{user.last_ip}</span>
+                             )}
                           </div>
                         )}
                       </td>
