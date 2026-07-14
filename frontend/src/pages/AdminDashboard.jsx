@@ -619,7 +619,8 @@ export default function AdminDashboard() {
           country: feeConfig.country.trim(),
           platform: feeConfig.platform.trim(),
           fields: feeConfig.verification_fields,
-        }
+        },
+        { silent: true }
       );
       fetchAllFeeConfigs();
     }
@@ -805,16 +806,16 @@ export default function AdminDashboard() {
     if (activeTab === 'blogs') fetchAdminBlogs();
   }, [activeTab, selectedMonth]);
 
-  const handleAction = async (url, method = 'PATCH', bodyData = null) => {
+  const handleAction = async (url, method = 'PATCH', bodyData = null, options = {}) => {
     try {
-      const options = { method, headers: getAuthHeaders(), credentials: 'include' };
-      if (bodyData) { options.headers['Content-Type'] = 'application/json'; options.body = JSON.stringify(bodyData); }
-      const res = await fetch(url, options);
-      if (res.status === 429) { alert('Rate limiter active.'); return false; }
+      const requestOptions = { method, headers: getAuthHeaders(), credentials: 'include' };
+      if (bodyData) { requestOptions.headers['Content-Type'] = 'application/json'; requestOptions.body = JSON.stringify(bodyData); }
+      const res = await fetch(url, requestOptions);
+      if (res.status === 429) { if (!options.silent) alert('Rate limiter active.'); return false; }
       const data = await res.json();
-      if (res.ok) { alert(data.message || 'Action successful'); return true; } 
-      else { alert(data.message || 'Action failed'); return false; }
-    } catch { alert('Connection Error.'); return false; }
+      if (res.ok) { if (!options.silent) alert(data.message || 'Action successful'); return true; } 
+      else { if (!options.silent) alert(data.message || 'Action failed'); return false; }
+    } catch { if (!options.silent) alert('Connection Error.'); return false; }
   };
 
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`${API_BASE}/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
