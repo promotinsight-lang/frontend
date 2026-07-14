@@ -67,6 +67,32 @@ const parseMaybeJson = (value, fallback) => {
   }
 };
 
+const hasGeoCoordinates = (user) => {
+  const latitude = Number(user?.geo_latitude);
+  const longitude = Number(user?.geo_longitude);
+  return Number.isFinite(latitude)
+    && Number.isFinite(longitude)
+    && latitude >= -90
+    && latitude <= 90
+    && longitude >= -180
+    && longitude <= 180;
+};
+
+const getUserLocationLabel = (user) =>
+  user?.location_label || user?.geo_location_label || user?.ip_location || 'Unknown Location';
+
+const getUserMapUrl = (user) => {
+  if (hasGeoCoordinates(user)) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(`${user.geo_latitude},${user.geo_longitude}`)}`;
+  }
+
+  if (user?.last_ip && user.last_ip !== 'Unknown') {
+    return `https://ipinfo.io/${encodeURIComponent(user.last_ip)}`;
+  }
+
+  return '';
+};
+
 const conditionOptions = PLATFORM_CHARGE_CONDITION_KEYS.map((key) => ({
   key,
   label: getPlatformChargeConditionLabel(key),
@@ -1182,16 +1208,16 @@ export default function AdminDashboard() {
                         ${Number(user.wallet_balance).toFixed(2)}
                       </span>
                     </AdminField>
-                    {user.last_ip && user.last_ip !== 'Unknown' && (
+                    {(hasGeoCoordinates(user) || (user.last_ip && user.last_ip !== 'Unknown')) && (
                       <AdminField label="IP" align="start">
-                        <span className="text-xs">{user.ip_location || 'Unknown Location'}</span>
+                        <span className="text-xs">{getUserLocationLabel(user)}</span>
                         <a
-                          href={`https://ipinfo.io/${user.last_ip}`}
+                          href={getUserMapUrl(user)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#0066ff] text-xs font-bold block mt-1"
+                          className="text-[#0066ff] text-xs font-bold inline-flex items-center gap-1 mt-1"
                         >
-                          {user.last_ip}
+                          <MapPin size={12} /> {hasGeoCoordinates(user) ? 'View Map' : user.last_ip}
                         </a>
                       </AdminField>
                     )}
@@ -1214,19 +1240,19 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <div className="font-bold text-gray-800">{user.name}</div>
                         <div className="text-xs text-gray-500">{user.email}</div>
-                        {user.last_ip && user.last_ip !== 'Unknown' && (
+                        {(hasGeoCoordinates(user) || (user.last_ip && user.last_ip !== 'Unknown')) && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
-                               🌍 {user.ip_location || 'Location Unknown'}
+                               <MapPin size={10} /> {getUserLocationLabel(user)}
                              </span>
                              <a 
-                               href={`https://ipinfo.io/${user.last_ip}`} 
+                               href={getUserMapUrl(user)}
                                target="_blank" 
                                rel="noopener noreferrer"
                                className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-                               title="Click to view full IP details"
+                               title={hasGeoCoordinates(user) ? 'Click to view map' : 'Click to view full IP details'}
                              >
-                               <MapPin size={10} /> {user.last_ip}
+                               <MapPin size={10} /> {hasGeoCoordinates(user) ? 'View Map' : user.last_ip}
                              </a>
                           </div>
                         )}

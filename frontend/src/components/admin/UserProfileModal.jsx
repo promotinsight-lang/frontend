@@ -10,6 +10,32 @@ const parseMaybeJson = (value, fallback) => {
   }
 };
 
+const hasGeoCoordinates = (user) => {
+  const latitude = Number(user?.geo_latitude);
+  const longitude = Number(user?.geo_longitude);
+  return Number.isFinite(latitude)
+    && Number.isFinite(longitude)
+    && latitude >= -90
+    && latitude <= 90
+    && longitude >= -180
+    && longitude <= 180;
+};
+
+const getUserLocationLabel = (user) =>
+  user?.location_label || user?.geo_location_label || user?.ip_location || 'Unknown Location';
+
+const getUserMapUrl = (user) => {
+  if (hasGeoCoordinates(user)) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(`${user.geo_latitude},${user.geo_longitude}`)}`;
+  }
+
+  if (user?.last_ip && user.last_ip !== 'Unknown') {
+    return `https://ipinfo.io/${encodeURIComponent(user.last_ip)}`;
+  }
+
+  return '';
+};
+
 export default function UserProfileModal({
   selectedUserProfile,
   userAppStats,
@@ -23,6 +49,9 @@ export default function UserProfileModal({
 }) {
   if (!selectedUserProfile) return null;
 
+  const hasLastIp = selectedUserProfile.last_ip && selectedUserProfile.last_ip !== 'Unknown';
+  const hasLocationDetails = hasGeoCoordinates(selectedUserProfile) || hasLastIp;
+  const mapUrl = getUserMapUrl(selectedUserProfile);
   const verificationResponses = parseMaybeJson(selectedUserProfile.verification_responses, {});
   const verificationPlatforms = parseMaybeJson(selectedUserProfile.verification_platforms, []);
   const platformStoreNames = (Array.isArray(verificationPlatforms) ? verificationPlatforms : [])
@@ -121,15 +150,15 @@ export default function UserProfileModal({
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Telegram:</span> <span className="break-all">{selectedUserProfile.telegram_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
               
-              {selectedUserProfile.last_ip && (
+              {hasLocationDetails && (
                 <div className="mt-2 border-t border-indigo-100 pt-2 space-y-2">
-                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max">🌍 {selectedUserProfile.ip_location || 'Unknown Location'}</span></p>
+                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max inline-flex items-center gap-1"><MapPin size={12} /> {getUserLocationLabel(selectedUserProfile)}</span></p>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
                     <span className="font-bold text-gray-700 w-32 shrink-0">Last Login IP:</span>
                     <div className="flex items-center flex-wrap gap-2">
-                      <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">{selectedUserProfile.last_ip}</span>
-                      {selectedUserProfile.last_ip !== 'Unknown' && (
-                        <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> Track Map</a>
+                      <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">{hasLastIp ? selectedUserProfile.last_ip : 'Not available'}</span>
+                      {mapUrl && (
+                        <a href={mapUrl} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> {hasGeoCoordinates(selectedUserProfile) ? 'View Map' : 'Track Map'}</a>
                       )}
                     </div>
                   </div>
