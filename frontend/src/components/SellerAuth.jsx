@@ -104,42 +104,6 @@ export default function SellerAuth({ onAuthSuccess }) {
   // BASIC EMAIL VALIDATION HELPER
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const getBrowserLocationPayload = async () => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) return {};
-
-    return new Promise((resolve) => {
-      try {
-        navigator.geolocation.getCurrentPosition(
-          ({ coords }) => {
-            const latitude = Number(coords.latitude);
-            const longitude = Number(coords.longitude);
-            const accuracy = Number(coords.accuracy);
-
-            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-              resolve({});
-              return;
-            }
-
-            resolve({
-              geo_latitude: latitude,
-              geo_longitude: longitude,
-              geo_accuracy: Number.isFinite(accuracy) ? accuracy : null,
-              geo_source: 'browser_geolocation',
-            });
-          },
-          () => resolve({}),
-          {
-            enableHighAccuracy: true,
-            timeout: 7000,
-            maximumAge: 5 * 60 * 1000,
-          }
-        );
-      } catch {
-        resolve({});
-      }
-    });
-  };
-
   // SEND OTP
   const handleSendOtp = async () => {
     if (!email || !isValidEmail(email)) {
@@ -181,8 +145,6 @@ export default function SellerAuth({ onAuthSuccess }) {
 
       const roleForApi = getRoleFromUrl(); // URL থেকে সরাসরি টাটকা রোল নিচ্ছি
 
-      const locationPayload = await getBrowserLocationPayload();
-
       console.log("Social Login - Sending Role to API:", roleForApi);
 
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/social-login`, {
@@ -191,8 +153,7 @@ export default function SellerAuth({ onAuthSuccess }) {
         body: JSON.stringify({
           idToken,
           referred_by_code: referredByCode,
-          role: roleForApi,
-          ...locationPayload
+          role: roleForApi
         })
       });
       
@@ -241,13 +202,12 @@ export default function SellerAuth({ onAuthSuccess }) {
     const payload = isLogin 
       ? { email, password, captchaId: captchaData?.captchaId, captchaInput } 
       : { fullName, email, password, role, profileLink, otp: otpCode, referred_by_code: referredByCode };
-    const locationPayload = await getBrowserLocationPayload();
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, ...locationPayload })
+        body: JSON.stringify(payload)
       });
       
       const data = await res.json();
