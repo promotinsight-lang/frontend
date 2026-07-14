@@ -1184,7 +1184,7 @@ export default function AdminDashboard() {
                     </AdminField>
                     {user.last_ip && user.last_ip !== 'Unknown' && (
                       <AdminField label="IP" align="start">
-                        <span className="text-xs">{user.location_label || user.ip_location || 'Unknown'}</span>
+                        <span className="text-xs">{user.ip_location || 'Unknown Location'}</span>
                         <a
                           href={`https://ipinfo.io/${user.last_ip}`}
                           target="_blank"
@@ -1217,7 +1217,7 @@ export default function AdminDashboard() {
                         {user.last_ip && user.last_ip !== 'Unknown' && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
-                               🌍 {user.location_label || user.ip_location || 'Location Unknown'}
+                               🌍 {user.ip_location || 'Location Unknown'}
                              </span>
                              <a 
                                href={`https://ipinfo.io/${user.last_ip}`} 

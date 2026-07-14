@@ -123,7 +123,7 @@ export default function UserProfileModal({
               
               {selectedUserProfile.last_ip && (
                 <div className="mt-2 border-t border-indigo-100 pt-2 space-y-2">
-                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max">🌍 {selectedUserProfile.location_label || selectedUserProfile.ip_location || selectedUserProfile.verification_country || selectedUserProfile.amazon_location || 'Unknown'}</span></p>
+                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max">🌍 {selectedUserProfile.ip_location || 'Unknown Location'}</span></p>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
                     <span className="font-bold text-gray-700 w-32 shrink-0">Last Login IP:</span>
                     <div className="flex items-center flex-wrap gap-2">
