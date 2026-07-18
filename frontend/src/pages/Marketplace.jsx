@@ -1,9 +1,10 @@
 import {  useState, useEffect  } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, ChevronDown
+  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, ChevronDown, Filter
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import SidebarMenu from '../components/SidebarMenu';
 import { formatProductMoney } from '../utils/currency';
 
 export default function Marketplace() {
@@ -19,6 +20,7 @@ export default function Marketplace() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [platformFilter, setPlatformFilter] = useState('All');
   const [countryFilter, setCountryFilter] = useState('All');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [favoriteProductIds, setFavoriteProductIds] = useState([]);
 
@@ -204,9 +206,9 @@ export default function Marketplace() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setShowMobileFilters((prev) => !prev)}
+                onClick={() => setShowMobileMenu((prev) => !prev)}
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
-                aria-label="Toggle filters"
+                aria-label="Open navigation"
               >
                 <Menu size={22} />
               </button>
@@ -225,6 +227,15 @@ export default function Marketplace() {
                   className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
                 />
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters((prev) => !prev)}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
+                aria-label="Toggle filters"
+              >
+                <Filter size={18} />
+              </button>
 
               <button
                 type="button"
@@ -366,6 +377,8 @@ export default function Marketplace() {
           </div>
         )}
       </main>
+
+      <SidebarMenu isOpen={showMobileMenu} setIsOpen={setShowMobileMenu} />
 
       <style dangerouslySetInnerHTML={{__html: `
         .hide-scrollbar::-webkit-scrollbar { display: none; }
