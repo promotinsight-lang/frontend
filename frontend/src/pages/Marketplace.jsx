@@ -1,7 +1,7 @@
 import {  useState, useEffect  } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, Lock, ShieldAlert, Sparkles, Eye, ShoppingBag
+  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, ChevronDown
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { formatProductMoney } from '../utils/currency';
@@ -19,6 +19,19 @@ export default function Marketplace() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [platformFilter, setPlatformFilter] = useState('All');
   const [countryFilter, setCountryFilter] = useState('All');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [favoriteProductIds, setFavoriteProductIds] = useState([]);
+
+  useEffect(() => {
+    try {
+      const savedFavorites = JSON.parse(localStorage.getItem('marketplace_favorites') || '[]');
+      if (Array.isArray(savedFavorites)) {
+        setFavoriteProductIds(savedFavorites.map(String));
+      }
+    } catch {
+      setFavoriteProductIds([]);
+    }
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -160,14 +173,91 @@ export default function Marketplace() {
   });
 
   const isVerified = user && user.verification_status === 'approved';
+  const sectionLabel = `${String(
+    categoryFilter !== 'All'
+      ? categoryFilter
+      : products.find((p) => p.category)?.category || 'products'
+  ).toLowerCase()}.`;
+
+  const toggleFavorite = (productId) => {
+    const key = String(productId);
+    setFavoriteProductIds((prev) => {
+      const next = prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key];
+      try {
+        localStorage.setItem('marketplace_favorites', JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[#f9fafb] font-sans text-gray-900 flex flex-col">
-      <Navbar />
+      <div className="hidden md:block">
+        <Navbar />
+      </div>
 
+      {!isAccountDisabled && isVerified && (
+        <div className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur md:hidden">
+          <div className="px-4 pt-4 pb-3">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowMobileFilters((prev) => !prev)}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
+                aria-label="Toggle filters"
+              >
+                <Menu size={22} />
+              </button>
+
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#10b981] text-white shadow-sm">
+                <span className="text-lg font-black leading-none">P</span>
+              </div>
+
+              <div className="flex h-11 flex-1 items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 shadow-sm">
+                <Search size={18} className="shrink-0 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search for products."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
+                />
+              </div>
+
+              <button
+                type="button"
+                className="flex items-center gap-1 text-sm font-semibold text-gray-900"
+              >
+                <Globe size={20} />
+                <span>English</span>
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm text-gray-500">{sectionLabel}</p>
+
+            {showMobileFilters && (
+              <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="grid grid-cols-1 gap-2">
+                  <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none">
+                    {uniqueCategories.map((cat) => <option key={cat} value={cat}>{cat === 'All' ? 'All Categories' : cat}</option>)}
+                  </select>
+                  <select value={platformFilter} onChange={(e) => setPlatformFilter(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none">
+                    {uniquePlatforms.map((plat) => <option key={plat} value={plat}>{plat === 'All' ? 'All Platforms' : plat}</option>)}
+                  </select>
+                  <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none">
+                    {uniqueCountries.map((country) => <option key={country} value={country}>{country === 'All' ? 'All Countries' : country}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* 🔍 SEARCH & FILTER BAR */}
       {!isAccountDisabled && isVerified && (
-        <div className="bg-white border-b border-gray-200 sticky top-14 z-30 px-4 py-4 shadow-sm">
+        <div className="hidden md:block bg-white border-b border-gray-200 sticky top-14 z-30 px-4 py-4 shadow-sm">
            <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row gap-4 items-center">
               <div className="flex gap-2 w-full md:w-auto flex-1">
                 <div className="relative flex-1">
@@ -200,7 +290,7 @@ export default function Marketplace() {
       )}
 
       {/* 🛒 MAIN PRODUCTS AREA */}
-      <main className="max-w-[1200px] mx-auto px-4 py-10 flex-1 w-full">
+      <main className="max-w-[1200px] mx-auto px-4 py-5 md:py-10 flex-1 w-full">
         
         {isAccountDisabled ? (
           <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in-up bg-white rounded-2xl border border-red-100 shadow-sm p-8">
@@ -236,19 +326,19 @@ export default function Marketplace() {
           </div>
         ) : (
           <div className="animate-fade-in-up">
-            <div className="flex justify-between items-end mb-6 border-b border-gray-200 pb-4">
-              <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <div className="mb-5 flex items-end justify-between border-b border-gray-200 pb-4">
+              <h2 className="flex items-center gap-2 text-xl font-black text-gray-900 md:text-2xl">
                 {isFiltering ? "Search Results" : "All Products"}
               </h2>
               {isFiltering && (
-                 <button onClick={() => { setSearchQuery(''); setCategoryFilter('All'); setPlatformFilter('All'); setCountryFilter('All'); }} className="text-xs text-red-500 hover:text-red-700 font-bold bg-red-50 px-3 py-1.5 rounded-lg border border-red-100">Clear Filters ✕</button>
+                 <button onClick={() => { setSearchQuery(''); setCategoryFilter('All'); setPlatformFilter('All'); setCountryFilter('All'); }} className="rounded-full border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-500 hover:text-red-700">Clear Filters</button>
               )}
             </div>
             
             {loading ? (
                 <div className="text-center py-10 font-bold text-gray-400 animate-pulse">Loading Products...</div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 shadow-sm">
+              <div className="rounded-2xl border border-gray-200 bg-white py-20 text-center shadow-sm">
                 <Search size={40} className="mx-auto text-gray-300 mb-4" />
                 <h3 className="text-lg font-bold text-gray-800 mb-1">
                   {isDropdownFiltering && !areAllDropdownsSelected ? "Please select all 3 filters" : "No products found"}
@@ -258,7 +348,7 @@ export default function Marketplace() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 md:gap-5">
                   {filteredProducts.map(product => (
                     <ProductCard
                       key={product.id}
@@ -267,6 +357,8 @@ export default function Marketplace() {
                       application={applicationByProduct[String(product.id)]}
                       onApply={handleApply}
                       navigate={navigate}
+                      isFavorite={favoriteProductIds.includes(String(product.id))}
+                      onToggleFavorite={toggleFavorite}
                     />
                   ))}
               </div>
@@ -286,7 +378,7 @@ export default function Marketplace() {
 }
 
 // 🌿 CLEAN PRODUCT CARD
-function ProductCard({ product, user, application, onApply, navigate }) {
+function ProductCard({ product, user, application, onApply, navigate, isFavorite, onToggleFavorite }) {
   const targetQty = parseInt(product.required_orders) || 0;
   const appliedQty = parseInt(product.application_count) || 0;
   const availableQty = Math.max(0, targetQty - appliedQty);
@@ -297,70 +389,83 @@ function ProductCard({ product, user, application, onApply, navigate }) {
   const applicationId = application?.application_id || application?.id;
   const priceDisplay = formatProductMoney(product.price, product.country);
   const rewardDisplay = formatProductMoney(product.reward, product.country);
+  const cardLabel = product.category || 'General';
+  const statusLabel = isSoldOut ? 'Closed' : `${availableQty} left`;
 
   return (
-    <div className={`bg-white rounded-lg overflow-hidden border ${isSoldOut ? 'border-gray-200 opacity-70' : 'border-gray-200 hover:border-emerald-300 hover:shadow-lg hover:-translate-y-1'} transition-all duration-300 flex flex-col h-full group`}>
-      <div className="h-[180px] bg-white relative p-4 flex items-center justify-center overflow-hidden cursor-pointer border-b border-gray-100">
-        <div className="absolute top-3 left-3 flex gap-1 z-10">
-          <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border border-gray-200 uppercase tracking-wider">{product.country}</span>
-          <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border border-emerald-100 uppercase tracking-wider">{product.category || 'General'}</span>
-        </div>
-        <div className="absolute top-3 right-3 z-10">
-          {isSoldOut ? (
-             <span className="bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm tracking-widest uppercase">Sold Out</span>
-          ) : (
-             <span className="bg-emerald-50 text-[#10b981] border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm tracking-wider">{availableQty} Tasks Left</span>
-          )}
-        </div>
+    <div className={`group flex h-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 ${isSoldOut ? 'border-gray-200 opacity-80' : 'border-gray-200 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md'}`}>
+      <div className="relative aspect-square bg-[#f7f7f7]">
         {product.image_url ? (
-          <img src={product.image_url} alt="Product" className={`w-full h-full object-contain transition-transform duration-500 ${isSoldOut ? 'grayscale opacity-50' : 'group-hover:scale-105'}`} />
+          <img
+            src={product.image_url}
+            alt="Product"
+            className={`h-full w-full object-cover transition-transform duration-500 ${isSoldOut ? 'grayscale opacity-60' : 'group-hover:scale-105'}`}
+          />
         ) : (
-          <span className="text-gray-400 font-bold text-xs">No Image</span>
+          <div className="flex h-full items-center justify-center text-xs font-bold text-gray-400">No Image</div>
         )}
+
+        <div className="absolute left-3 top-3 z-10">
+          <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm ${isSoldOut ? 'bg-gray-400' : 'bg-emerald-500'}`}>
+            {statusLabel}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onToggleFavorite?.(product.id)}
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50"
+          aria-label="Toggle favorite"
+        >
+          <Heart size={18} className={isFavorite ? 'fill-current text-rose-500' : 'text-gray-700'} />
+        </button>
+
+        <div className="absolute bottom-3 left-3 inline-flex rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+          {cardLabel}
+        </div>
       </div>
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className={`text-sm font-semibold line-clamp-2 leading-snug mb-3 flex-1 transition-colors ${isSoldOut ? 'text-gray-400' : 'text-gray-800 group-hover:text-emerald-600 cursor-pointer'}`} title={product.product_name}>
+
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <h3 className={`mb-2 min-h-[2.5rem] line-clamp-2 text-sm font-semibold leading-snug transition-colors ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`} title={product.product_name}>
           {product.product_name || 'Premium product'}
         </h3>
-        <div className="flex justify-between items-end mb-4 pt-3 border-t border-gray-100">
+
+        <div className="mb-3 flex items-end justify-between gap-3 border-t border-gray-100 pt-3">
           <div>
-            <p className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">Price ({priceDisplay.code})</p>
-            <p className={`text-xl font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>{priceDisplay.formatted}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Price</p>
+            <p className={`text-lg font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>{priceDisplay.formatted}</p>
           </div>
           <div className="text-right">
-             <p className="text-[10px] text-emerald-600 font-bold uppercase mb-0.5 flex items-center gap-1 justify-end"><Sparkles size={10}/> Reward</p>
-             <span className={`text-sm font-black px-2 py-1 rounded-md ${isSoldOut ? 'text-gray-400 bg-gray-100' : 'text-[#10b981] bg-emerald-50 border border-emerald-100'}`}>
-              +{rewardDisplay.formatted}
-            </span>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Reward</p>
+            <p className={`text-base font-black ${isSoldOut ? 'text-gray-400' : 'text-emerald-600'}`}>+{rewardDisplay.formatted}</p>
           </div>
         </div>
-        
-        {/* 🔥 DYNAMIC BUTTON LOGIC: Role অনুযায়ী বাটন পরিবর্তন হবে */}
+
         {user?.role === 'seller' ? (
-           <button onClick={() => navigate('/dashboard?tab=overview')} className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-1 shadow-sm">
-             <Eye size={16} /> View Details
-           </button>
+          <button onClick={() => navigate('/dashboard?tab=overview')} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+            <Eye size={16} /> View Details
+          </button>
         ) : hasExistingApplication && canSubmitOrder ? (
-           <div className="grid grid-cols-2 gap-2">
-             <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg transition-colors text-xs shadow-sm flex items-center justify-center gap-1">
-               <Eye size={14} /> View Details
-             </button>
-             <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}&action=order` : ''}`)} className="bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-xs shadow-sm flex items-center justify-center gap-1">
-               <ShoppingBag size={14} /> Submit Order
-             </button>
-           </div>
+          <div className="mt-auto grid grid-cols-2 gap-2">
+            <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-3 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-100">
+              <Eye size={14} /> View
+            </button>
+            <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}&action=order` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-3 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+              <ShoppingBag size={14} /> Order
+            </button>
+          </div>
         ) : hasExistingApplication ? (
-           <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="w-full bg-[#0066ff] hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors text-sm shadow-sm">
-             View My Order
-           </button>
+          <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+            <Eye size={16} /> View Order
+          </button>
         ) : isSoldOut ? (
-           <button disabled className="w-full bg-gray-100 text-gray-400 font-bold py-2.5 rounded-lg cursor-not-allowed text-sm uppercase tracking-wider">
-             Closed
-           </button>
+          <button disabled className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-gray-100 px-4 py-3 text-sm font-bold text-gray-400">
+            Closed
+          </button>
         ) : (
-           <button onClick={() => onApply(product.id)} className="w-full bg-white border-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981] hover:text-white font-bold py-2 rounded-lg transition-colors text-sm shadow-sm">
-             Order Now
-           </button>
+          <button onClick={() => onApply(product.id)} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+            <Plus size={16} /> Order Now
+          </button>
         )}
       </div>
     </div>

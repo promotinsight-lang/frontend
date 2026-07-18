@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Users } from 'lucide-react';
+import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Users, Copy } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
 import LiveChatModal from '../components/LiveChatModal';
-import { isReviewRequiredCampaignCategory } from '../utils/campaignCategories';
+import { isReviewRequiredCampaignCategory, normalizeCampaignCategoryKey } from '../utils/campaignCategories';
 
 const BuyerDashboard = () => {
   const { formatWallet, formatProduct } = useBuyerCurrency();
@@ -55,6 +55,7 @@ const BuyerDashboard = () => {
   const [showTicketViewModal, setShowTicketViewModal] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
 const [showLiveChatModal, setShowLiveChatModal] = useState(false);
+  const [copiedProductLink, setCopiedProductLink] = useState('');
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
@@ -417,6 +418,33 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
   const getInstructionText = (data) => {
     return data?.instruction || data?.instructions || "Please follow standard guidelines. Search the item on Amazon after admin approval.";
+  };
+
+  const canShowProductLink = (app) => {
+    return normalizeCampaignCategoryKey(app?.category) !== 'no_need_review';
+  };
+
+  const copyProductLink = async (link) => {
+    if (!link) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const tempInput = document.createElement('input');
+        tempInput.value = link;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+      }
+      setCopiedProductLink(link);
+      window.setTimeout(() => {
+        setCopiedProductLink((current) => (current === link ? '' : current));
+      }, 1800);
+    } catch (error) {
+      console.error('Copy link failed:', error);
+      alert('Could not copy the link right now.');
+    }
   };
 
   const formatDateTime = (value) => {
@@ -1308,12 +1336,27 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                     <p><span className="font-semibold text-gray-500 w-24 inline-block">Platform:</span> {selectedItem.data.platform} {selectedItem.data.country && `(${selectedItem.data.country})`}</p>
                   )}
 
-                  {selectedItem.data.product_link && (
+                  {selectedItem.data.product_link && canShowProductLink(selectedItem.data) && (
                     <div className="mt-2 pt-2 border-t border-gray-100">
                       <span className="font-semibold text-gray-500 block mb-1">Product Link:</span>
-                      <a href={selectedItem.data.product_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-xs break-all bg-gray-50 p-2 block rounded border border-gray-100">
-                        {selectedItem.data.product_link}
-                      </a>
+                      <div className="flex flex-col gap-2">
+                        <a
+                          href={selectedItem.data.product_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-600 hover:underline text-xs break-all bg-gray-50 p-2 block rounded border border-gray-100"
+                        >
+                          {selectedItem.data.product_link}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => copyProductLink(selectedItem.data.product_link)}
+                          className="inline-flex w-fit items-center gap-1.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold text-xs px-3 py-2 rounded-lg transition-colors"
+                        >
+                          {copiedProductLink === selectedItem.data.product_link ? <CheckCircle size={14} /> : <Copy size={14} />}
+                          {copiedProductLink === selectedItem.data.product_link ? 'Copied' : 'Copy Link'}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
