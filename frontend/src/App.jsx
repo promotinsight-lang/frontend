@@ -1,5 +1,5 @@
 import {  useState, useEffect  } from 'react'; 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'; 
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'; 
 import HomePage from './pages/HomePage';
 import Marketplace from './pages/Marketplace'; // 🔥 NEW: Marketplace Import
 import SellerAuth from './components/SellerAuth';
@@ -25,6 +25,7 @@ import Blogs from './pages/Blogs';
 import BlogDetails from './pages/BlogDetails';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { API_BASE_URL } from './utils/apiClient';
+import { trackPageView } from './utils/analytics';
 
 const getStoredUser = () => {
   try {
@@ -35,6 +36,16 @@ const getStoredUser = () => {
     return null;
   }
 };
+
+function AnalyticsPageView() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(`${location.pathname}${location.search}${location.hash}`);
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+}
 
 export default function App() {
   const [user, setUser] = useState(getStoredUser);
@@ -92,6 +103,8 @@ export default function App() {
     <LanguageProvider>
       <BrowserRouter>
         <div className="min-h-screen bg-slate-950">
+          <AnalyticsPageView />
+
           {isSessionChecking && showSlowServerNotice && (
             <div className="fixed inset-x-0 top-0 z-[9999] bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-900 shadow-sm">
               Server is waking up. You can keep browsing while we reconnect your session.
