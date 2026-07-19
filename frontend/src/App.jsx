@@ -24,6 +24,7 @@ import Support from './pages/Support';
 import Blogs from './pages/Blogs';
 import BlogDetails from './pages/BlogDetails';
 import { LanguageProvider } from './i18n/LanguageContext';
+import { API_BASE_URL } from './utils/apiClient';
 
 const getStoredUser = () => {
   try {
@@ -37,16 +38,24 @@ const getStoredUser = () => {
 
 export default function App() {
   const [user, setUser] = useState(getStoredUser);
-  const [isSessionLoading, setIsSessionLoading] = useState(true);
+  const [isSessionChecking, setIsSessionChecking] = useState(true);
+  const [showSlowServerNotice, setShowSlowServerNotice] = useState(false);
 
   // 🔥 Secure Session Validation on App Load (HttpOnly Cookie Fallback)
   useEffect(() => {
+    let isMounted = true;
+    const slowNoticeTimer = window.setTimeout(() => {
+      if (isMounted) setShowSlowServerNotice(true);
+    }, 2500);
+
     const verifySession = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/profile`, {
+        const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
           credentials: 'include' // Validate session via HttpOnly Cookie
         });
-        
+
+        if (!isMounted) return;
+
         if (res.status === 401 || res.status === 403) {
           localStorage.removeItem('user');
           setUser(null);
@@ -60,25 +69,35 @@ export default function App() {
       } catch (err) {
         console.error("Session verification failed:", err);
       } finally {
-        setIsSessionLoading(false);
+        if (isMounted) {
+          setIsSessionChecking(false);
+          setShowSlowServerNotice(false);
+        }
       }
     };
 
     verifySession();
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(slowNoticeTimer);
+    };
   }, []);
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
   };
 
-  if (isSessionLoading) {
-    return <div className="min-h-screen bg-slate-950" aria-busy="true" />;
-  }
-
   return (
     <LanguageProvider>
       <BrowserRouter>
         <div className="min-h-screen bg-slate-950">
+          {isSessionChecking && showSlowServerNotice && (
+            <div className="fixed inset-x-0 top-0 z-[9999] bg-amber-50 px-4 py-3 text-center text-sm font-semibold text-amber-900 shadow-sm">
+              Server is waking up. You can keep browsing while we reconnect your session.
+            </div>
+          )}
+
           <Routes>
           {/* Admin login kora thakle homepage-er bodle shorasori dashboard-e jabe */}
           <Route 
