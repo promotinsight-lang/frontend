@@ -180,6 +180,9 @@ const Navbar = () => {
     setShowNotif(false);
   };
 
+  const navLinkClass =
+    "relative cursor-pointer flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 rounded-lg px-1.5 py-1.5 text-gray-500 transition-all hover:bg-emerald-50 hover:text-emerald-600";
+
   // 🔥 X বাটনে ক্লিক করলে লিস্ট থেকে পার্মানেন্টলি ডিলিট হবে
   const removeNotificationCompletely = (notifId, e) => {
     markAsRead(notifId, e);
@@ -208,20 +211,23 @@ const Navbar = () => {
               </Link>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-4">
-               <Link to="/" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title={t('nav_home')}>
+            <div className="flex items-center gap-1.5 md:gap-3">
+               <Link to="/" className={navLinkClass} title={t('nav_home')} aria-label={t('nav_home')}>
                  <Home size={22} />
+                 <span className="text-[9px] font-black leading-none sm:text-xs">{t('nav_home')}</span>
                </Link>
 
-               <Link to="/blogs" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title={t('nav_blogs')}>
+               <Link to="/blogs" className={navLinkClass} title={t('nav_blogs')} aria-label={t('nav_blogs')}>
                  <FileText size={22} />
+                 <span className="text-[9px] font-black leading-none sm:text-xs">{t('nav_blogs')}</span>
                </Link>
 
                {user ? (
                  <>
                    {user.role !== 'admin' && (
-                     <Link to="/marketplace" className="relative cursor-pointer p-2 hover:bg-emerald-50 text-gray-500 hover:text-emerald-600 rounded-lg transition-all" title={t('nav_marketplace')}>
+                     <Link to="/marketplace" className={navLinkClass} title={t('nav_marketplace')} aria-label={t('nav_marketplace')}>
                        <ShoppingBag size={22} />
+                       <span className="text-[9px] font-black leading-none sm:text-xs">{t('nav_marketplace')}</span>
                      </Link>
                    )}
 

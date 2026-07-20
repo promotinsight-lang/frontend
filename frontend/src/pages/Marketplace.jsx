@@ -1,7 +1,7 @@
 import {  useState, useEffect  } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, ChevronDown, Filter
+  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, Filter, Home
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import SidebarMenu from '../components/SidebarMenu';
@@ -194,61 +194,78 @@ export default function Marketplace() {
     });
   };
 
+  const mobileNavActionClass =
+    "flex min-w-[3.35rem] flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-2 py-2 text-[10px] font-black leading-none text-gray-700 shadow-sm transition-colors hover:bg-emerald-50 hover:text-emerald-700";
+
   return (
     <div className="min-h-screen bg-[#f9fafb] font-sans text-gray-900 flex flex-col">
       <div className="hidden md:block">
         <Navbar />
       </div>
 
-      {!isAccountDisabled && isVerified && (
+      {user && (
         <div className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur md:hidden">
           <div className="px-4 pt-4 pb-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar">
               <button
                 type="button"
                 onClick={() => setShowMobileMenu((prev) => !prev)}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
+                className={mobileNavActionClass}
                 aria-label="Open navigation"
               >
                 <Menu size={22} />
+                <span>Menu</span>
               </button>
 
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#10b981] text-white shadow-sm">
+              <Link to="/" className={mobileNavActionClass} aria-label="Go to home page">
+                <Home size={22} />
+                <span>Home</span>
+              </Link>
+
+              <Link to="/profile" className="flex min-w-[3.35rem] flex-col items-center justify-center gap-1 rounded-xl border border-emerald-100 bg-emerald-50 px-2 py-2 text-[10px] font-black leading-none text-emerald-700 shadow-sm" aria-label="Open profile">
                 <span className="text-lg font-black leading-none">P</span>
-              </div>
+                <span>Profile</span>
+              </Link>
 
-              <div className="flex h-11 flex-1 items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 shadow-sm">
-                <Search size={18} className="shrink-0 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search for products."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowMobileFilters((prev) => !prev)}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-sm"
-                aria-label="Toggle filters"
-              >
-                <Filter size={18} />
-              </button>
+              {!isAccountDisabled && isVerified && (
+                <button
+                  type="button"
+                  onClick={() => setShowMobileFilters((prev) => !prev)}
+                  className={mobileNavActionClass}
+                  aria-label="Toggle filters"
+                >
+                  <Filter size={18} />
+                  <span>Filter</span>
+                </button>
+              )}
 
               <button
                 type="button"
-                className="flex items-center gap-1 text-sm font-semibold text-gray-900"
+                className={mobileNavActionClass}
               >
                 <Globe size={20} />
                 <span>English</span>
               </button>
             </div>
 
-            <p className="mt-3 text-sm text-gray-500">{sectionLabel}</p>
+            {!isAccountDisabled && isVerified && (
+              <>
+                <div className="mt-2 flex h-11 items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 shadow-sm">
+                  <Search size={18} className="shrink-0 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search for products."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
+                  />
+                </div>
 
-            {showMobileFilters && (
+                <p className="mt-3 text-sm text-gray-500">{sectionLabel}</p>
+              </>
+            )}
+
+            {!isAccountDisabled && isVerified && showMobileFilters && (
               <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="grid grid-cols-1 gap-2">
                   <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none">
