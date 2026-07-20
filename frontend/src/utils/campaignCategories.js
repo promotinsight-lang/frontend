@@ -115,7 +115,11 @@ export const parseBuyerRewardConditions = (value) => {
   const defaults = buildDefaultBuyerRewardConditions();
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return defaults;
   PLATFORM_CHARGE_CONDITION_KEYS.forEach((key) => {
-    const reward = Number(parsed[key]);
+    const rawReward = parsed[key];
+    if (rawReward === '' || rawReward === null || rawReward === undefined) return;
+    if (typeof rawReward === 'string' && rawReward.trim() === '') return;
+
+    const reward = Number(rawReward);
     defaults[key] = Number.isFinite(reward) && reward >= 0 ? reward : '';
   });
   return defaults;
@@ -131,9 +135,13 @@ export const resolvePlatformChargeTiersForCategory = (config, category) => {
 
 export const resolveBuyerRewardForCategory = (config, category) => {
   const categoryKey = normalizeCampaignCategoryKey(category);
-  const conditionMap = parseBuyerRewardConditions(config?.buyer_reward_conditions);
-  const conditionReward = categoryKey ? Number(conditionMap[categoryKey]) : NaN;
-  if (Number.isFinite(conditionReward) && conditionReward >= 0) return conditionReward;
+  const conditionMap = config?.parsed_buyer_reward_conditions || parseBuyerRewardConditions(config?.buyer_reward_conditions);
+  const rawConditionReward = categoryKey ? conditionMap[categoryKey] : '';
+  if (rawConditionReward !== '' && rawConditionReward !== null && rawConditionReward !== undefined) {
+    const conditionReward = Number(rawConditionReward);
+    if (Number.isFinite(conditionReward) && conditionReward >= 0) return conditionReward;
+  }
+
   const fixedReward = Number(config?.buyer_reward);
   return Number.isFinite(fixedReward) ? fixedReward : 0;
 };
@@ -149,3 +157,33 @@ export const getConfiguredCampaignCategoryOptions = (config) => {
 };
 
 export const getPlatformChargeConditionLabel = (conditionKey) => CATEGORY_LABELS[conditionKey] || conditionKey;
+
+export const getBuyerRewardConditionEntries = (value) => {
+  const conditionMap = parseBuyerRewardConditions(value);
+  return PLATFORM_CHARGE_CONDITION_KEYS.reduce((entries, key) => {
+    const rawReward = conditionMap[key];
+    if (rawReward === '' || rawReward === null || rawReward === undefined) return entries;
+
+    const reward = Number(rawReward);
+    if (Number.isFinite(reward) && reward >= 0) {
+      entries.push({ key, label: getPlatformChargeConditionLabel(key), reward });
+    }
+    return entries;
+  }, []);
+};
+
+export const formatBuyerRewardSummary = (config, currencySymbol = '$') => {
+  const entries = getBuyerRewardConditionEntries(config?.buyer_reward_conditions);
+  if (entries.length > 0) {
+    return entries
+      .map(({ label, reward }) => `${label}: ${currencySymbol}${reward.toFixed(2)}`)
+      .join(', ');
+  }
+
+  const rawFixedReward = config?.buyer_reward;
+  if (rawFixedReward === '' || rawFixedReward === null || rawFixedReward === undefined) return 'Custom';
+  if (typeof rawFixedReward === 'string' && rawFixedReward.trim() === '') return 'Custom';
+
+  const fixedReward = Number(rawFixedReward);
+  return Number.isFinite(fixedReward) ? `${currencySymbol}${fixedReward.toFixed(2)}` : 'Custom';
+};

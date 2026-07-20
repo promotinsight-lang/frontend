@@ -21,6 +21,7 @@ import {
   PLATFORM_CHARGE_CONDITION_KEYS,
   buildDefaultPlatformChargeConditions,
   buildDefaultBuyerRewardConditions,
+  formatBuyerRewardSummary,
   getPlatformChargeConditionLabel,
   parseBuyerRewardConditions,
   parsePlatformChargeConditions,
@@ -1575,7 +1576,7 @@ export default function AdminDashboard() {
                     >
                       <AdminField label="Platform fee">{tierCount > 0 ? `${tierCount} tiers` : `${conf.platform_charge}%`}</AdminField>
                       <AdminField label="Condition fees">{conditionRuleCount > 0 ? `${conditionRuleCount} conditions` : 'Default only'}</AdminField>
-                      <AdminField label="Reward (USD)">$ {conf.buyer_reward}</AdminField>
+                      <AdminField label="Reward (USD)">{formatBuyerRewardSummary(conf)}</AdminField>
                       <AdminField label="Refund">{conf.buyer_refund_fee}%</AdminField>
                       <AdminField label="Deposit">{conf.seller_deposit_fee}%</AdminField>
                       <AdminField label="Withdraw">{conf.seller_withdrawal_fee}%</AdminField>
@@ -1624,7 +1625,7 @@ export default function AdminDashboard() {
                               <span className="text-gray-400 text-xs">Default</span>
                             )}
                           </td>
-                          <td className="p-3 text-center font-semibold text-green-600">$ {conf.buyer_reward}</td>
+                          <td className="p-3 text-center font-semibold text-green-600 text-xs">{formatBuyerRewardSummary(conf)}</td>
                           <td className="p-3 text-center font-semibold text-red-500">{conf.buyer_refund_fee}%</td>
                           <td className="p-3 text-center font-semibold">{conf.seller_deposit_fee}%</td>
                           <td className="p-3 text-center font-semibold">{conf.seller_withdrawal_fee}%</td>

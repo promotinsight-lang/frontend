@@ -4,6 +4,14 @@ import { Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDas
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useLanguage } from '../i18n/LanguageContext';
+import {
+  getConfiguredCampaignCategoryOptions,
+  parseBuyerRewardConditions,
+  parsePlatformChargeConditions,
+  parsePlatformChargeTiers,
+  resolveBuyerRewardForCategory,
+  resolvePlatformChargeTiersForCategory,
+} from '../utils/campaignCategories';
 
 export default function HomePage() {
   const { t, language } = useLanguage();
@@ -27,6 +35,7 @@ export default function HomePage() {
   const [calcData, setCalcData] = useState({
     country: '',
     platform: '',
+    category: 'Need Review',
     price: 25.00,
     reward: 5.00,
     qty: 10
@@ -137,19 +146,11 @@ export default function HomePage() {
         if (data.success && data.data) {
           
           // 🔥 Parse JSON Tiers for dynamic platform charge logic
-          let parsedTiers = [];
-          if (Array.isArray(data.data.platform_charge)) {
-            parsedTiers = data.data.platform_charge;
-          } else if (typeof data.data.platform_charge === 'string') {
-            try { parsedTiers = JSON.parse(data.data.platform_charge); } catch {}
-          }
-          data.data.parsed_platform_charge = parsedTiers;
+          data.data.parsed_platform_charge = parsePlatformChargeTiers(data.data.platform_charge);
+          data.data.parsed_platform_charge_conditions = parsePlatformChargeConditions(data.data.platform_charge_conditions);
+          data.data.parsed_buyer_reward_conditions = parseBuyerRewardConditions(data.data.buyer_reward_conditions);
           
           setActiveConfig(data.data);
-          
-          if (parseFloat(data.data.buyer_reward) > 0) {
-              setCalcData(prev => ({ ...prev, reward: parseFloat(data.data.buyer_reward) }));
-          }
         } else {
           setActiveConfig(null);
         }
@@ -162,22 +163,48 @@ export default function HomePage() {
     fetchCalcTarrifs();
   }, [calcData.country, calcData.platform]);
 
+  const availableCategoryOptions = useMemo(
+    () => getConfiguredCampaignCategoryOptions(activeConfig),
+    [activeConfig]
+  );
+
+  useEffect(() => {
+    if (!availableCategoryOptions.some((option) => option.value === calcData.category)) {
+      setCalcData(prev => ({ ...prev, category: availableCategoryOptions[0]?.value || 'Need Review' }));
+    }
+  }, [activeConfig, calcData.category, availableCategoryOptions]);
+
+  useEffect(() => {
+    if (!activeConfig) return;
+
+    const rate = Number(activeConfig.exchange_rate) || 1;
+    const rewardValue = resolveBuyerRewardForCategory(activeConfig, calcData.category);
+    if (rewardValue > 0) {
+      setCalcData(prev => ({ ...prev, reward: (rewardValue * rate).toFixed(2) }));
+    }
+  }, [activeConfig, calcData.category]);
+
   const priceNum = parseFloat(calcData.price || 0);
   const rewardNum = parseFloat(calcData.reward || 0);
   const rewardDeposit = rewardNum;
+  const exchangeRate = Number(activeConfig?.exchange_rate) || 1;
+  const priceNumUSD = priceNum / exchangeRate;
+  const platformChargeTiers = resolvePlatformChargeTiersForCategory(activeConfig, calcData.category);
+  const categoryRewardUSD = activeConfig ? resolveBuyerRewardForCategory(activeConfig, calcData.category) : 0;
+  const buyerRewardLocked = activeConfig && categoryRewardUSD > 0;
   
   // 🔥 DYNAMIC TIER LOGIC FOR PLATFORM FEE
   const platformFee = (() => {
-    if (activeConfig && activeConfig.parsed_platform_charge && activeConfig.parsed_platform_charge.length > 0) {
+    if (activeConfig && platformChargeTiers && platformChargeTiers.length > 0) {
       // Find the correct tier based on product price
-      const matchedTier = activeConfig.parsed_platform_charge.find(
-        t => priceNum >= Number(t.min) && priceNum <= Number(t.max)
+      const matchedTier = platformChargeTiers.find(
+        t => priceNumUSD >= Number(t.min) && priceNumUSD <= Number(t.max)
       );
-      return matchedTier ? Number(matchedTier.fee) : 0;
+      return matchedTier ? Number(matchedTier.fee) * exchangeRate : 0;
     }
     if (activeConfig && !isNaN(activeConfig.platform_charge)) {
       // Fallback if it's still using the old percentage format
-      return priceNum * (parseFloat(activeConfig.platform_charge) / 100);
+      return (priceNumUSD * (parseFloat(activeConfig.platform_charge) / 100)) * exchangeRate;
     }
     return priceNum * 0.10; // Default 10% fallback
   })();
@@ -330,6 +357,15 @@ export default function HomePage() {
               </div>
             </div>
 
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Campaign Category</label>
+              <select name="category" value={calcData.category} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                {availableCategoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid grid-cols-2 gap-4 mb-5">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('product_price')}</label>
@@ -347,10 +383,10 @@ export default function HomePage() {
                     name="reward" 
                     value={calcData.reward} 
                     onChange={handleCalcChange}
-                    readOnly={activeConfig && parseFloat(activeConfig.buyer_reward) > 0} 
-                    className={`w-full pl-8 p-3.5 border rounded-xl font-bold outline-none transition-all ${activeConfig && parseFloat(activeConfig.buyer_reward) > 0 ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-emerald-50 border-emerald-200 text-emerald-700 focus:ring-2 focus:ring-emerald-500'}`} 
+                    readOnly={buyerRewardLocked}
+                    className={`w-full pl-8 p-3.5 border rounded-xl font-bold outline-none transition-all ${buyerRewardLocked ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-emerald-50 border-emerald-200 text-emerald-700 focus:ring-2 focus:ring-emerald-500'}`}
                   />
-                  {activeConfig && parseFloat(activeConfig.buyer_reward) > 0 && (
+                  {buyerRewardLocked && (
                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400 uppercase bg-gray-200 px-1 rounded">{t('fixed')}</span>
                   )}
                 </div>
@@ -381,7 +417,7 @@ export default function HomePage() {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium flex items-center gap-1">
                   {t('platform_fee')}{' '}
-                  {activeConfig?.parsed_platform_charge?.length > 0 ? (
+                  {platformChargeTiers?.length > 0 ? (
                      <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{t('fixed_tier')}</span>
                   ) : (
                      <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">{activeConfig ? activeConfig.platform_charge : '10'}{t('pct_of_price')}</span>
@@ -407,8 +443,8 @@ export default function HomePage() {
                     <Info size={12}/> {t('active_tariffs')} ({calcData.country} - {calcData.platform})
                  </h4>
                  <div className="grid grid-cols-2 gap-y-2 text-xs font-medium text-blue-900">
-                    <p>{t('platform')}: <b className="text-blue-700">{activeConfig.parsed_platform_charge?.length > 0 ? t('tiered_fee') : `${activeConfig.platform_charge}%`}</b></p>
-                    <p>{t('buyer_reward')}: <b className="text-blue-700">{parseFloat(activeConfig.buyer_reward) > 0 ? `${calcCurrency}${activeConfig.buyer_reward}` : t('custom')}</b></p>
+                    <p>{t('platform')}: <b className="text-blue-700">{platformChargeTiers?.length > 0 ? t('tiered_fee') : `${activeConfig.platform_charge}%`}</b></p>
+                    <p>{t('buyer_reward')}: <b className="text-blue-700">{categoryRewardUSD > 0 ? `${calcCurrency}${(categoryRewardUSD * exchangeRate).toFixed(2)}` : t('custom')}</b></p>
                     <p>Deposit: <b className="text-blue-700">{activeConfig.seller_deposit_fee}%</b></p>
                     <p>W.Draw: <b className="text-blue-700">{activeConfig.seller_withdrawal_fee}%</b></p>
                  </div>
