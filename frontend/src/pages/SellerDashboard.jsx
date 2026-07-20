@@ -64,6 +64,7 @@ const hasReviewSubmission = (application) => {
 export default function SellerDashboard() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
+  const [trackingTab, setTrackingTab] = useState('active');
   const [products, setProducts] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
   const [userProfile, setUserProfile] = useState(null); // 🔥 NEW STATE
@@ -581,6 +582,28 @@ export default function SellerDashboard() {
     }
   };
 
+  const normalizedProductStatus = (product) => String(product?.status || '').toLowerCase();
+  const activeTrackingProducts = products.filter((product) =>
+    ['approved', 'stopped'].includes(normalizedProductStatus(product))
+  );
+  const completedTrackingProducts = products.filter((product) =>
+    normalizedProductStatus(product) === 'completed'
+  );
+  const failedTrackingProducts = products.filter((product) =>
+    ['rejected', 'cancelled', 'canceled', 'failed'].includes(normalizedProductStatus(product))
+  );
+  const trackingProductsByTab = {
+    active: activeTrackingProducts,
+    completed: completedTrackingProducts,
+    failed: failedTrackingProducts,
+  };
+  const currentTrackingProducts = trackingProductsByTab[trackingTab] || activeTrackingProducts;
+  const trackingEmptyMessages = {
+    active: 'No active products available for tracking.',
+    completed: 'No completed orders found.',
+    failed: 'No failed products found.',
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-20">
       <Navbar />
@@ -745,14 +768,58 @@ export default function SellerDashboard() {
         {/* TRACKING TAB */}
         {activeTab === 'tracking' && (
           <div className="space-y-4">
-            <h2 className="text-gray-700 text-xl font-bold mb-4">Quota & Review Tracking</h2>
-            {products.filter(p => p.status === 'approved' || p.status === 'stopped').map(product => (
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+              <h2 className="text-gray-700 text-xl font-bold mb-4">Order Tracking</h2>
+
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
+                  <Clock size={20} className="text-blue-500 mb-1" />
+                  <p className="text-2xl font-black text-blue-700 leading-none">{activeTrackingProducts.length}</p>
+                  <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">Active</p>
+                </div>
+                <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
+                  <CheckCircle size={20} className="text-green-500 mb-1" />
+                  <p className="text-2xl font-black text-green-700 leading-none">{completedTrackingProducts.length}</p>
+                  <p className="text-[10px] font-bold text-green-500 uppercase mt-1">Completed</p>
+                </div>
+                <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
+                  <XCircle size={20} className="text-red-500 mb-1" />
+                  <p className="text-2xl font-black text-red-700 leading-none">{failedTrackingProducts.length}</p>
+                  <p className="text-[10px] font-bold text-red-500 uppercase mt-1">Failed</p>
+                </div>
+              </div>
+
+              <div className="flex w-full bg-gray-100 rounded-lg p-1 overflow-x-auto hide-scrollbar">
+                <button
+                  onClick={() => setTrackingTab('active')}
+                  className={`flex-1 py-2 px-3 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap ${trackingTab === 'active' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
+                >
+                  Active Order
+                </button>
+                <button
+                  onClick={() => setTrackingTab('completed')}
+                  className={`flex-1 py-2 px-3 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap ${trackingTab === 'completed' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500'}`}
+                >
+                  Completed
+                </button>
+                <button
+                  onClick={() => setTrackingTab('failed')}
+                  className={`flex-1 py-2 px-3 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap ${trackingTab === 'failed' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500'}`}
+                >
+                  Failed
+                </button>
+              </div>
+            </div>
+
+            {currentTrackingProducts.map(product => (
               <div key={product.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-6 items-center">
                 <img src={product.image_url} alt="Product" className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl border border-gray-200" />
                 <div className="flex-1 w-full">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{product.product_name}</h3>
-                    {product.status === 'stopped' && <span className="bg-orange-100 text-orange-800 text-[10px] px-2 py-0.5 rounded font-bold uppercase border border-orange-200 w-max">Stopped</span>}
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase border w-max ${getStatusColor(product.status)}`}>
+                      {product.status}
+                    </span>
                   </div>
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center w-full">
                     <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 shadow-sm">
@@ -770,8 +837,10 @@ export default function SellerDashboard() {
                 </div>
               </div>
             ))}
-            {products.filter(p => p.status === 'approved' || p.status === 'stopped').length === 0 && (
-              <p className="text-center py-10 text-gray-500 bg-white rounded-2xl border border-dashed">No active products available for tracking.</p>
+            {currentTrackingProducts.length === 0 && (
+              <p className="text-center py-10 text-gray-500 bg-white rounded-2xl border border-dashed">
+                {trackingEmptyMessages[trackingTab]}
+              </p>
             )}
           </div>
         )}
