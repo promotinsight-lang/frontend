@@ -302,6 +302,25 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                   </div>
                   <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
                 </Link>
+                <div className="mx-2 mb-2 rounded-xl bg-gray-50 p-2">
+                  {[
+                    ['active_product', 'Active Product'],
+                    ['stopped_product', 'Stop Product'],
+                    ['active_order', 'Active Order'],
+                    ['completed_order', 'Complete Order'],
+                    ['failed_order', 'Failed Order'],
+                  ].map(([trackingKey, label]) => (
+                    <Link
+                      key={trackingKey}
+                      to={`/dashboard?tab=tracking&tracking=${trackingKey}`}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-white hover:text-[#0066ff] transition-colors"
+                    >
+                      <span>{label}</span>
+                      <ChevronRight size={14} className="text-gray-300" />
+                    </Link>
+                  ))}
+                </div>
 
                 <Link to="/dashboard?tab=funds" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                   <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">

@@ -64,8 +64,9 @@ const hasReviewSubmission = (application) => {
 export default function SellerDashboard() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
-  const [trackingTab, setTrackingTab] = useState('active');
+  const [trackingTab, setTrackingTab] = useState('active_product');
   const [products, setProducts] = useState([]);
+  const [sellerOrders, setSellerOrders] = useState([]);
   const [walletBalance, setWalletBalance] = useState(0);
   const [userProfile, setUserProfile] = useState(null); // 🔥 NEW STATE
   const [loading, setLoading] = useState(true);
@@ -163,10 +164,19 @@ export default function SellerDashboard() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
+    const tracking = params.get('tracking');
     if (tab) {
       setActiveTab(tab);
     } else {
       setActiveTab('overview');
+    }
+    if (
+      tracking &&
+      ['active_product', 'stopped_product', 'active_order', 'completed_order', 'failed_order'].includes(tracking)
+    ) {
+      setTrackingTab(tracking);
+    } else if (tab === 'tracking') {
+      setTrackingTab('active_product');
     }
   }, [location.search]);
 
@@ -197,7 +207,38 @@ export default function SellerDashboard() {
 
       const productsRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/my`, { headers: authHeaders });
       const productsData = await productsRes.json();
-      if (productsData.success) setProducts(productsData.data);
+      if (productsData.success) {
+        const nextProducts = productsData.data || [];
+        setProducts(nextProducts);
+
+        try {
+          const orderGroups = await Promise.all(
+            nextProducts.map(async (product) => {
+              try {
+                const reviewsRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/seller/product/${product.id}/reviews`, {
+                  headers: authHeaders
+                });
+                const reviewsData = await reviewsRes.json();
+                if (!reviewsRes.ok || !reviewsData.success) return [];
+                return (reviewsData.data || []).map((order) => ({
+                  ...order,
+                  product_id: product.id,
+                  product_name: product.product_name,
+                  image_url: product.image_url,
+                  category: product.category,
+                  country: product.country,
+                  platform: product.platform,
+                }));
+              } catch {
+                return [];
+              }
+            })
+          );
+          setSellerOrders(orderGroups.flat());
+        } catch {
+          setSellerOrders([]);
+        }
+      }
 
       const settingsRes = await secureFetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/payment-settings`, { headers: authHeaders });
       const settingsData = await settingsRes.json();
@@ -584,24 +625,39 @@ export default function SellerDashboard() {
 
   const normalizedProductStatus = (product) => String(product?.status || '').toLowerCase();
   const activeTrackingProducts = products.filter((product) =>
-    ['approved', 'stopped'].includes(normalizedProductStatus(product))
+    normalizedProductStatus(product) === 'approved'
   );
-  const completedTrackingProducts = products.filter((product) =>
-    normalizedProductStatus(product) === 'completed'
+  const stoppedTrackingProducts = products.filter((product) =>
+    normalizedProductStatus(product) === 'stopped'
   );
-  const failedTrackingProducts = products.filter((product) =>
-    ['rejected', 'cancelled', 'canceled', 'failed'].includes(normalizedProductStatus(product))
+  const normalizedOrderStatus = (order) => String(order?.status || order?.application_status || '').toLowerCase();
+  const activeTrackingOrders = sellerOrders.filter((order) =>
+    !['completed', 'rejected', 'cancelled', 'canceled', 'failed'].includes(normalizedOrderStatus(order))
+  );
+  const completedTrackingOrders = sellerOrders.filter((order) =>
+    normalizedOrderStatus(order) === 'completed'
+  );
+  const failedTrackingOrders = sellerOrders.filter((order) =>
+    ['rejected', 'cancelled', 'canceled', 'failed'].includes(normalizedOrderStatus(order))
   );
   const trackingProductsByTab = {
-    active: activeTrackingProducts,
-    completed: completedTrackingProducts,
-    failed: failedTrackingProducts,
+    active_product: activeTrackingProducts,
+    stopped_product: stoppedTrackingProducts,
   };
-  const currentTrackingProducts = trackingProductsByTab[trackingTab] || activeTrackingProducts;
+  const trackingOrdersByTab = {
+    active_order: activeTrackingOrders,
+    completed_order: completedTrackingOrders,
+    failed_order: failedTrackingOrders,
+  };
+  const currentTrackingProducts = trackingProductsByTab[trackingTab] || [];
+  const currentTrackingOrders = trackingOrdersByTab[trackingTab] || [];
+  const isProductTrackingTab = Boolean(trackingProductsByTab[trackingTab]);
   const trackingEmptyMessages = {
-    active: 'No active products available for tracking.',
-    completed: 'No completed orders found.',
-    failed: 'No failed products found.',
+    active_product: 'No active products available for tracking.',
+    stopped_product: 'No stopped products found.',
+    active_order: 'No active orders found.',
+    completed_order: 'No completed orders found.',
+    failed_order: 'No failed orders found.',
   };
 
   return (
@@ -767,81 +823,125 @@ export default function SellerDashboard() {
 
         {/* TRACKING TAB */}
         {activeTab === 'tracking' && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-              <h2 className="text-gray-700 text-xl font-bold mb-4">Order Tracking</h2>
-
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
-                  <Clock size={20} className="text-blue-500 mb-1" />
-                  <p className="text-2xl font-black text-blue-700 leading-none">{activeTrackingProducts.length}</p>
-                  <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">Active</p>
-                </div>
-                <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
-                  <CheckCircle size={20} className="text-green-500 mb-1" />
-                  <p className="text-2xl font-black text-green-700 leading-none">{completedTrackingProducts.length}</p>
-                  <p className="text-[10px] font-bold text-green-500 uppercase mt-1">Completed</p>
-                </div>
-                <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
-                  <XCircle size={20} className="text-red-500 mb-1" />
-                  <p className="text-2xl font-black text-red-700 leading-none">{failedTrackingProducts.length}</p>
-                  <p className="text-[10px] font-bold text-red-500 uppercase mt-1">Failed</p>
-                </div>
-              </div>
-
-              <div className="flex w-full bg-gray-100 rounded-lg p-1 overflow-x-auto hide-scrollbar">
-                <button
-                  onClick={() => setTrackingTab('active')}
-                  className={`flex-1 py-2 px-3 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap ${trackingTab === 'active' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
-                >
-                  Active Order
-                </button>
-                <button
-                  onClick={() => setTrackingTab('completed')}
-                  className={`flex-1 py-2 px-3 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap ${trackingTab === 'completed' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500'}`}
-                >
-                  Completed
-                </button>
-                <button
-                  onClick={() => setTrackingTab('failed')}
-                  className={`flex-1 py-2 px-3 text-xs md:text-sm font-bold rounded-md transition-all whitespace-nowrap ${trackingTab === 'failed' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500'}`}
-                >
-                  Failed
-                </button>
-              </div>
-            </div>
-
-            {currentTrackingProducts.map(product => (
-              <div key={product.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-6 items-center">
-                <img src={product.image_url} alt="Product" className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl border border-gray-200" />
-                <div className="flex-1 w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{product.product_name}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase border w-max ${getStatusColor(product.status)}`}>
-                      {product.status}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[240px_1fr]">
+            <aside className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm h-max">
+              <h2 className="px-2 pb-3 text-gray-700 text-lg font-black">Order Tracking</h2>
+              {[
+                { key: 'active_product', label: 'Active Product', count: activeTrackingProducts.length, color: 'blue', icon: <Package size={18} /> },
+                { key: 'stopped_product', label: 'Stop Product', count: stoppedTrackingProducts.length, color: 'orange', icon: <Snowflake size={18} /> },
+                { key: 'active_order', label: 'Active Order', count: activeTrackingOrders.length, color: 'blue', icon: <Clock size={18} /> },
+                { key: 'completed_order', label: 'Complete Order', count: completedTrackingOrders.length, color: 'green', icon: <CheckCircle size={18} /> },
+                { key: 'failed_order', label: 'Failed Order', count: failedTrackingOrders.length, color: 'red', icon: <XCircle size={18} /> },
+              ].map((item) => {
+                const active = trackingTab === item.key;
+                const activeClass =
+                  item.color === 'green'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : item.color === 'red'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : item.color === 'orange'
+                        ? 'bg-orange-50 text-orange-700 border-orange-200'
+                        : 'bg-blue-50 text-blue-700 border-blue-200';
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => setTrackingTab(item.key)}
+                    className={`mb-2 flex w-full items-center justify-between rounded-xl border px-3 py-3 text-sm font-bold transition-colors ${active ? activeClass : 'border-transparent text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      {item.icon}
+                      {item.label}
                     </span>
-                  </div>
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center w-full">
-                    <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 shadow-sm">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase">Total Quota</p>
-                      <p className="text-2xl font-black text-gray-700">{product.required_orders}</p>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-gray-600 shadow-sm">{item.count}</span>
+                  </button>
+                );
+              })}
+            </aside>
+
+            <div className="space-y-4">
+              {isProductTrackingTab ? (
+                <>
+                  {currentTrackingProducts.map(product => (
+                    <div key={product.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-6 items-center">
+                      <img src={product.image_url} alt="Product" className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl border border-gray-200" />
+                      <div className="flex-1 w-full">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{product.product_name}</h3>
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase border w-max ${getStatusColor(product.status)}`}>
+                            {product.status}
+                          </span>
+                        </div>
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center w-full">
+                          <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 shadow-sm">
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">Total Quota</p>
+                            <p className="text-2xl font-black text-gray-700">{product.required_orders}</p>
+                          </div>
+                          <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 shadow-sm">
+                            <p className="text-[10px] text-blue-500 font-bold uppercase">Applications</p>
+                            <p className="text-2xl font-black text-blue-700">{product.application_count || 0}</p>
+                          </div>
+                          <div className="flex items-center justify-center p-3">
+                             <button onClick={() => openViewModal(product)} className="text-[#0066ff] text-sm font-bold flex items-center gap-1 hover:underline"><Eye size={18}/> View Reviews</button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 shadow-sm">
-                      <p className="text-[10px] text-blue-500 font-bold uppercase">Applications</p>
-                      <p className="text-2xl font-black text-blue-700">{product.application_count || 0}</p>
-                    </div>
-                    <div className="flex items-center justify-center p-3">
-                       <button onClick={() => openViewModal(product)} className="text-[#0066ff] text-sm font-bold flex items-center gap-1 hover:underline"><Eye size={18}/> View Reviews</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {currentTrackingProducts.length === 0 && (
-              <p className="text-center py-10 text-gray-500 bg-white rounded-2xl border border-dashed">
-                {trackingEmptyMessages[trackingTab]}
-              </p>
-            )}
+                  ))}
+                  {currentTrackingProducts.length === 0 && (
+                    <p className="text-center py-10 text-gray-500 bg-white rounded-2xl border border-dashed">
+                      {trackingEmptyMessages[trackingTab]}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  {currentTrackingOrders.map(order => {
+                    const product = products.find((p) => String(p.id) === String(order.product_id));
+                    return (
+                      <div key={order.application_id || order.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-5 items-center">
+                        <img src={order.image_url} alt="Product" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl border border-gray-200" />
+                        <div className="flex-1 w-full">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <h3 className="text-base font-bold text-gray-800 line-clamp-1">{order.product_name || 'Product Order'}</h3>
+                              <p className="text-xs text-gray-500 mt-1">Buyer: <span className="font-bold text-gray-700">{order.buyer_name || order.buyer_email || 'Buyer'}</span></p>
+                            </div>
+                            <span className={`px-3 py-1.5 text-[10px] font-black uppercase rounded-lg border tracking-wider w-full sm:w-auto text-center ${getStatusColor(order.status)}`}>
+                              {String(order.status || '').replace('_', ' ')}
+                            </span>
+                          </div>
+                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase">Order No</p>
+                              <p className="font-bold text-gray-800 break-all">{order.order_number || 'N/A'}</p>
+                            </div>
+                            <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+                              <p className="text-[10px] text-green-600 font-bold uppercase">Reward</p>
+                              <p className="font-black text-green-700">USD ${parseFloat(order.reward || 0).toFixed(2)}</p>
+                            </div>
+                            <div className="flex items-center justify-center">
+                              <button
+                                onClick={() => product && openViewModal(product)}
+                                disabled={!product}
+                                className="text-[#0066ff] text-sm font-bold flex items-center gap-1 hover:underline disabled:text-gray-300 disabled:no-underline"
+                              >
+                                <Eye size={18}/> View Details
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {currentTrackingOrders.length === 0 && (
+                    <p className="text-center py-10 text-gray-500 bg-white rounded-2xl border border-dashed">
+                      {trackingEmptyMessages[trackingTab]}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
