@@ -217,7 +217,7 @@ const Navbar = () => {
                  <span className="text-[9px] font-black leading-none sm:text-xs">{t('nav_home')}</span>
                </Link>
 
-               <Link to="/blogs" className={navLinkClass} title={t('nav_blogs')} aria-label={t('nav_blogs')}>
+               <Link to="/blog/" className={navLinkClass} title={t('nav_blogs')} aria-label={t('nav_blogs')}>
                  <FileText size={22} />
                  <span className="text-[9px] font-black leading-none sm:text-xs">{t('nav_blogs')}</span>
                </Link>

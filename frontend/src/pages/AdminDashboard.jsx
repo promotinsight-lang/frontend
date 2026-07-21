@@ -614,8 +614,8 @@ export default function AdminDashboard() {
       return;
     }
     
-    let conditionCharges = {};
-    let buyerRewardCharges = {};
+    let conditionCharges;
+    let buyerRewardCharges;
 
     try {
       conditionCharges = conditionOptions.reduce((acc, { key, label }) => {

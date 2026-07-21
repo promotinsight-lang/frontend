@@ -1,0 +1,6 @@
+/blogs /blog/ 301!
+/blogs/:slug /blog/:slug/ 301!
+/blog /blog/ 301!
+/blog/:slug /blog/:slug/ 301!
+/blog/category/:slug /blog/category/:slug/ 301!
+/blog/author/:slug /blog/author/:slug/ 301!

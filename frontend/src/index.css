@@ -48,6 +48,55 @@
   .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out forwards;
   }
+
+  .blog-prose {
+    @apply text-base leading-8 text-slate-700;
+  }
+
+  .blog-prose h2 {
+    @apply mt-10 mb-4 scroll-mt-24 text-2xl font-black leading-tight text-slate-950 md:text-3xl;
+  }
+
+  .blog-prose h3 {
+    @apply mt-8 mb-3 scroll-mt-24 text-xl font-black leading-tight text-slate-950;
+  }
+
+  .blog-prose p {
+    @apply mb-5;
+  }
+
+  .blog-prose ul,
+  .blog-prose ol {
+    @apply mb-6 ml-6 space-y-2;
+  }
+
+  .blog-prose ul {
+    @apply list-disc;
+  }
+
+  .blog-prose ol {
+    @apply list-decimal;
+  }
+
+  .blog-prose a {
+    @apply font-bold text-emerald-700 underline decoration-emerald-200 underline-offset-4 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500;
+  }
+
+  .blog-prose blockquote {
+    @apply mb-6 border-l-4 border-emerald-500 bg-emerald-50 p-4 font-semibold text-slate-800;
+  }
+
+  .blog-prose code {
+    @apply rounded bg-slate-100 px-1.5 py-0.5 text-sm font-bold text-slate-900;
+  }
+
+  .blog-prose pre {
+    @apply mb-6 overflow-x-auto rounded-lg bg-slate-950 p-4 text-slate-100;
+  }
+
+  .blog-prose pre code {
+    @apply bg-transparent p-0 text-slate-100;
+  }
 }
 
 /* Keyframes */

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Product page optimization layout</title>
+  <desc id="desc">A product page layout with image, benefit, proof, and support sections highlighted.</desc>
+  <rect width="1200" height="630" fill="#f1f5f9"/>
+  <rect x="112" y="86" width="976" height="458" rx="30" fill="#ffffff" stroke="#cbd5e1" stroke-width="4"/>
+  <rect x="164" y="148" width="352" height="238" rx="24" fill="#dbeafe"/>
+  <circle cx="262" cy="258" r="62" fill="#2563eb"/>
+  <rect x="552" y="154" width="432" height="36" rx="18" fill="#0f172a"/>
+  <rect x="552" y="220" width="352" height="20" rx="10" fill="#94a3b8"/>
+  <rect x="552" y="260" width="392" height="20" rx="10" fill="#94a3b8"/>
+  <rect x="552" y="320" width="178" height="54" rx="16" fill="#10b981"/>
+  <rect x="752" y="320" width="178" height="54" rx="16" fill="#f59e0b"/>
+  <rect x="164" y="428" width="236" height="58" rx="16" fill="#e0f2fe"/>
+  <rect x="430" y="428" width="236" height="58" rx="16" fill="#dcfce7"/>
+  <rect x="696" y="428" width="236" height="58" rx="16" fill="#fef3c7"/>
+  <text x="196" y="467" fill="#0369a1" font-family="Arial, sans-serif" font-size="24" font-weight="800">Image</text>
+  <text x="462" y="467" fill="#047857" font-family="Arial, sans-serif" font-size="24" font-weight="800">Benefit</text>
+  <text x="728" y="467" fill="#92400e" font-family="Arial, sans-serif" font-size="24" font-weight="800">Proof</text>
+</svg>

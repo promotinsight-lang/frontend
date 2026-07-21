@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "blog:generate": "node scripts/generate-blog-data.mjs",
+    "blog:prerender": "node scripts/prerender-blog.mjs",
+    "seo:verify": "node scripts/verify-blog-seo.mjs",
+    "test": "node scripts/test-blog.mjs",
+    "build": "npm run blog:generate && vite build && npm run blog:prerender",
     "lint": "eslint .",
     "preview": "vite preview"
   },

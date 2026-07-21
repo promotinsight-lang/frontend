@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /login
+Disallow: /register
+Disallow: /login-form
+Disallow: /register-form
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /verification
+Sitemap: https://promotinsight.com/sitemap.xml

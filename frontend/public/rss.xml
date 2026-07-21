@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>PromotInsight Blog</title>
+    <link>https://promotinsight.com/blog/</link>
+    <description>Guides and updates from PromotInsight.</description>
+    <lastBuildDate>Tue, 21 Jul 2026 15:48:34 GMT</lastBuildDate>
+    <item>
+      <title>How to Plan a Cashback Campaign That Buyers Trust</title>
+      <link>https://promotinsight.com/blog/cashback-campaign-guide/</link>
+      <guid>https://promotinsight.com/blog/cashback-campaign-guide/</guid>
+      <pubDate>Wed, 01 Jul 2026 09:00:00 GMT</pubDate>
+      <description>A practical checklist for setting campaign terms, refund timing, proof requirements, and buyer expectations before launch.</description>
+    </item>
+    <item>
+      <title>Buyer Proof Checklist for Faster Cashback Approval</title>
+      <link>https://promotinsight.com/blog/buyer-proof-checklist/</link>
+      <guid>https://promotinsight.com/blog/buyer-proof-checklist/</guid>
+      <pubDate>Thu, 18 Jun 2026 09:00:00 GMT</pubDate>
+      <description>Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.</description>
+    </item>
+    <item>
+      <title>Product Page Details That Improve Promotion Results</title>
+      <link>https://promotinsight.com/blog/seller-product-page-optimization/</link>
+      <guid>https://promotinsight.com/blog/seller-product-page-optimization/</guid>
+      <pubDate>Fri, 29 May 2026 09:00:00 GMT</pubDate>
+      <description>Improve campaign performance by tightening product titles, images, buyer benefits, proof steps, and support expectations.</description>
+    </item>
+  </channel>
+</rss>

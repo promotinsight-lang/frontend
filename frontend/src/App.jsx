@@ -23,6 +23,8 @@ import Support from './pages/Support';
 // 🔥 NEW: Blog Pages Import
 import Blogs from './pages/Blogs';
 import BlogDetails from './pages/BlogDetails';
+import BlogCategory from './pages/BlogCategory';
+import BlogAuthor from './pages/BlogAuthor';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { API_BASE_URL } from './utils/apiClient';
 import { trackPageView } from './utils/analytics';
@@ -125,8 +127,16 @@ export default function App() {
           />
 
           {/* 🔥 NEW: Blog Routes (Public - Anyone can access) */}
-          <Route path="/blogs" element={<Blogs />} />
+          <Route path="/blogs" element={<Navigate to="/blog/" replace />} />
+          <Route path="/blogs/:slug" element={<Navigate to="/blog/" replace />} />
+          <Route path="/blog" element={<Navigate to="/blog/" replace />} />
+          <Route path="/blog/" element={<Blogs />} />
           <Route path="/blog/:slug" element={<BlogDetails />} />
+          <Route path="/blog/:slug/" element={<BlogDetails />} />
+          <Route path="/blog/category/:categorySlug" element={<BlogCategory />} />
+          <Route path="/blog/category/:categorySlug/" element={<BlogCategory />} />
+          <Route path="/blog/author/:authorSlug" element={<BlogAuthor />} />
+          <Route path="/blog/author/:authorSlug/" element={<BlogAuthor />} />
 
           {/* 🔥 NEW: Route to Role Selection first */}
           <Route 
@@ -161,6 +171,19 @@ export default function App() {
                 <BuyerDashboard />
               )
             } 
+          />
+
+          <Route
+            path="/admin/blog"
+            element={user?.role === 'admin' ? <Navigate to="/dashboard?tab=blogs" replace /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/blog/new"
+            element={user?.role === 'admin' ? <Navigate to="/dashboard?tab=blogs" replace /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/admin/blog/edit/:id"
+            element={user?.role === 'admin' ? <Navigate to="/dashboard?tab=blogs" replace /> : <Navigate to="/login" />}
           />
 
           <Route path="/reset-password/:id/:token" element={<ResetPassword />} />
