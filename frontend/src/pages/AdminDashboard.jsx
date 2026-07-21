@@ -273,6 +273,7 @@ export default function AdminDashboard() {
   const [editingBlog, setEditingBlog] = useState(null);
   const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
+  const [siteRebuild, setSiteRebuild] = useState({ isRunning: false, message: '', error: '' });
 
   // Full Image Lightbox States for Admin View Details
   const [showFullImageModal, setShowFullImageModal] = useState(false);
@@ -1100,18 +1101,64 @@ export default function AdminDashboard() {
       const res = await fetch(endpoint, { method: editingBlog ? "PUT" : "POST", headers: getAuthHeaders(), body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(editingBlog ? "Blog updated successfully!" : "Blog published successfully!");
+        const successMessage = editingBlog ? "Blog updated successfully!" : "Blog saved successfully!";
+        const shouldRebuild = Boolean(newBlog.is_published || editingBlog?.is_published);
         resetBlogForm();
         fetchAdminBlogs();
+        if (shouldRebuild) {
+          await triggerSiteRebuild({ successAlertMessage: `${successMessage} Public blog pages rebuilt.` });
+        } else {
+          alert(successMessage);
+        }
       } else alert(data.message || (editingBlog ? "Failed to update blog." : "Failed to publish blog."));
     } catch {}
     setIsPublishingBlog(false);
   };
 
+  const triggerSiteRebuild = async ({ confirmFirst = false, successAlertMessage = '' } = {}) => {
+    if (siteRebuild.isRunning) return false;
+    if (confirmFirst && !window.confirm("Rebuild public blog pages now?")) return false;
+
+    setSiteRebuild({ isRunning: true, message: "Rebuilding public blog pages...", error: '' });
+
+    try {
+      const res = await fetch(`${API_BASE}/api/blogs/admin/rebuild-site`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Site rebuild failed.");
+      }
+
+      const seconds = data?.data?.durationMs ? Math.round(data.data.durationMs / 1000) : null;
+      const message = seconds
+        ? `Public blog pages rebuilt successfully in ${seconds}s.`
+        : (data.message || "Public blog pages rebuilt successfully.");
+
+      setSiteRebuild({ isRunning: false, message, error: '' });
+      if (confirmFirst || successAlertMessage) alert(successAlertMessage || message);
+      return true;
+    } catch (error) {
+      const message = error.message || "Site rebuild failed.";
+      setSiteRebuild({ isRunning: false, message: '', error: message });
+      alert(message);
+      return false;
+    }
+  };
+
   const handleDeleteBlog = async (id) => {
     if (window.confirm("Are you sure you want to delete this blog post?")) {
+      const blogToDelete = adminBlogs.find((blog) => blog.id === id);
       const success = await handleAction(`${API_BASE}/api/blogs/${id}`, 'DELETE');
-      if (success) fetchAdminBlogs();
+      if (success) {
+        fetchAdminBlogs();
+        if (blogToDelete?.is_published !== false) {
+          await triggerSiteRebuild({ successAlertMessage: "Blog deleted and public blog pages rebuilt." });
+        }
+      }
     }
   };
 
@@ -2560,6 +2607,28 @@ export default function AdminDashboard() {
         {/* BLOGS TAB */}
         {activeTab === 'blogs' && (
           <div className="space-y-6 animate-fade-in-up mt-6">
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                  <RefreshCcw size={18} className="text-[#0066ff]" /> Public Blog Pages
+                </h3>
+                {siteRebuild.error ? (
+                  <p className="text-sm text-red-600 mt-1 font-medium">{siteRebuild.error}</p>
+                ) : (
+                  <p className="text-sm text-gray-500 mt-1">{siteRebuild.message || 'Ready to rebuild SEO blog pages from backend posts.'}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => triggerSiteRebuild({ confirmFirst: true })}
+                disabled={siteRebuild.isRunning}
+                className="w-full lg:w-auto bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <RefreshCcw size={17} className={siteRebuild.isRunning ? 'animate-spin' : ''} />
+                {siteRebuild.isRunning ? 'Rebuilding...' : 'Rebuild Site'}
+              </button>
+            </div>
+
             <div id="blog-editor-card" className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border">
               <h3 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
                 <FileText size={20} className="text-[#0066ff]"/> {editingBlog ? 'Edit Blog Post' : 'Publish New Blog Post'}
