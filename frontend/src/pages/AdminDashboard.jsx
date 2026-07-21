@@ -28,6 +28,37 @@ import {
 } from '../utils/campaignCategories';
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
 
+const slugifyBlogValue = (value) => String(value || '')
+  .toLowerCase()
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '')
+  .replace(/-{2,}/g, '-');
+
+const createEmptyBlogForm = () => ({
+  title: '',
+  slug: '',
+  excerpt: '',
+  content: '',
+  meta_title: '',
+  meta_description: '',
+  primary_keyword: '',
+  category: 'General',
+  category_slug: 'general',
+  author_name: 'Admin',
+  author_slug: 'admin',
+  author_title: '',
+  author_bio: '',
+  featured_image_alt: '',
+  canonical_url: '',
+  published_at: '',
+  related_post_ids: '',
+  featured_image_width: 1200,
+  featured_image_height: 630,
+  is_published: true,
+});
+
 const exchangeRateCache = {};
 
 const COUNTRY_CURRENCIES = {
@@ -238,7 +269,7 @@ export default function AdminDashboard() {
   const [isPublishing, setIsPublishing] = useState(false);
 
   const [adminBlogs, setAdminBlogs] = useState([]);
-  const [newBlog, setNewBlog] = useState({ title: '', content: '', is_published: true });
+  const [newBlog, setNewBlog] = useState(createEmptyBlogForm);
   const [editingBlog, setEditingBlog] = useState(null);
   const [blogImage, setBlogImage] = useState(null);
   const [isPublishingBlog, setIsPublishingBlog] = useState(false);
@@ -947,7 +978,7 @@ export default function AdminDashboard() {
   };
 
   const resetBlogForm = () => {
-    setNewBlog({ title: '', content: '', is_published: true });
+    setNewBlog(createEmptyBlogForm());
     setEditingBlog(null);
     setBlogImage(null);
     const input = document.getElementById('blog-image-upload');
@@ -958,7 +989,24 @@ export default function AdminDashboard() {
     setEditingBlog(blog);
     setNewBlog({
       title: blog.title || '',
+      slug: blog.slug || '',
+      excerpt: blog.excerpt || '',
       content: blog.content || '',
+      meta_title: blog.meta_title || blog.title || '',
+      meta_description: blog.meta_description || blog.excerpt || '',
+      primary_keyword: blog.primary_keyword || '',
+      category: blog.category || 'General',
+      category_slug: blog.category_slug || slugifyBlogValue(blog.category || 'General') || 'general',
+      author_name: blog.author_name || 'Admin',
+      author_slug: blog.author_slug || slugifyBlogValue(blog.author_name || 'Admin') || 'admin',
+      author_title: blog.author_title || '',
+      author_bio: blog.author_bio || '',
+      featured_image_alt: blog.featured_image_alt || blog.title || '',
+      canonical_url: blog.canonical_url || '',
+      published_at: blog.published_at ? new Date(blog.published_at).toISOString().slice(0, 16) : '',
+      related_post_ids: Array.isArray(blog.related_post_ids) ? blog.related_post_ids.join(', ') : '',
+      featured_image_width: blog.featured_image_width || 1200,
+      featured_image_height: blog.featured_image_height || 630,
       is_published: blog.is_published !== false,
     });
     setBlogImage(null);
@@ -985,12 +1033,67 @@ export default function AdminDashboard() {
     }, 0);
   };
 
+  const updateBlogField = (field, value) => {
+    setNewBlog((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateBlogTitle = (value) => {
+    setNewBlog((prev) => ({
+      ...prev,
+      title: value,
+      slug: prev.slug || slugifyBlogValue(value),
+      meta_title: prev.meta_title || value,
+      featured_image_alt: prev.featured_image_alt || value,
+    }));
+  };
+
+  const updateBlogCategory = (value) => {
+    setNewBlog((prev) => ({
+      ...prev,
+      category: value,
+      category_slug: prev.category_slug && prev.category_slug !== slugifyBlogValue(prev.category)
+        ? prev.category_slug
+        : slugifyBlogValue(value),
+    }));
+  };
+
+  const updateBlogAuthorName = (value) => {
+    setNewBlog((prev) => ({
+      ...prev,
+      author_name: value,
+      author_slug: prev.author_slug && prev.author_slug !== slugifyBlogValue(prev.author_name)
+        ? prev.author_slug
+        : slugifyBlogValue(value),
+    }));
+  };
+
   const handleCreateBlog = async (e) => {
     e.preventDefault();
     if (!newBlog.title || !newBlog.content) return alert("Title and content are required.");
     setIsPublishingBlog(true);
     const formData = new FormData();
-    formData.append("title", newBlog.title); formData.append("content", newBlog.content); formData.append("is_published", newBlog.is_published);
+    [
+      'title',
+      'slug',
+      'excerpt',
+      'content',
+      'meta_title',
+      'meta_description',
+      'primary_keyword',
+      'category',
+      'category_slug',
+      'author_name',
+      'author_slug',
+      'author_title',
+      'author_bio',
+      'featured_image_alt',
+      'canonical_url',
+      'published_at',
+      'related_post_ids',
+      'featured_image_width',
+      'featured_image_height',
+    ].forEach((field) => formData.append(field, newBlog[field] ?? ''));
+    formData.append("is_published", newBlog.is_published);
     if (blogImage) formData.append("image", blogImage); 
     try {
       const endpoint = editingBlog ? `${API_BASE}/api/blogs/${editingBlog.id}` : `${API_BASE}/api/blogs`;
@@ -2462,7 +2565,56 @@ export default function AdminDashboard() {
                 <FileText size={20} className="text-[#0066ff]"/> {editingBlog ? 'Edit Blog Post' : 'Publish New Blog Post'}
               </h3>
               <form onSubmit={handleCreateBlog} className="space-y-4">
-                <input required type="text" placeholder="Blog Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.title} onChange={e => setNewBlog({...newBlog, title: e.target.value})} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Blog Title</label>
+                    <input required type="text" placeholder="Blog Title" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.title} onChange={e => updateBlogTitle(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">URL Slug</label>
+                    <input type="text" placeholder="blog-url-slug" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.slug} onChange={e => updateBlogField('slug', slugifyBlogValue(e.target.value))} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Excerpt</label>
+                  <textarea placeholder="Short summary for blog cards and meta descriptions." className="w-full p-3 border rounded-xl h-20 outline-none focus:border-[#0066ff] text-sm" value={newBlog.excerpt} onChange={e => updateBlogField('excerpt', e.target.value)} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Category</label>
+                    <input type="text" placeholder="Seller Growth" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.category} onChange={e => updateBlogCategory(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Category Slug</label>
+                    <input type="text" placeholder="seller-growth" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.category_slug} onChange={e => updateBlogField('category_slug', slugifyBlogValue(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Author Name</label>
+                    <input type="text" placeholder="PromotInsight Editorial" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.author_name} onChange={e => updateBlogAuthorName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Author Slug</label>
+                    <input type="text" placeholder="promotinsight-editorial" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.author_slug} onChange={e => updateBlogField('author_slug', slugifyBlogValue(e.target.value))} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Author Title</label>
+                    <input type="text" placeholder="Marketplace Education Team" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.author_title} onChange={e => updateBlogField('author_title', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Primary Keyword</label>
+                    <input type="text" placeholder="cashback campaign guide" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.primary_keyword} onChange={e => updateBlogField('primary_keyword', e.target.value)} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Author Bio</label>
+                  <textarea placeholder="Short author bio shown on the article page." className="w-full p-3 border rounded-xl h-20 outline-none focus:border-[#0066ff] text-sm" value={newBlog.author_bio} onChange={e => updateBlogField('author_bio', e.target.value)} />
+                </div>
                 
                 <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1 w-full">
@@ -2475,13 +2627,55 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_120px] gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Featured Image Alt Text</label>
+                    <input type="text" placeholder="Describe the featured image for accessibility and SEO." className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.featured_image_alt} onChange={e => updateBlogField('featured_image_alt', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Image Width</label>
+                    <input type="number" min="1" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.featured_image_width} onChange={e => updateBlogField('featured_image_width', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Image Height</label>
+                    <input type="number" min="1" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.featured_image_height} onChange={e => updateBlogField('featured_image_height', e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Meta Title</label>
+                    <input type="text" placeholder="SEO title for search results" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.meta_title} onChange={e => updateBlogField('meta_title', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Canonical URL</label>
+                    <input type="url" placeholder="https://promotinsight.com/blog/post-slug/" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.canonical_url} onChange={e => updateBlogField('canonical_url', e.target.value)} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Meta Description</label>
+                  <textarea placeholder="Unique SEO description for this article." className="w-full p-3 border rounded-xl h-20 outline-none focus:border-[#0066ff] text-sm" value={newBlog.meta_description} onChange={e => updateBlogField('meta_description', e.target.value)} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Published At</label>
+                    <input type="datetime-local" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.published_at} onChange={e => updateBlogField('published_at', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Related Post IDs or Slugs</label>
+                    <input type="text" placeholder="post-one, post-two" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.related_post_ids} onChange={e => updateBlogField('related_post_ids', e.target.value)} />
+                  </div>
+                </div>
+
                 <div>
                   <div className="flex flex-wrap gap-2 mb-2">
                     <button type="button" onClick={() => applyBlogFormat('strong')} className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-black text-gray-700 hover:bg-gray-50">Bold</button>
                     <button type="button" onClick={() => applyBlogFormat('h1')} className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-xs font-black text-blue-700 hover:bg-blue-100">H1 Title</button>
                     <button type="button" onClick={() => applyBlogFormat('h2')} className="px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-xs font-black text-indigo-700 hover:bg-indigo-100">H2 Title</button>
                   </div>
-                  <textarea id="blog-content-editor" required placeholder="Write the blog content here. Use toolbar for Bold, H1, H2..." className="w-full p-3 border rounded-xl h-48 outline-none focus:border-[#0066ff] text-sm font-mono" value={newBlog.content} onChange={e => setNewBlog({...newBlog, content: e.target.value})}></textarea>
+                  <textarea id="blog-content-editor" required placeholder="Write the blog content here. Use toolbar for Bold, H1, H2..." className="w-full p-3 border rounded-xl h-48 outline-none focus:border-[#0066ff] text-sm font-mono" value={newBlog.content} onChange={e => updateBlogField('content', e.target.value)}></textarea>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -2506,15 +2700,17 @@ export default function AdminDashboard() {
                 {adminBlogs.map(blog => (
                   <div key={blog.id} className="p-4 hover:bg-gray-50 flex flex-col md:flex-row items-start md:items-center gap-4">
                     {blog.image_url ? (
-                      <img src={blog.image_url} alt="blog" className="w-full md:w-20 h-40 md:h-14 object-cover rounded-lg border bg-gray-100 shrink-0" />
+                      <img src={blog.image_url} alt={blog.featured_image_alt || blog.title || 'Blog image'} className="w-full md:w-20 h-40 md:h-14 object-cover rounded-lg border bg-gray-100 shrink-0" />
                     ) : (
                       <div className="w-full md:w-20 h-40 md:h-14 bg-gray-100 rounded-lg border flex items-center justify-center text-gray-400 shrink-0"><ImageIcon size={24} /></div>
                     )}
                     <div className="flex-1 min-w-0 w-full"> 
                       <h4 className="font-bold text-gray-800 truncate">{blog.title}</h4>
-                      <p className="text-xs text-gray-500 line-clamp-2 mt-1 md:line-clamp-1">{blog.content.substring(0, 100)}...</p>
-                      <div className="flex items-center gap-2 mt-2">
+                      <p className="text-xs text-gray-500 line-clamp-2 mt-1 md:line-clamp-1">{(blog.excerpt || blog.content || '').substring(0, 140)}...</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
                         <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${blog.is_published ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{blog.is_published ? 'Published' : 'Draft'}</span>
+                        {blog.category && <span className="text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider bg-slate-100 text-slate-600">{blog.category}</span>}
+                        {blog.slug && <span className="text-[10px] text-blue-500">/{blog.slug}/</span>}
                         <span className="text-[10px] text-gray-400">{new Date(blog.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>

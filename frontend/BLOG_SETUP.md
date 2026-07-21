@@ -14,6 +14,15 @@ Because the local app is static and the SEO requirement needs complete blog HTML
 2. `vite build` builds the normal SPA.
 3. `npm run blog:prerender` writes static HTML files into `dist/blog/`, `dist/blog/:slug/`, `dist/blog/category/:categorySlug/`, and `dist/blog/author/:authorSlug/`.
 
+By default, content comes from Markdown files. To prerender admin-created backend posts during deployment, set:
+
+```text
+BLOG_CONTENT_SOURCE=api
+BLOG_API_BASE_URL=https://your-backend-domain.com
+```
+
+`BLOG_API_BASE_URL` may be omitted when `VITE_API_BASE_URL` already points to the backend. Backend API rendering uses `/api/blogs/public`, so the backend must be deployed first and must include the blog SEO fields.
+
 The generated blog HTML includes title, meta description, canonical URL, robots, Open Graph, Twitter card metadata, article dates, article JSON-LD, breadcrumb JSON-LD, H1, article body, and crawlable links before client JavaScript runs.
 
 ## How to Create a Blog Post
@@ -160,7 +169,7 @@ Revert the blog files and restore the previous `npm run build` script to `vite b
 
 ## Database Migration
 
-No database migration was added because this checkout does not include the Node.js/Express server, database schema, ORM, or migration system. Existing external API endpoints and admin screens were left untouched.
+Backend SEO blog support requires the backend migration `migrations/add_blog_seo_fields.sql` or the backend startup schema helper. It adds SEO, category, author, canonical, status, related-post, publish-date, and image-dimension fields to the existing `blogs` table.
 
 ## Admin Workflow
 
@@ -170,7 +179,7 @@ The existing admin blog UI remains in `AdminDashboard.jsx` under `/dashboard?tab
 - `/admin/blog/new`
 - `/admin/blog/edit/:id`
 
-The SEO blog introduced here is Markdown-based because the local backend and migration system are not present in this checkout. To make database-backed admin posts SEO-complete immediately after publishing, the backend should render or prerender those API posts with the same metadata contract.
+The admin blog UI posts to the backend `/api/blogs` endpoints. To include admin-created posts in prerendered SEO HTML, build the frontend with `BLOG_CONTENT_SOURCE=api` after the backend has been deployed.
 
 ## Environment Variables
 
@@ -179,6 +188,8 @@ No required environment variables were added. Optional:
 ```text
 VITE_SITE_URL=https://promotinsight.com
 SITE_URL=https://promotinsight.com
+BLOG_CONTENT_SOURCE=api
+BLOG_API_BASE_URL=https://backend.example.com
 ```
 
-These control absolute canonical, image, sitemap, robots, RSS, and JSON-LD URLs at build time.
+These control absolute canonical, image, sitemap, robots, RSS, JSON-LD URLs, and optional backend API content loading at build time.
