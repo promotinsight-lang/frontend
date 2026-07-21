@@ -14,6 +14,8 @@ import {
   toPostSummary,
 } from './blog-core.mjs';
 
+loadBuildEnv();
+
 const outFile = path.resolve('src/content/blog/generatedBlogData.js');
 const publicDir = path.resolve('public');
 const siteUrl = getSiteUrl();
@@ -29,6 +31,35 @@ writeRss();
 writeRedirects();
 
 console.log(`Generated ${dataset.posts.length} published blog posts.`);
+
+function loadBuildEnv() {
+  const envValues = {};
+  const envFiles = ['.env', '.env.local', '.env.production', '.env.production.local'];
+
+  for (const envFile of envFiles) {
+    const envPath = path.resolve(envFile);
+    if (!fs.existsSync(envPath)) continue;
+
+    const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+
+      const separator = line.indexOf('=');
+      if (separator === -1) continue;
+
+      const key = line.slice(0, separator).trim();
+      const value = line.slice(separator + 1).trim().replace(/^["']|["']$/g, '');
+      if (key) envValues[key] = value;
+    }
+  }
+
+  for (const [key, value] of Object.entries(envValues)) {
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
 
 async function getBlogDataset() {
   if (process.env.BLOG_CONTENT_SOURCE !== 'api') {
