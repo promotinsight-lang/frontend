@@ -99,25 +99,22 @@ const parseMaybeJson = (value, fallback) => {
   }
 };
 
-const getCountryOnlyLabel = (value) => {
+const getIpLocationLabel = (value) => {
   const label = String(value || '').trim();
-  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable', 'Localhost'].includes(label)) return '';
-  if (/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(label)) return '';
-
-  return label.split(',').map((part) => part.trim()).filter(Boolean).pop() || '';
+  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable'].includes(label)) return '';
+  return label;
 };
 
 const getUserLocationLabel = (user) =>
-  getCountryOnlyLabel(user?.ip_location)
-  || getCountryOnlyLabel(user?.location_label)
-  || getCountryOnlyLabel(user?.verification_country)
-  || getCountryOnlyLabel(user?.amazon_location)
+  getIpLocationLabel(user?.ip_location)
+  || getIpLocationLabel(user?.location_label)
   || 'Unknown Location';
 
-const hasCountryLocation = (user) => getUserLocationLabel(user) !== 'Unknown Location';
+const hasIpTrackingDetails = (user) =>
+  Boolean(user?.last_ip && user.last_ip !== 'Unknown');
 
 const getApplicationLocationLabel = (application) =>
-  getCountryOnlyLabel(application?.ip_location) || 'Location Unknown';
+  getIpLocationLabel(application?.ip_location) || 'Location Unknown';
 
 const conditionOptions = PLATFORM_CHARGE_CONDITION_KEYS.map((key) => ({
   key,
@@ -1353,9 +1350,17 @@ export default function AdminDashboard() {
                         ${Number(user.wallet_balance).toFixed(2)}
                       </span>
                     </AdminField>
-                    {hasCountryLocation(user) && (
-                      <AdminField label="Country" align="start">
+                    {hasIpTrackingDetails(user) && (
+                      <AdminField label="IP" align="start">
                         <span className="text-xs">{getUserLocationLabel(user)}</span>
+                        <a
+                          href={`https://ipinfo.io/${user.last_ip}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#0066ff] text-xs font-bold inline-flex items-center gap-1 mt-1"
+                        >
+                          <MapPin size={12} /> {user.last_ip}
+                        </a>
                       </AdminField>
                     )}
                   </AdminMobileCard>
@@ -1377,11 +1382,20 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <div className="font-bold text-gray-800">{user.name}</div>
                         <div className="text-xs text-gray-500">{user.email}</div>
-                        {hasCountryLocation(user) && (
+                        {hasIpTrackingDetails(user) && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
                                <MapPin size={10} /> {getUserLocationLabel(user)}
                              </span>
+                             <a
+                               href={`https://ipinfo.io/${user.last_ip}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                               title="Track user IP"
+                             >
+                               <MapPin size={10} /> {user.last_ip}
+                             </a>
                           </div>
                         )}
                       </td>
@@ -2245,11 +2259,20 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <p className="font-bold text-gray-800">{app.buyer_name}</p>
                         <p className="text-xs text-gray-500 mb-1">{app.buyer_email}</p>
-                        {app.ip_location && (
+                        {app.ip_address && app.ip_address !== 'Unknown' && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
                                🌍 {getApplicationLocationLabel(app)}
                              </span>
+                             <a
+                               href={`https://ipinfo.io/${app.ip_address}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
+                               title="Track Applicant IP"
+                             >
+                               <MapPin size={10} /> {app.ip_address}
+                             </a>
                           </div>
                         )}
                       </td>

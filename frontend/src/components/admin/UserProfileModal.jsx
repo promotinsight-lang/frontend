@@ -10,19 +10,15 @@ const parseMaybeJson = (value, fallback) => {
   }
 };
 
-const getCountryOnlyLabel = (value) => {
+const getIpLocationLabel = (value) => {
   const label = String(value || '').trim();
-  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable', 'Localhost'].includes(label)) return '';
-  if (/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(label)) return '';
-
-  return label.split(',').map((part) => part.trim()).filter(Boolean).pop() || '';
+  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable'].includes(label)) return '';
+  return label;
 };
 
 const getUserLocationLabel = (user) =>
-  getCountryOnlyLabel(user?.ip_location)
-  || getCountryOnlyLabel(user?.location_label)
-  || getCountryOnlyLabel(user?.verification_country)
-  || getCountryOnlyLabel(user?.amazon_location)
+  getIpLocationLabel(user?.ip_location)
+  || getIpLocationLabel(user?.location_label)
   || 'Unknown Location';
 
 export default function UserProfileModal({
@@ -38,7 +34,8 @@ export default function UserProfileModal({
 }) {
   if (!selectedUserProfile) return null;
 
-  const hasLocationDetails = getUserLocationLabel(selectedUserProfile) !== 'Unknown Location';
+  const hasLastIp = selectedUserProfile.last_ip && selectedUserProfile.last_ip !== 'Unknown';
+  const hasLocationDetails = hasLastIp;
   const verificationResponses = parseMaybeJson(selectedUserProfile.verification_responses, {});
   const verificationPlatforms = parseMaybeJson(selectedUserProfile.verification_platforms, []);
   const platformStoreNames = (Array.isArray(verificationPlatforms) ? verificationPlatforms : [])
@@ -139,7 +136,14 @@ export default function UserProfileModal({
               
               {hasLocationDetails && (
                 <div className="mt-2 border-t border-indigo-100 pt-2 space-y-2">
-                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Country:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max inline-flex items-center gap-1"><MapPin size={12} /> {getUserLocationLabel(selectedUserProfile)}</span></p>
+                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max inline-flex items-center gap-1"><MapPin size={12} /> {getUserLocationLabel(selectedUserProfile)}</span></p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
+                    <span className="font-bold text-gray-700 w-32 shrink-0">Last Login IP:</span>
+                    <div className="flex items-center flex-wrap gap-2">
+                      <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">{selectedUserProfile.last_ip}</span>
+                      <a href={`https://ipinfo.io/${selectedUserProfile.last_ip}`} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> Track Map</a>
+                    </div>
+                  </div>
                 </div>
               )}
               {selectedUserProfile.amazon_profile_url && (
