@@ -101,7 +101,7 @@ const parseMaybeJson = (value, fallback) => {
 
 const getCountryOnlyLabel = (value) => {
   const label = String(value || '').trim();
-  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable'].includes(label)) return '';
+  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable', 'Localhost'].includes(label)) return '';
   if (/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(label)) return '';
 
   return label.split(',').map((part) => part.trim()).filter(Boolean).pop() || '';
