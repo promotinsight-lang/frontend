@@ -99,27 +99,25 @@ const parseMaybeJson = (value, fallback) => {
   }
 };
 
-const hasGeoCoordinates = (user) => {
-  const latitude = Number(user?.geo_latitude);
-  const longitude = Number(user?.geo_longitude);
-  return Number.isFinite(latitude)
-    && Number.isFinite(longitude)
-    && latitude >= -90
-    && latitude <= 90
-    && longitude >= -180
-    && longitude <= 180;
+const getCountryOnlyLabel = (value) => {
+  const label = String(value || '').trim();
+  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable'].includes(label)) return '';
+  if (/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(label)) return '';
+
+  return label.split(',').map((part) => part.trim()).filter(Boolean).pop() || '';
 };
 
 const getUserLocationLabel = (user) =>
-  user?.location_label || user?.geo_location_label || user?.ip_location || 'Unknown Location';
+  getCountryOnlyLabel(user?.ip_location)
+  || getCountryOnlyLabel(user?.location_label)
+  || getCountryOnlyLabel(user?.verification_country)
+  || getCountryOnlyLabel(user?.amazon_location)
+  || 'Unknown Location';
 
-const getUserMapUrl = (user) => {
-  if (hasGeoCoordinates(user)) {
-    return `https://www.google.com/maps?q=${encodeURIComponent(`${user.geo_latitude},${user.geo_longitude}`)}`;
-  }
+const hasCountryLocation = (user) => getUserLocationLabel(user) !== 'Unknown Location';
 
-  return '';
-};
+const getApplicationLocationLabel = (application) =>
+  getCountryOnlyLabel(application?.ip_location) || 'Location Unknown';
 
 const conditionOptions = PLATFORM_CHARGE_CONDITION_KEYS.map((key) => ({
   key,
@@ -1355,21 +1353,9 @@ export default function AdminDashboard() {
                         ${Number(user.wallet_balance).toFixed(2)}
                       </span>
                     </AdminField>
-                    {(hasGeoCoordinates(user) || (user.last_ip && user.last_ip !== 'Unknown')) && (
-                      <AdminField label="IP" align="start">
+                    {hasCountryLocation(user) && (
+                      <AdminField label="Country" align="start">
                         <span className="text-xs">{getUserLocationLabel(user)}</span>
-                        {hasGeoCoordinates(user) ? (
-                          <a
-                            href={getUserMapUrl(user)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#0066ff] text-xs font-bold inline-flex items-center gap-1 mt-1"
-                          >
-                            <MapPin size={12} /> View Map
-                          </a>
-                        ) : (
-                          <span className="text-[10px] font-bold text-gray-500 mt-1">{user.last_ip}</span>
-                        )}
                       </AdminField>
                     )}
                   </AdminMobileCard>
@@ -1391,24 +1377,11 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <div className="font-bold text-gray-800">{user.name}</div>
                         <div className="text-xs text-gray-500">{user.email}</div>
-                        {(hasGeoCoordinates(user) || (user.last_ip && user.last_ip !== 'Unknown')) && (
+                        {hasCountryLocation(user) && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
                                <MapPin size={10} /> {getUserLocationLabel(user)}
                              </span>
-                             {hasGeoCoordinates(user) ? (
-                               <a
-                                 href={getUserMapUrl(user)}
-                                 target="_blank"
-                                 rel="noopener noreferrer"
-                                 className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-                                 title="Click to view map"
-                               >
-                                 <MapPin size={10} /> View Map
-                               </a>
-                             ) : (
-                               <span className="text-[10px] font-bold text-gray-500 px-2">{user.last_ip}</span>
-                             )}
                           </div>
                         )}
                       </td>
@@ -2272,20 +2245,11 @@ export default function AdminDashboard() {
                       <td className="p-4">
                         <p className="font-bold text-gray-800">{app.buyer_name}</p>
                         <p className="text-xs text-gray-500 mb-1">{app.buyer_email}</p>
-                        {app.ip_address && app.ip_address !== 'Unknown' && (
+                        {app.ip_location && (
                           <div className="mt-1.5 flex flex-col items-start gap-1">
                              <span className="text-[10px] font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-flex items-center gap-1">
-                               🌍 {app.ip_location || 'Location Unknown'}
+                               🌍 {getApplicationLocationLabel(app)}
                              </span>
-                             <a 
-                               href={`https://ipinfo.io/${app.ip_address}`} 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0066ff] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-                               title="Track Applicant IP"
-                             >
-                               <MapPin size={10} /> {app.ip_address}
-                             </a>
                           </div>
                         )}
                       </td>

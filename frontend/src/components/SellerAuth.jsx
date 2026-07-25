@@ -6,29 +6,6 @@ import { FileText, X, RefreshCcw } from 'lucide-react';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, yahooProvider } from '../firebase'; 
 
-const getBrowserGeoPayload = () => {
-  if (typeof navigator === 'undefined' || !navigator.geolocation) return Promise.resolve(null);
-
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        resolve({
-          geo_latitude: coords.latitude,
-          geo_longitude: coords.longitude,
-          geo_accuracy: coords.accuracy,
-          geo_source: 'browser_geolocation'
-        });
-      },
-      () => resolve(null),
-      {
-        enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 5 * 60 * 1000
-      }
-    );
-  });
-};
-
 export default function SellerAuth({ onAuthSuccess }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -169,7 +146,6 @@ export default function SellerAuth({ onAuthSuccess }) {
       const roleForApi = getRoleFromUrl(); // URL থেকে সরাসরি টাটকা রোল নিচ্ছি
 
       console.log("Social Login - Sending Role to API:", roleForApi);
-      const geoPayload = await getBrowserGeoPayload();
 
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/social-login`, {
         method: 'POST',
@@ -177,8 +153,7 @@ export default function SellerAuth({ onAuthSuccess }) {
         body: JSON.stringify({
           idToken,
           referred_by_code: referredByCode,
-          role: roleForApi,
-          ...(geoPayload || {})
+          role: roleForApi
         })
       });
       
@@ -223,11 +198,10 @@ export default function SellerAuth({ onAuthSuccess }) {
     setLoading(true);
 
     const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
-    const geoPayload = !isLogin ? await getBrowserGeoPayload() : null;
     
     const payload = isLogin 
       ? { email, password, captchaId: captchaData?.captchaId, captchaInput } 
-      : { fullName, email, password, role, profileLink, otp: otpCode, referred_by_code: referredByCode, ...(geoPayload || {}) };
+      : { fullName, email, password, role, profileLink, otp: otpCode, referred_by_code: referredByCode };
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${endpoint}`, {

@@ -10,27 +10,20 @@ const parseMaybeJson = (value, fallback) => {
   }
 };
 
-const hasGeoCoordinates = (user) => {
-  const latitude = Number(user?.geo_latitude);
-  const longitude = Number(user?.geo_longitude);
-  return Number.isFinite(latitude)
-    && Number.isFinite(longitude)
-    && latitude >= -90
-    && latitude <= 90
-    && longitude >= -180
-    && longitude <= 180;
+const getCountryOnlyLabel = (value) => {
+  const label = String(value || '').trim();
+  if (!label || ['Unknown', 'Unknown Location', 'Location Unavailable'].includes(label)) return '';
+  if (/^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(label)) return '';
+
+  return label.split(',').map((part) => part.trim()).filter(Boolean).pop() || '';
 };
 
 const getUserLocationLabel = (user) =>
-  user?.location_label || user?.geo_location_label || user?.ip_location || 'Unknown Location';
-
-const getUserMapUrl = (user) => {
-  if (hasGeoCoordinates(user)) {
-    return `https://www.google.com/maps?q=${encodeURIComponent(`${user.geo_latitude},${user.geo_longitude}`)}`;
-  }
-
-  return '';
-};
+  getCountryOnlyLabel(user?.ip_location)
+  || getCountryOnlyLabel(user?.location_label)
+  || getCountryOnlyLabel(user?.verification_country)
+  || getCountryOnlyLabel(user?.amazon_location)
+  || 'Unknown Location';
 
 export default function UserProfileModal({
   selectedUserProfile,
@@ -45,9 +38,7 @@ export default function UserProfileModal({
 }) {
   if (!selectedUserProfile) return null;
 
-  const hasLastIp = selectedUserProfile.last_ip && selectedUserProfile.last_ip !== 'Unknown';
-  const hasLocationDetails = hasGeoCoordinates(selectedUserProfile) || hasLastIp;
-  const mapUrl = getUserMapUrl(selectedUserProfile);
+  const hasLocationDetails = getUserLocationLabel(selectedUserProfile) !== 'Unknown Location';
   const verificationResponses = parseMaybeJson(selectedUserProfile.verification_responses, {});
   const verificationPlatforms = parseMaybeJson(selectedUserProfile.verification_platforms, []);
   const platformStoreNames = (Array.isArray(verificationPlatforms) ? verificationPlatforms : [])
@@ -148,16 +139,7 @@ export default function UserProfileModal({
               
               {hasLocationDetails && (
                 <div className="mt-2 border-t border-indigo-100 pt-2 space-y-2">
-                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Location:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max inline-flex items-center gap-1"><MapPin size={12} /> {getUserLocationLabel(selectedUserProfile)}</span></p>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0">
-                    <span className="font-bold text-gray-700 w-32 shrink-0">Last Login IP:</span>
-                    <div className="flex items-center flex-wrap gap-2">
-                      <span className="font-mono text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs">{hasLastIp ? selectedUserProfile.last_ip : 'Not available'}</span>
-                      {mapUrl && (
-                        <a href={mapUrl} target="_blank" rel="noreferrer" className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center gap-1 bg-blue-50 border border-blue-200 px-2 py-1 rounded w-max"><MapPin size={12} /> View Map</a>
-                      )}
-                    </div>
-                  </div>
+                  <p className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-0"><span className="font-bold text-gray-700 w-32 shrink-0">Login Country:</span><span className="font-bold text-gray-800 bg-white px-2 py-0.5 border border-indigo-200 rounded text-xs w-max inline-flex items-center gap-1"><MapPin size={12} /> {getUserLocationLabel(selectedUserProfile)}</span></p>
                 </div>
               )}
               {selectedUserProfile.amazon_profile_url && (
