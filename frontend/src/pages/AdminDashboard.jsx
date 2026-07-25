@@ -223,6 +223,7 @@ export default function AdminDashboard() {
 
   const [usersList, setUsersList] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [productSearchTerm, setProductSearchTerm] = useState('');
   const [subTabHistory, setSubTabHistory] = useState('withdrawals');
 
   const [showProductModal, setShowProductModal] = useState(false);
@@ -1028,6 +1029,22 @@ export default function AdminDashboard() {
       textarea.setSelectionRange(start + wrapped.length, start + wrapped.length);
     }, 0);
   };
+
+  const filteredAllProducts = allProducts.filter((product) => {
+    const term = productSearchTerm.trim().toLowerCase();
+    if (!term) return true;
+
+    return [
+      product.product_name,
+      product.store_name,
+      product.platform,
+      product.country,
+      product.seller_name,
+      product.seller_email,
+      product.search_keyword,
+      product.status
+    ].some((value) => String(value || '').toLowerCase().includes(term));
+  });
 
   const updateBlogField = (field, value) => {
     setNewBlog((prev) => ({ ...prev, [field]: value }));
@@ -2119,13 +2136,19 @@ export default function AdminDashboard() {
               <h3 className="font-bold text-gray-700">All Listed Products</h3>
               <div className="relative w-full sm:w-auto">
                 <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input type="text" placeholder="Search product..." className="w-full sm:w-auto pl-9 pr-4 py-1.5 border rounded-full text-sm focus:outline-none focus:border-blue-500" />
+                <input
+                  type="text"
+                  placeholder="Search product..."
+                  className="w-full sm:w-auto pl-9 pr-4 py-1.5 border rounded-full text-sm focus:outline-none focus:border-blue-500"
+                  value={productSearchTerm}
+                  onChange={(e) => setProductSearchTerm(e.target.value)}
+                />
               </div>
             </div>
             <ResponsiveTableShell
-              empty={allProducts.length === 0}
+              empty={filteredAllProducts.length === 0}
               emptyMessage="No products found in the system."
-              mobile={allProducts.map((p) => (
+              mobile={filteredAllProducts.map((p) => (
                 <AdminMobileCard
                   key={p.id}
                   title={p.product_name || p.store_name}
@@ -2163,7 +2186,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {allProducts.map(p => (
+                  {filteredAllProducts.map(p => (
                     <tr key={p.id} className="border-b hover:bg-gray-50">
                       <td className="p-4 flex items-center gap-3">
                         <img src={p.image_url} alt="Product" className="w-12 h-12 rounded object-contain bg-white border p-1 shrink-0" />
