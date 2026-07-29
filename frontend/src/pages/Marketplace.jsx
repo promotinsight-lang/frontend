@@ -424,7 +424,7 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
 
   return (
     <div className={`group flex h-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 ${isSoldOut ? 'border-gray-200 opacity-80' : 'border-gray-200 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md'}`}>
-      <div className="relative aspect-square bg-[#f7f7f7]">
+      <div className="relative aspect-square bg-[#f7f7f7] cursor-pointer" onClick={() => navigate('/product/' + product.id)}>
         {product.image_url ? (
           <img
             src={product.image_url}
@@ -443,7 +443,7 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
 
         <button
           type="button"
-          onClick={() => onToggleFavorite?.(product.id)}
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(product.id); }}
           className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50"
           aria-label="Toggle favorite"
         >
@@ -456,7 +456,7 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
       </div>
 
       <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <h3 className={`mb-2 min-h-[2.5rem] line-clamp-2 text-sm font-semibold leading-snug transition-colors ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`} title={product.product_name}>
+        <h3 className={`mb-2 min-h-[2.5rem] line-clamp-2 text-sm font-semibold leading-snug transition-colors cursor-pointer hover:text-emerald-600 ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`} title={product.product_name} onClick={() => navigate('/product/' + product.id)}>
           {product.product_name || 'Premium product'}
         </h3>
 
@@ -493,9 +493,14 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
             Closed
           </button>
         ) : (
-          <button onClick={() => onApply(product.id)} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
-            <Plus size={16} /> Order Now
-          </button>
+          <div className="mt-auto grid grid-cols-2 gap-2">
+            <button onClick={() => navigate('/product/' + product.id)} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2 py-3 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-100">
+              <Eye size={14} /> View Details
+            </button>
+            <button onClick={() => onApply(product.id)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-2 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+              <Plus size={14} /> Order Now
+            </button>
+          </div>
         )}
       </div>
     </div>

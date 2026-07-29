@@ -2,6 +2,7 @@ import {  useState, useEffect  } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'; 
 import HomePage from './pages/HomePage';
 import Marketplace from './pages/Marketplace'; // 🔥 NEW: Marketplace Import
+import ProductDetails from './pages/ProductDetails'; // 🔥 NEW: Product Details Import
 import SellerAuth from './components/SellerAuth';
 import SellerDashboard from './pages/SellerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -124,6 +125,12 @@ export default function App() {
           <Route 
             path="/marketplace" 
             element={user ? <Marketplace /> : <Navigate to="/login" />} 
+          />
+
+          {/* 🔥 NEW: Product Details Route (Public for sharing) */}
+          <Route 
+            path="/product/:id" 
+            element={<ProductDetails />} 
           />
 
           {/* 🔥 NEW: Blog Routes (Public - Anyone can access) */}
