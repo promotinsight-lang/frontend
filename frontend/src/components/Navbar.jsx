@@ -131,6 +131,10 @@ const Navbar = () => {
               }
           }
 
+          // 🔥 Filter out permanently dismissed notifications
+          const currentDismissed = JSON.parse(localStorage.getItem(`dismissedNotifs_${user.id}`) || "[]");
+          notifs = notifs.filter(n => !currentDismissed.includes(n.id));
+
           // 🔥 সব নোটিফিকেশন স্টেট-এ সেভ করা হচ্ছে
           setNotifications(notifs.slice(0, 15)); 
        } catch (e) {
@@ -172,7 +176,13 @@ const Navbar = () => {
     setReadNotifs(updatedReadNotifs);
     if (user && user.id) {
         localStorage.setItem(`readNotifs_${user.id}`, JSON.stringify(updatedReadNotifs));
+        
+        // Also permanently dismiss them so they don't reappear
+        const currentDismissed = JSON.parse(localStorage.getItem(`dismissedNotifs_${user.id}`) || "[]");
+        const updatedDismissed = Array.from(new Set([...currentDismissed, ...allCurrentIds]));
+        localStorage.setItem(`dismissedNotifs_${user.id}`, JSON.stringify(updatedDismissed));
     }
+    setNotifications([]);
   };
 
   const handleNotificationClick = (notifId) => {
@@ -185,7 +195,20 @@ const Navbar = () => {
 
   // 🔥 X বাটনে ক্লিক করলে লিস্ট থেকে পার্মানেন্টলি ডিলিট হবে
   const removeNotificationCompletely = (notifId, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     markAsRead(notifId, e);
+    
+    if (user && user.id) {
+      const currentDismissed = JSON.parse(localStorage.getItem(`dismissedNotifs_${user.id}`) || "[]");
+      if (!currentDismissed.includes(notifId)) {
+        const updatedDismissed = [...currentDismissed, notifId];
+        localStorage.setItem(`dismissedNotifs_${user.id}`, JSON.stringify(updatedDismissed));
+      }
+    }
+    
     setNotifications(prev => prev.filter(n => n.id !== notifId));
   };
 
