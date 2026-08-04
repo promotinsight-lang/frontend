@@ -13,7 +13,7 @@ export const translations = {
     seller_hero_title_1: 'Dominate Search Rankings.',
     seller_hero_title_2: 'Grow Your Brand.',
     seller_hero_desc:
-      'Launch campaigns with zero risk. Our strict KYC-verified buyer network ensures 100% authentic, high-quality reviews that skyrocket your organic sales.',
+      'Launch campaigns with zero risk. Our strict KYC-verified buyer network ensures 100% authentic, high-quality engagement that skyrocket your organic sales.',
     buyer_hero_title_1: 'Boost Your Sales.',
     buyer_hero_title_2: 'Get Rewarded.',
     buyer_hero_desc:

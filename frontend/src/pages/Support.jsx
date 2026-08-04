@@ -11,7 +11,7 @@ const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 const AUTO_REPLY_MESSAGES = [
   'Welcome to PromotInsight! You are in the right place to earn rewards, get signup bonuses, and grow with trusted campaigns.',
   'Buyers can earn product rewards, unlock the $10 signup bonus after 5 completed orders, and get referral bonuses. Sellers can reach real verified buyers for authentic engagement.',
-  'Your trust matters here: verified users, admin-reviewed orders, wallet tracking, and support are all designed to keep the process clear and secure.',
+  'Your trust matters here: verified users, admin-verified orders, wallet tracking, and support are all designed to keep the process clear and secure.',
   'Tell us what you need today: earning as a buyer, promoting as a seller, referral bonuses, wallet help, or order support.'
 ];
 

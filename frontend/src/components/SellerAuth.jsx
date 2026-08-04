@@ -442,12 +442,12 @@ export default function SellerAuth({ onAuthSuccess }) {
               <p className="font-bold text-gray-800">Please read carefully before registering:</p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong className="text-gray-800">Profile Requirement:</strong> You must provide a valid profile link during verification.</li>
-                <li><strong className="text-gray-800">Honest Reviews:</strong> You are required to submit an order number first, wait for the product delivery, and then submit a genuine review.</li>
-                <li><strong className="text-gray-800">Review Deletion:</strong> If you delete your review from the platform after receiving the cashback, your account will be permanently banned and legal action may be taken.</li>
+                <li><strong className="text-gray-800">Honest Feedback:</strong> You are required to submit an order number first, wait for the product delivery, and then submit genuine feedback.</li>
+                <li><strong className="text-gray-800">Feedback Deletion:</strong> If you delete your feedback from the platform after receiving the cashback, your account will be permanently banned and legal action may be taken.</li>
                 <li><strong className="text-gray-800">Account Limits:</strong> You can only apply for a product once unless stated otherwise.</li>
-                <li><strong className="text-gray-800">Payment:</strong> Cashback and rewards will only be credited to your wallet after the seller confirms your published review link.</li>
+                <li><strong className="text-gray-800">Payment:</strong> Cashback and rewards will only be credited to your wallet after the seller confirms your published feedback link.</li>
                 <li><strong className="text-gray-800">No Fake Accounts:</strong> Using multiple accounts, fake IP addresses, or fraudulent details will result in an immediate permanent ban and forfeiture of wallet funds.</li>
-                <li><strong className="text-gray-800">Confidentiality:</strong> Do not mention this platform on the seller's store or product review page.</li>
+                <li><strong className="text-gray-800">Confidentiality:</strong> Do not mention this platform on the seller's store or product feedback page.</li>
               </ul>
               <p className="pt-4 font-bold text-[#0066ff]">By checking the box in the registration form, you digitally sign this agreement.</p>
             </div>

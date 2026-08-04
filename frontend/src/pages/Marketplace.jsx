@@ -340,7 +340,7 @@ export default function Marketplace() {
             
             {user?.verification_status === 'pending' ? (
               <>
-                <p className="text-yellow-700 mb-8 max-w-md text-sm leading-relaxed bg-yellow-50 p-4 rounded-xl border border-yellow-200">Your verification details are currently under review by the admin.</p>
+                <p className="text-yellow-700 mb-8 max-w-md text-sm leading-relaxed bg-yellow-50 p-4 rounded-xl border border-yellow-200">Your verification details are currently being processed by the admin.</p>
                 <button disabled className="bg-gray-200 text-gray-500 px-8 py-3 rounded-full font-bold cursor-not-allowed">Verification Pending...</button>
               </>
             ) : (

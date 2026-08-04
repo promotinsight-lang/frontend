@@ -22,7 +22,7 @@ export default function AboutUs() {
     {
       icon: <ShieldCheck className="text-blue-500" size={32} />,
       title: 'Secure & Trusted',
-      description: 'Security and trust are at the core of PromotInsight. We ensure safe transactions and verified reviews.'
+      description: 'Security and trust are at the core of PromotInsight. We ensure safe transactions and verified engagements.'
     },
     {
       icon: <Zap className="text-yellow-500" size={32} />,
@@ -73,7 +73,7 @@ export default function AboutUs() {
             </div>
             <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Our Mission</h2>
             <p className="text-gray-600 leading-relaxed text-lg font-medium">
-              To revolutionize the way e-commerce sellers rank their products by connecting them with a network of trusted buyers, ensuring high-quality reviews and sustainable growth across global marketplaces.
+              To revolutionize the way e-commerce sellers rank their products by connecting them with a network of trusted buyers, ensuring high-quality engagements and sustainable growth across global marketplaces.
             </p>
           </div>
           <div className="w-full md:w-1/2 p-10 lg:p-14 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-100">
@@ -82,7 +82,7 @@ export default function AboutUs() {
             </div>
             <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Our Vision</h2>
             <p className="text-gray-600 leading-relaxed text-lg font-medium">
-              To become the world's most trusted and reliable product promotion and review ecosystem, fostering a transparent environment where genuine feedback drives market success.
+              To become the world's most trusted and reliable product promotion and engagement ecosystem, fostering a transparent environment where genuine feedback drives market success.
             </p>
           </div>
         </div>

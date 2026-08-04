@@ -13,7 +13,7 @@ export default function Terms() {
 
             <section>
               <h2 className="text-xl font-bold text-gray-800 mb-3">1. Platform Overview</h2>
-              <p>PromotInsight acts as a bridge between buyers and sellers to facilitate product reviews, cashback tasks, and e-commerce growth. We ensure a secure escrow system for transaction safety.</p>
+              <p>PromotInsight acts as a bridge between buyers and sellers to facilitate product engagement, cashback tasks, and e-commerce growth. We ensure a secure escrow system for transaction safety.</p>
             </section>
 
             <section>
@@ -21,7 +21,7 @@ export default function Terms() {
               <ul className="list-disc pl-6 space-y-2">
                 <li>You must provide accurate profile links from respective e-commerce platforms (Amazon, Walmart, etc.) for verification.</li>
                 <li>Purchases must be made using your own verified accounts.</li>
-                <li>Cashback is only issued upon successful verification of the order ID and completed review task.</li>
+                <li>Cashback is only issued upon successful verification of the order ID and completed engagement task.</li>
                 <li>Creating multiple accounts to exploit the system is strictly prohibited and will result in a permanent ban.</li>
               </ul>
             </section>
@@ -30,8 +30,8 @@ export default function Terms() {
               <h2 className="text-xl font-bold text-gray-800 mb-3">3. Seller Obligations</h2>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Sellers must deposit funds upfront into the system wallet before listing a product.</li>
-                <li>You are responsible for providing clear, accurate product keywords and review instructions.</li>
-                <li>Disputes against buyers must be raised fairly and are subject to final manual review by PromotInsight's admin mediation team.</li>
+                <li>You are responsible for providing clear, accurate product keywords and engagement instructions.</li>
+                <li>Disputes against buyers must be raised fairly and are subject to final manual verification by PromotInsight's admin mediation team.</li>
               </ul>
             </section>
 

@@ -45,7 +45,7 @@ export default function RoleSelection() {
               <ShoppingCart size={40} />
             </div>
             <h2 className="text-2xl font-black text-gray-800 mb-2">I am a Buyer</h2>
-            <p className="text-sm text-gray-500 mb-6">I want to test products, leave reviews, and earn 100% cashback plus rewards.</p>
+            <p className="text-sm text-gray-500 mb-6">I want to test products, provide feedback, and earn 100% cashback plus rewards.</p>
             <button className="mt-auto w-full bg-blue-50 text-[#0066ff] group-hover:bg-[#0066ff] group-hover:text-white py-3 rounded-xl font-bold transition-colors">
               Continue as Buyer
             </button>
@@ -60,7 +60,7 @@ export default function RoleSelection() {
               <Store size={40} />
             </div>
             <h2 className="text-2xl font-black text-gray-800 mb-2">I am a Seller</h2>
-            <p className="text-sm text-gray-500 mb-6">I want to list my products, boost rankings, and get verified organic reviews.</p>
+            <p className="text-sm text-gray-500 mb-6">I want to list my products, boost rankings, and get verified organic engagement.</p>
             <button className="mt-auto w-full bg-yellow-50 text-yellow-600 group-hover:bg-yellow-400 group-hover:text-gray-900 py-3 rounded-xl font-bold transition-colors">
               Continue as Seller
             </button>

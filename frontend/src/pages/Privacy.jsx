@@ -13,7 +13,7 @@ export default function Privacy() {
 
             <section>
               <h2 className="text-xl font-bold text-gray-800 mb-3">1. Information We Collect</h2>
-              <p>When you register as a buyer or seller, we collect essential data such as your name, email address, and financial routing details for wallet withdrawals. To maintain the integrity of our review ecosystem, we verify platform identities strictly through authentic profile links rather than uploaded screenshots.</p>
+              <p>When you register as a buyer or seller, we collect essential data such as your name, email address, and financial routing details for wallet withdrawals. To maintain the integrity of our engagement ecosystem, we verify platform identities strictly through authentic profile links rather than uploaded screenshots.</p>
             </section>
 
             <section>
