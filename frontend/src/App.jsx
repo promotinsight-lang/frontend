@@ -20,6 +20,8 @@ import RoleSelection from './components/RoleSelection';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import Support from './pages/Support';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
 
 // 🔥 NEW: Blog Pages Import
 import Blogs from './pages/Blogs';
@@ -144,6 +146,10 @@ export default function App() {
           <Route path="/blog/category/:categorySlug/" element={<BlogCategory />} />
           <Route path="/blog/author/:authorSlug" element={<BlogAuthor />} />
           <Route path="/blog/author/:authorSlug/" element={<BlogAuthor />} />
+
+          {/* 🔥 NEW: About & Contact Routes */}
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
 
           {/* 🔥 NEW: Route to Role Selection first */}
           <Route 

@@ -61,6 +61,8 @@ const hasReviewSubmission = (application) => {
   );
 };
 
+import SellerCostCalculator from '../components/SellerCostCalculator';
+
 export default function SellerDashboard() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
@@ -748,7 +750,8 @@ export default function SellerDashboard() {
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div className="space-y-4">
-            <h2 className="text-gray-700 text-xl font-bold mb-4">My Listed Products</h2>
+            <SellerCostCalculator />
+            <h2 className="text-gray-700 text-xl font-bold mb-4 mt-8">My Listed Products</h2>
             {loading ? (
               <p className="text-gray-500 animate-pulse text-center py-10">Loading data...</p>
             ) : products.length === 0 ? (
