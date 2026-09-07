@@ -13,7 +13,7 @@ export default function Terms() {
 
             <section>
               <h2 className="text-xl font-bold text-gray-800 mb-3">1. Platform Overview</h2>
-              <p>PromotInsight acts as a bridge between buyers and sellers to facilitate product engagement, cashback tasks, and e-commerce growth. We ensure a secure escrow system for transaction safety.</p>
+              <p>PromotInsight acts as a bridge between buyers and sellers to facilitate product engagement, verified campaign tasks, and e-commerce growth. We ensure a secure escrow system for transaction safety.</p>
             </section>
 
             <section>
@@ -21,7 +21,7 @@ export default function Terms() {
               <ul className="list-disc pl-6 space-y-2">
                 <li>You must provide accurate profile links from respective e-commerce platforms (Amazon, Walmart, etc.) for verification.</li>
                 <li>Purchases must be made using your own verified accounts.</li>
-                <li>Cashback is only issued upon successful verification of the order ID and completed engagement task.</li>
+                <li>Campaign completion is confirmed only after successful verification of the order ID and completed engagement task.</li>
                 <li>Creating multiple accounts to exploit the system is strictly prohibited and will result in a permanent ban.</li>
               </ul>
             </section>

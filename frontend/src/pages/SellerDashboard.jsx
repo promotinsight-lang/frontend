@@ -720,7 +720,7 @@ export default function SellerDashboard() {
                 <p className="text-xs font-black uppercase tracking-wider text-amber-700">Important Seller Payment Rule</p>
                 <h2 className="mt-1 text-lg font-black text-gray-900 sm:text-xl">Wallet deductions and buyer refunds are separate.</h2>
                 <p className="mt-2 text-sm font-semibold leading-relaxed text-gray-700">
-                  PromotInsight deducts only the platform charge and buyer reward from your seller wallet balance.
+                  PromotInsight deducts only the platform charge from your seller wallet balance.
                 </p>
               </div>
             </div>
@@ -731,7 +731,7 @@ export default function SellerDashboard() {
                   <Wallet size={18} />
                   <p className="text-xs font-black uppercase tracking-wider">Deducted From Wallet</p>
                 </div>
-                <p className="mt-2 text-sm font-bold text-gray-800">Platform charge + buyer reward only.</p>
+                <p className="mt-2 text-sm font-bold text-gray-800">Platform charge only.</p>
               </div>
 
               <div className="rounded-xl border border-red-200 bg-white p-3">
@@ -784,17 +784,11 @@ export default function SellerDashboard() {
                            {product.category || 'Need Review'}
                         </span>
                       </div>
-                      <div className="flex justify-between text-sm mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                      <div className="text-sm mt-3 bg-gray-50 p-2 rounded-lg border border-gray-100">
                         <div className="flex flex-col">
                           <p className="text-gray-600">Price: <span className="font-bold text-black">USD ${parseFloat(product.price || 0).toFixed(2)}</span></p>
                           <p className="text-[9px] text-gray-500 font-bold">
                             ~ {(parseFloat(product.price || 0) * getRateForCountry(allRatesMap, product.country)).toFixed(2)} {getCurrencyForCountry(product.country).code}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <p className="text-gray-600">Reward: <span className="font-bold text-green-600">USD ${parseFloat(product.reward || 0).toFixed(2)}</span></p>
-                          <p className="text-[9px] text-green-600/80 font-bold">
-                            ~ {(parseFloat(product.reward || 0) * getRateForCountry(allRatesMap, product.country)).toFixed(2)} {getCurrencyForCountry(product.country).code}
                           </p>
                         </div>
                       </div>
@@ -918,10 +912,6 @@ export default function SellerDashboard() {
                             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                               <p className="text-[10px] text-gray-400 font-bold uppercase">Order No</p>
                               <p className="font-bold text-gray-800 break-all">{order.order_number || 'N/A'}</p>
-                            </div>
-                            <div className="bg-green-50 rounded-xl p-3 border border-green-100">
-                              <p className="text-[10px] text-green-600 font-bold uppercase">Reward</p>
-                              <p className="font-black text-green-700">USD ${parseFloat(order.reward || 0).toFixed(2)}</p>
                             </div>
                             <div className="flex items-center justify-center">
                               <button
@@ -1215,7 +1205,7 @@ export default function SellerDashboard() {
                 <p className="text-xs sm:text-sm text-blue-700 leading-relaxed font-medium">
                   When you list a product, the system safely holds funds in escrow based on Active Tariffs. The formula is: <br/>
                   <strong className="bg-white px-3 py-1.5 rounded inline-block mt-2 border border-blue-200 shadow-sm text-[#0066ff]">
-                    (Buyer Reward + Platform Tariff) × Target Quantity
+                    Platform Tariff x Target Quantity
                   </strong>
                 </p>
               </div>
@@ -1226,7 +1216,6 @@ export default function SellerDashboard() {
                  ) : (
                    products.filter(p => p.status !== 'rejected').map(p => {
                      const price = parseFloat(p.price) || 0;
-                     const reward = parseFloat(p.reward) || 0;
                      const qty = parseInt(p.required_orders) || 1;
                      // exact data
                      const commission = parseFloat(p.platform_fee_charged) || 0;
@@ -1255,10 +1244,6 @@ export default function SellerDashboard() {
                             <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
                               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1.5">Unit Price</p>
                               <p className="font-black text-gray-800 text-base sm:text-lg">USD ${price.toFixed(2)}</p>
-                            </div>
-                            <div className="bg-green-50 p-3 rounded-xl border border-green-100 text-center">
-                              <p className="text-green-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Reward</p>
-                              <p className="font-black text-green-700 text-base sm:text-lg">+ USD ${reward.toFixed(2)}</p>
                             </div>
                             <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 text-center relative group">
                               <p className="text-orange-600 text-[10px] font-bold uppercase tracking-wider mb-1.5">Tariff</p>
@@ -1310,11 +1295,6 @@ export default function SellerDashboard() {
                       <span className="font-bold text-gray-400 block text-[10px] uppercase">Price</span> 
                       <span className="font-black text-gray-800">${selectedProduct.price}</span>
                       <span className="block text-[9px] text-gray-500 font-bold mt-0.5">~ {(parseFloat(selectedProduct.price || 0) * getRateForCountry(allRatesMap, selectedProduct.country || userProfile?.country)).toFixed(2)} {getCurrencyForCountry(selectedProduct.country || userProfile?.country).code}</span>
-                    </div>
-                    <div>
-                      <span className="font-bold text-gray-400 block text-[10px] uppercase">Reward</span> 
-                      <span className="font-black text-green-600">${selectedProduct.reward}</span>
-                      <span className="block text-[9px] text-green-600 font-bold mt-0.5">~ {(parseFloat(selectedProduct.reward || 0) * getRateForCountry(allRatesMap, selectedProduct.country || userProfile?.country)).toFixed(2)} {getCurrencyForCountry(selectedProduct.country || userProfile?.country).code}</span>
                     </div>
                     <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Platform</span> <span className="font-bold text-gray-800">{selectedProduct.platform}</span></p>
                     <p><span className="font-bold text-gray-400 block text-[10px] uppercase">Target Qty</span> <span className="font-black text-[#0066ff]">{selectedProduct.required_orders}</span></p>
@@ -1847,7 +1827,7 @@ export default function SellerDashboard() {
             <h3 className="text-xl sm:text-2xl font-black text-gray-800 mb-4 border-b border-gray-100 pb-3">Edit Product</h3>
             <p className="text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 font-semibold p-4 rounded-xl mb-6 flex items-start gap-2">
               <AlertTriangle size={16} className="shrink-0 mt-0.5 text-yellow-600"/>
-              Note: For wallet security, product price, reward, or quota cannot be edited. To change them, please cancel the product and relist.
+              Note: For wallet security, product price or quota cannot be edited. To change them, please cancel the product and relist.
             </p>
             <form onSubmit={handleEditSubmit} className="space-y-5">
               <div><label className="text-sm font-bold text-gray-700 mb-2 block">Product Name</label><input type="text" required className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-colors text-sm" value={editFormData.product_name} onChange={e => setEditFormData({...editFormData, product_name: e.target.value})} /></div>

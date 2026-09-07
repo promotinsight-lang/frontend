@@ -1,7 +1,6 @@
 import {  useState, useEffect  } from 'react';
 import { Settings, Globe, Layers } from 'lucide-react';
 import { buildCountriesFromFeeConfigs, parsePlatformChargeTiers } from '../utils/feeConfigHelpers';
-import { formatBuyerRewardSummary } from '../utils/campaignCategories';
 import { ResponsiveTableShell, AdminMobileCard, AdminField } from './admin/AdminMobileUi';
 
 const API = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
@@ -113,7 +112,6 @@ export default function SellerTariffsPage() {
                   <AdminField label="Ex. rate">
                     <span className="text-[#0066ff] font-bold">{conf.exchange_rate || 1}</span>
                   </AdminField>
-                  <AdminField label="Buyer reward">{formatBuyerRewardSummary(conf)}</AdminField>
                   <AdminField label="Refund fee">{conf.buyer_refund_fee}%</AdminField>
                   <AdminField label="Deposit fee">{conf.seller_deposit_fee}%</AdminField>
                   <AdminField label="Withdraw fee">{conf.seller_withdrawal_fee}%</AdminField>
@@ -128,7 +126,6 @@ export default function SellerTariffsPage() {
                   <th className="p-3">Platform</th>
                   <th className="p-3 text-center">Platform charge</th>
                   <th className="p-3 text-center">Ex. rate</th>
-                  <th className="p-3 text-center">Reward</th>
                   <th className="p-3 text-center">Refund</th>
                   <th className="p-3 text-center">Deposit</th>
                   <th className="p-3 text-center">Withdraw</th>
@@ -145,7 +142,6 @@ export default function SellerTariffsPage() {
                     </td>
                     <td className="p-3 text-center text-xs">{renderTiers(conf)}</td>
                     <td className="p-3 text-center font-bold text-[#0066ff]">{conf.exchange_rate || 1}</td>
-                    <td className="p-3 text-center text-xs">{formatBuyerRewardSummary(conf)}</td>
                     <td className="p-3 text-center">{conf.buyer_refund_fee}%</td>
                     <td className="p-3 text-center">{conf.seller_deposit_fee}%</td>
                     <td className="p-3 text-center">{conf.seller_withdrawal_fee}%</td>

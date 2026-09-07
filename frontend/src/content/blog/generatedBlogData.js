@@ -10,12 +10,12 @@ export const blogData = {
   },
   "posts": [
     {
-      "id": "cashback-campaign-guide",
-      "title": "How to Plan a Cashback Campaign That Buyers Trust",
-      "slug": "cashback-campaign-guide",
+      "id": "product-campaign-guide",
+      "title": "How to Plan a Product Campaign That Buyers Trust",
+      "slug": "product-campaign-guide",
       "excerpt": "A practical checklist for setting campaign terms, refund timing, proof requirements, and buyer expectations before launch.",
-      "content": "Cashback campaigns work best when the buyer understands exactly what to do and the seller can verify every step without confusion. A strong campaign is not only a discount. It is a clear agreement between both sides.\n\n## Start With One Campaign Goal\n\nDecide what the campaign should improve before choosing the reward amount. Common goals include more product trials, more verified orders, better launch momentum, or more detailed buyer feedback.\n\nWhen the goal is clear, the rest of the campaign becomes easier to judge. You can choose a fair cashback amount, explain the buyer task, and measure whether the promotion worked.\n\n## Write Simple Buyer Instructions\n\nUse short steps that a first-time buyer can follow. Avoid vague instructions such as \"complete the task properly\" because they create support questions later.\n\n- Name the exact product or offer.\n- Explain the order requirement.\n- List every proof item the buyer must submit.\n- Give the expected review or feedback timing.\n- State when the cashback will be released.\n\n## Set Proof Requirements Before Launch\n\nProof requirements protect both sides. Ask for only the evidence needed to verify the order and campaign task. Common examples include an order ID, screenshot, published review link, or delivery confirmation.\n\nNever ask buyers to submit sensitive payment information, full card numbers, passwords, or private account credentials.\n\n## Make Refund Timing Visible\n\nBuyers trust campaigns when payment timing is visible before they apply. If refunds are released after review approval, say that directly. If the seller needs a manual verification window, include the expected number of days.\n\n## Keep Campaign Updates Consistent\n\nIf you change campaign availability, instructions, or reward value, update the campaign text before accepting more applications. Consistent instructions reduce disputes and make support easier.\n\n## Review Results After Completion\n\nAfter the campaign ends, compare the goal with the outcome. Look at approved orders, rejected submissions, support tickets, refund timing, and buyer feedback. This helps you improve the next campaign without guessing.\n\nThe strongest campaigns feel calm and predictable. Clear terms, fair rewards, and fast communication do more for trust than a high reward with confusing rules.",
-      "contentHtml": "\u003cp>Cashback campaigns work best when the buyer understands exactly what to do and the seller can verify every step without confusion. A strong campaign is not only a discount. It is a clear agreement between both sides.\u003c/p>\n\u003ch2 id=\"start-with-one-campaign-goal\">Start With One Campaign Goal\u003c/h2>\n\u003cp>Decide what the campaign should improve before choosing the reward amount. Common goals include more product trials, more verified orders, better launch momentum, or more detailed buyer feedback.\u003c/p>\n\u003cp>When the goal is clear, the rest of the campaign becomes easier to judge. You can choose a fair cashback amount, explain the buyer task, and measure whether the promotion worked.\u003c/p>\n\u003ch2 id=\"write-simple-buyer-instructions\">Write Simple Buyer Instructions\u003c/h2>\n\u003cp>Use short steps that a first-time buyer can follow. Avoid vague instructions such as &quot;complete the task properly&quot; because they create support questions later.\u003c/p>\n\u003cul>\u003cli>Name the exact product or offer.\u003c/li>\u003cli>Explain the order requirement.\u003c/li>\u003cli>List every proof item the buyer must submit.\u003c/li>\u003cli>Give the expected review or feedback timing.\u003c/li>\u003cli>State when the cashback will be released.\u003c/li>\u003c/ul>\n\u003ch2 id=\"set-proof-requirements-before-launch\">Set Proof Requirements Before Launch\u003c/h2>\n\u003cp>Proof requirements protect both sides. Ask for only the evidence needed to verify the order and campaign task. Common examples include an order ID, screenshot, published review link, or delivery confirmation.\u003c/p>\n\u003cp>Never ask buyers to submit sensitive payment information, full card numbers, passwords, or private account credentials.\u003c/p>\n\u003ch2 id=\"make-refund-timing-visible\">Make Refund Timing Visible\u003c/h2>\n\u003cp>Buyers trust campaigns when payment timing is visible before they apply. If refunds are released after review approval, say that directly. If the seller needs a manual verification window, include the expected number of days.\u003c/p>\n\u003ch2 id=\"keep-campaign-updates-consistent\">Keep Campaign Updates Consistent\u003c/h2>\n\u003cp>If you change campaign availability, instructions, or reward value, update the campaign text before accepting more applications. Consistent instructions reduce disputes and make support easier.\u003c/p>\n\u003ch2 id=\"review-results-after-completion\">Review Results After Completion\u003c/h2>\n\u003cp>After the campaign ends, compare the goal with the outcome. Look at approved orders, rejected submissions, support tickets, refund timing, and buyer feedback. This helps you improve the next campaign without guessing.\u003c/p>\n\u003cp>The strongest campaigns feel calm and predictable. Clear terms, fair rewards, and fast communication do more for trust than a high reward with confusing rules.\u003c/p>",
+      "content": "Product campaigns work best when the buyer understands exactly what to do and the seller can verify every step without confusion. A strong campaign is a clear agreement between both sides.\n\r\n## Start With One Campaign Goal\r\n\r\nDecide what the campaign should improve before launch. Common goals include more product trials, more verified orders, better launch momentum, or more detailed buyer feedback.\n\r\nWhen the goal is clear, the rest of the campaign becomes easier to judge. You can explain the buyer task, set proof requirements, and measure whether the promotion worked.\n\r\n## Write Simple Buyer Instructions\r\n\r\nUse short steps that a first-time buyer can follow. Avoid vague instructions such as \"complete the task properly\" because they create support questions later.\r\n\r\n- Name the exact product or offer.\r\n- Explain the order requirement.\r\n- List every proof item the buyer must submit.\r\n- Give the expected review or feedback timing.\r\n- State when the campaign will be reviewed.\n\r\n## Set Proof Requirements Before Launch\r\n\r\nProof requirements protect both sides. Ask for only the evidence needed to verify the order and campaign task. Common examples include an order ID, screenshot, published review link, or delivery confirmation.\r\n\r\nNever ask buyers to submit sensitive payment information, full card numbers, passwords, or private account credentials.\r\n\r\n## Make Review Timing Visible\n\nBuyers trust campaigns when review timing is visible before they apply. If the seller needs a manual verification window, include the expected number of days.\n\r\n## Keep Campaign Updates Consistent\r\n\r\nIf you change campaign availability, pricing, or instructions, update the campaign text before accepting more applications. Consistent instructions reduce disputes and make support easier.\n\r\n## Review Results After Completion\r\n\r\nAfter the campaign ends, compare the goal with the outcome. Look at approved orders, rejected submissions, support tickets, review timing, and buyer feedback. This helps you improve the next campaign without guessing.\n\r\nThe strongest campaigns feel calm and predictable. Clear terms and fast communication do more for trust than confusing rules.",
+      "contentHtml": "\u003cp>Product campaigns work best when the buyer understands exactly what to do and the seller can verify every step without confusion. A strong campaign is a clear agreement between both sides.\u003c/p>\n\u003ch2 id=\"start-with-one-campaign-goal\">Start With One Campaign Goal\u003c/h2>\n\u003cp>Decide what the campaign should improve before launch. Common goals include more product trials, more verified orders, better launch momentum, or more detailed buyer feedback.\u003c/p>\n\u003cp>When the goal is clear, the rest of the campaign becomes easier to judge. You can explain the buyer task, set proof requirements, and measure whether the promotion worked.\u003c/p>\n\u003ch2 id=\"write-simple-buyer-instructions\">Write Simple Buyer Instructions\u003c/h2>\n\u003cp>Use short steps that a first-time buyer can follow. Avoid vague instructions such as &quot;complete the task properly&quot; because they create support questions later.\u003c/p>\n\u003cul>\u003cli>Name the exact product or offer.\u003c/li>\u003cli>Explain the order requirement.\u003c/li>\u003cli>List every proof item the buyer must submit.\u003c/li>\u003cli>Give the expected review or feedback timing.\u003c/li>\u003cli>State when the campaign will be reviewed.\u003c/li>\u003c/ul>\n\u003ch2 id=\"set-proof-requirements-before-launch\">Set Proof Requirements Before Launch\u003c/h2>\n\u003cp>Proof requirements protect both sides. Ask for only the evidence needed to verify the order and campaign task. Common examples include an order ID, screenshot, published review link, or delivery confirmation.\u003c/p>\n\u003cp>Never ask buyers to submit sensitive payment information, full card numbers, passwords, or private account credentials.\u003c/p>\n\u003ch2 id=\"make-review-timing-visible\">Make Review Timing Visible\u003c/h2>\n\u003cp>Buyers trust campaigns when review timing is visible before they apply. If the seller needs a manual verification window, include the expected number of days.\u003c/p>\n\u003ch2 id=\"keep-campaign-updates-consistent\">Keep Campaign Updates Consistent\u003c/h2>\n\u003cp>If you change campaign availability, pricing, or instructions, update the campaign text before accepting more applications. Consistent instructions reduce disputes and make support easier.\u003c/p>\n\u003ch2 id=\"review-results-after-completion\">Review Results After Completion\u003c/h2>\n\u003cp>After the campaign ends, compare the goal with the outcome. Look at approved orders, rejected submissions, support tickets, review timing, and buyer feedback. This helps you improve the next campaign without guessing.\u003c/p>\n\u003cp>The strongest campaigns feel calm and predictable. Clear terms and fast communication do more for trust than confusing rules.\u003c/p>",
       "headings": [
         {
           "id": "start-with-one-campaign-goal",
@@ -33,8 +33,8 @@ export const blogData = {
           "level": 2
         },
         {
-          "id": "make-refund-timing-visible",
-          "text": "Make Refund Timing Visible",
+          "id": "make-review-timing-visible",
+          "text": "Make Review Timing Visible",
           "level": 2
         },
         {
@@ -48,9 +48,9 @@ export const blogData = {
           "level": 2
         }
       ],
-      "metaTitle": "Cashback Campaign Planning Guide | PromotInsight Blog",
-      "metaDescription": "Learn how to plan a trusted cashback campaign with clear terms, proof requirements, refund timing, and buyer communication.",
-      "primaryKeyword": "cashback campaign planning",
+      "metaTitle": "Product Campaign Planning Guide | PromotInsight Blog",
+      "metaDescription": "Learn how to plan a trusted product campaign with clear terms, proof requirements, review timing, and buyer communication.",
+      "primaryKeyword": "product campaign planning",
       "category": {
         "slug": "seller-growth",
         "name": "Seller Growth",
@@ -60,17 +60,17 @@ export const blogData = {
         "slug": "promotinsight-editorial",
         "name": "PromotInsight Editorial",
         "title": "Marketplace Education Team",
-        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
         "avatar": ""
       },
-      "featuredImage": "/blog/images/cashback-campaign-guide.svg",
+      "featuredImage": "/blog/images/product-campaign-guide.svg",
       "featuredImageWebp": "",
       "featuredImageAvif": "",
-      "featuredImageAlt": "Planning board showing a trusted cashback campaign workflow",
+      "featuredImageAlt": "Planning board showing a trusted product campaign workflow",
       "featuredImageWidth": 1200,
       "featuredImageHeight": 630,
-      "canonicalUrl": "https://promotinsight.com/blog/cashback-campaign-guide/",
-      "canonicalPath": "/blog/cashback-campaign-guide/",
+      "canonicalUrl": "https://promotinsight.com/blog/product-campaign-guide/",
+      "canonicalPath": "/blog/product-campaign-guide/",
       "publishedAt": "2026-07-01T09:00:00.000Z",
       "updatedAt": "2026-07-10T09:00:00.000Z",
       "status": "published",
@@ -80,22 +80,22 @@ export const blogData = {
       ],
       "createdAt": "2026-06-28T09:00:00.000Z",
       "readingTime": 2,
-      "sourceFile": "src/content/blog/cashback-campaign-guide.md",
+      "sourceFile": "src/content/blog/product-campaign-guide.md",
       "previousPost": {
         "id": "buyer-proof-checklist",
-        "title": "Buyer Proof Checklist for Faster Cashback Approval",
+        "title": "Buyer Proof Checklist for Faster Campaign Approval",
         "slug": "buyer-proof-checklist",
         "excerpt": "Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.",
         "category": {
           "slug": "buyer-guides",
           "name": "Buyer Guides",
-          "description": "Helpful guides for buyers applying to cashback and promotion campaigns."
+          "description": "Helpful guides for buyers applying to verified product campaigns."
         },
         "author": {
           "slug": "promotinsight-editorial",
           "name": "PromotInsight Editorial",
           "title": "Marketplace Education Team",
-          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
           "avatar": ""
         },
         "featuredImage": "/blog/images/buyer-proof-checklist.svg",
@@ -125,7 +125,7 @@ export const blogData = {
           "bio": "Practical guidance from the PromotInsight team.",
           "avatar": ""
         },
-        "featuredImage": "/blog/images/cashback-campaign-guide.svg",
+        "featuredImage": "/blog/images/product-campaign-guide.svg",
         "featuredImageAlt": "Campaign measurement dashboard",
         "featuredImageWidth": 1200,
         "featuredImageHeight": 630,
@@ -138,19 +138,19 @@ export const blogData = {
       "relatedPosts": [
         {
           "id": "buyer-proof-checklist",
-          "title": "Buyer Proof Checklist for Faster Cashback Approval",
+          "title": "Buyer Proof Checklist for Faster Campaign Approval",
           "slug": "buyer-proof-checklist",
           "excerpt": "Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.",
           "category": {
             "slug": "buyer-guides",
             "name": "Buyer Guides",
-            "description": "Helpful guides for buyers applying to cashback and promotion campaigns."
+            "description": "Helpful guides for buyers applying to verified product campaigns."
           },
           "author": {
             "slug": "promotinsight-editorial",
             "name": "PromotInsight Editorial",
             "title": "Marketplace Education Team",
-            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
             "avatar": ""
           },
           "featuredImage": "/blog/images/buyer-proof-checklist.svg",
@@ -177,7 +177,7 @@ export const blogData = {
             "slug": "promotinsight-editorial",
             "name": "PromotInsight Editorial",
             "title": "Marketplace Education Team",
-            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
             "avatar": ""
           },
           "featuredImage": "/blog/images/seller-product-page-optimization.svg",
@@ -194,11 +194,11 @@ export const blogData = {
     },
     {
       "id": "buyer-proof-checklist",
-      "title": "Buyer Proof Checklist for Faster Cashback Approval",
+      "title": "Buyer Proof Checklist for Faster Campaign Approval",
       "slug": "buyer-proof-checklist",
       "excerpt": "Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.",
-      "content": "Submitting clear proof is the easiest way to avoid cashback delays. Sellers need enough information to verify your campaign task, and support teams need a clean record if anything needs review.\n\n## Check the Campaign Instructions First\n\nBefore placing an order, read the campaign instructions from top to bottom. Make sure the product, reward amount, order timing, and proof requirements match what you plan to submit.\n\n## Save the Right Evidence\n\nMost campaigns need proof that the order belongs to you and matches the approved task.\n\n- Keep your order ID available.\n- Save delivery or order screenshots when required.\n- Copy the review link if the campaign asks for one.\n- Submit proof before the campaign deadline.\n\n## Keep Screenshots Clear\n\nScreenshots should show the required details without exposing private information. Crop away unrelated account details, but keep the proof readable.\n\n## Avoid Common Delays\n\nMany delays happen because proof is incomplete or submitted in the wrong place. Double-check the campaign page before submitting, and do not send duplicate proofs unless support asks for them.\n\n## What Not to Share\n\nDo not upload passwords, private payment details, full card numbers, or unrelated personal documents. Campaign verification should never require sensitive account access.\n\nClear proof helps everyone move faster. When your submission matches the instructions, sellers can approve confidently and your cashback path stays predictable.",
-      "contentHtml": "\u003cp>Submitting clear proof is the easiest way to avoid cashback delays. Sellers need enough information to verify your campaign task, and support teams need a clean record if anything needs review.\u003c/p>\n\u003ch2 id=\"check-the-campaign-instructions-first\">Check the Campaign Instructions First\u003c/h2>\n\u003cp>Before placing an order, read the campaign instructions from top to bottom. Make sure the product, reward amount, order timing, and proof requirements match what you plan to submit.\u003c/p>\n\u003ch2 id=\"save-the-right-evidence\">Save the Right Evidence\u003c/h2>\n\u003cp>Most campaigns need proof that the order belongs to you and matches the approved task.\u003c/p>\n\u003cul>\u003cli>Keep your order ID available.\u003c/li>\u003cli>Save delivery or order screenshots when required.\u003c/li>\u003cli>Copy the review link if the campaign asks for one.\u003c/li>\u003cli>Submit proof before the campaign deadline.\u003c/li>\u003c/ul>\n\u003ch2 id=\"keep-screenshots-clear\">Keep Screenshots Clear\u003c/h2>\n\u003cp>Screenshots should show the required details without exposing private information. Crop away unrelated account details, but keep the proof readable.\u003c/p>\n\u003ch2 id=\"avoid-common-delays\">Avoid Common Delays\u003c/h2>\n\u003cp>Many delays happen because proof is incomplete or submitted in the wrong place. Double-check the campaign page before submitting, and do not send duplicate proofs unless support asks for them.\u003c/p>\n\u003ch2 id=\"what-not-to-share\">What Not to Share\u003c/h2>\n\u003cp>Do not upload passwords, private payment details, full card numbers, or unrelated personal documents. Campaign verification should never require sensitive account access.\u003c/p>\n\u003cp>Clear proof helps everyone move faster. When your submission matches the instructions, sellers can approve confidently and your cashback path stays predictable.\u003c/p>",
+      "content": "Submitting clear proof is the easiest way to avoid review delays. Sellers need enough information to verify your campaign task, and support teams need a clean record if anything needs review.\n\r\n## Check the Campaign Instructions First\r\n\r\nBefore placing an order, read the campaign instructions from top to bottom. Make sure the product, order timing, and proof requirements match what you plan to submit.\n\r\n## Save the Right Evidence\r\n\r\nMost campaigns need proof that the order belongs to you and matches the approved task.\r\n\r\n- Keep your order ID available.\r\n- Save delivery or order screenshots when required.\r\n- Copy the review link if the campaign asks for one.\r\n- Submit proof before the campaign deadline.\r\n\r\n## Keep Screenshots Clear\r\n\r\nScreenshots should show the required details without exposing private information. Crop away unrelated account details, but keep the proof readable.\r\n\r\n## Avoid Common Delays\r\n\r\nMany delays happen because proof is incomplete or submitted in the wrong place. Double-check the campaign page before submitting, and do not send duplicate proofs unless support asks for them.\r\n\r\n## What Not to Share\r\n\r\nDo not upload passwords, private payment details, full card numbers, or unrelated personal documents. Campaign verification should never require sensitive account access.\r\n\r\nClear proof helps everyone move faster. When your submission matches the instructions, sellers can approve confidently and your campaign path stays predictable.",
+      "contentHtml": "\u003cp>Submitting clear proof is the easiest way to avoid review delays. Sellers need enough information to verify your campaign task, and support teams need a clean record if anything needs review.\u003c/p>\n\u003ch2 id=\"check-the-campaign-instructions-first\">Check the Campaign Instructions First\u003c/h2>\n\u003cp>Before placing an order, read the campaign instructions from top to bottom. Make sure the product, order timing, and proof requirements match what you plan to submit.\u003c/p>\n\u003ch2 id=\"save-the-right-evidence\">Save the Right Evidence\u003c/h2>\n\u003cp>Most campaigns need proof that the order belongs to you and matches the approved task.\u003c/p>\n\u003cul>\u003cli>Keep your order ID available.\u003c/li>\u003cli>Save delivery or order screenshots when required.\u003c/li>\u003cli>Copy the review link if the campaign asks for one.\u003c/li>\u003cli>Submit proof before the campaign deadline.\u003c/li>\u003c/ul>\n\u003ch2 id=\"keep-screenshots-clear\">Keep Screenshots Clear\u003c/h2>\n\u003cp>Screenshots should show the required details without exposing private information. Crop away unrelated account details, but keep the proof readable.\u003c/p>\n\u003ch2 id=\"avoid-common-delays\">Avoid Common Delays\u003c/h2>\n\u003cp>Many delays happen because proof is incomplete or submitted in the wrong place. Double-check the campaign page before submitting, and do not send duplicate proofs unless support asks for them.\u003c/p>\n\u003ch2 id=\"what-not-to-share\">What Not to Share\u003c/h2>\n\u003cp>Do not upload passwords, private payment details, full card numbers, or unrelated personal documents. Campaign verification should never require sensitive account access.\u003c/p>\n\u003cp>Clear proof helps everyone move faster. When your submission matches the instructions, sellers can approve confidently and your campaign path stays predictable.\u003c/p>",
       "headings": [
         {
           "id": "check-the-campaign-instructions-first",
@@ -226,19 +226,19 @@ export const blogData = {
           "level": 2
         }
       ],
-      "metaTitle": "Buyer Proof Checklist for Cashback Approval | PromotInsight",
-      "metaDescription": "Follow this buyer proof checklist to submit complete campaign evidence, reduce review delays, and receive cashback faster.",
-      "primaryKeyword": "cashback proof checklist",
+      "metaTitle": "Buyer Proof Checklist for Campaign Approval | PromotInsight",
+      "metaDescription": "Follow this buyer proof checklist to submit complete campaign evidence and reduce review delays.",
+      "primaryKeyword": "campaign proof checklist",
       "category": {
         "slug": "buyer-guides",
         "name": "Buyer Guides",
-        "description": "Helpful guides for buyers applying to cashback and promotion campaigns."
+        "description": "Helpful guides for buyers applying to verified product campaigns."
       },
       "author": {
         "slug": "promotinsight-editorial",
         "name": "PromotInsight Editorial",
         "title": "Marketplace Education Team",
-        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
         "avatar": ""
       },
       "featuredImage": "/blog/images/buyer-proof-checklist.svg",
@@ -253,7 +253,7 @@ export const blogData = {
       "updatedAt": "2026-06-18T09:00:00.000Z",
       "status": "published",
       "relatedPostIds": [
-        "cashback-campaign-guide"
+        "product-campaign-guide"
       ],
       "createdAt": "2026-06-15T09:00:00.000Z",
       "readingTime": 1,
@@ -272,7 +272,7 @@ export const blogData = {
           "slug": "promotinsight-editorial",
           "name": "PromotInsight Editorial",
           "title": "Marketplace Education Team",
-          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
           "avatar": ""
         },
         "featuredImage": "/blog/images/seller-product-page-optimization.svg",
@@ -286,9 +286,9 @@ export const blogData = {
         "readingTime": 1
       },
       "nextPost": {
-        "id": "cashback-campaign-guide",
-        "title": "How to Plan a Cashback Campaign That Buyers Trust",
-        "slug": "cashback-campaign-guide",
+        "id": "product-campaign-guide",
+        "title": "How to Plan a Product Campaign That Buyers Trust",
+        "slug": "product-campaign-guide",
         "excerpt": "A practical checklist for setting campaign terms, refund timing, proof requirements, and buyer expectations before launch.",
         "category": {
           "slug": "seller-growth",
@@ -299,24 +299,24 @@ export const blogData = {
           "slug": "promotinsight-editorial",
           "name": "PromotInsight Editorial",
           "title": "Marketplace Education Team",
-          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
           "avatar": ""
         },
-        "featuredImage": "/blog/images/cashback-campaign-guide.svg",
-        "featuredImageAlt": "Planning board showing a trusted cashback campaign workflow",
+        "featuredImage": "/blog/images/product-campaign-guide.svg",
+        "featuredImageAlt": "Planning board showing a trusted product campaign workflow",
         "featuredImageWidth": 1200,
         "featuredImageHeight": 630,
-        "canonicalPath": "/blog/cashback-campaign-guide/",
-        "canonicalUrl": "https://promotinsight.com/blog/cashback-campaign-guide/",
+        "canonicalPath": "/blog/product-campaign-guide/",
+        "canonicalUrl": "https://promotinsight.com/blog/product-campaign-guide/",
         "publishedAt": "2026-07-01T09:00:00.000Z",
         "updatedAt": "2026-07-10T09:00:00.000Z",
         "readingTime": 2
       },
       "relatedPosts": [
         {
-          "id": "cashback-campaign-guide",
-          "title": "How to Plan a Cashback Campaign That Buyers Trust",
-          "slug": "cashback-campaign-guide",
+          "id": "product-campaign-guide",
+          "title": "How to Plan a Product Campaign That Buyers Trust",
+          "slug": "product-campaign-guide",
           "excerpt": "A practical checklist for setting campaign terms, refund timing, proof requirements, and buyer expectations before launch.",
           "category": {
             "slug": "seller-growth",
@@ -327,15 +327,15 @@ export const blogData = {
             "slug": "promotinsight-editorial",
             "name": "PromotInsight Editorial",
             "title": "Marketplace Education Team",
-            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
             "avatar": ""
           },
-          "featuredImage": "/blog/images/cashback-campaign-guide.svg",
-          "featuredImageAlt": "Planning board showing a trusted cashback campaign workflow",
+          "featuredImage": "/blog/images/product-campaign-guide.svg",
+          "featuredImageAlt": "Planning board showing a trusted product campaign workflow",
           "featuredImageWidth": 1200,
           "featuredImageHeight": 630,
-          "canonicalPath": "/blog/cashback-campaign-guide/",
-          "canonicalUrl": "https://promotinsight.com/blog/cashback-campaign-guide/",
+          "canonicalPath": "/blog/product-campaign-guide/",
+          "canonicalUrl": "https://promotinsight.com/blog/product-campaign-guide/",
           "publishedAt": "2026-07-01T09:00:00.000Z",
           "updatedAt": "2026-07-10T09:00:00.000Z",
           "readingTime": 2
@@ -347,8 +347,8 @@ export const blogData = {
       "title": "Product Page Details That Improve Promotion Results",
       "slug": "seller-product-page-optimization",
       "excerpt": "Improve campaign performance by tightening product titles, images, buyer benefits, proof steps, and support expectations.",
-      "content": "A promotion campaign starts before a buyer applies. The product page sets expectations, answers common questions, and helps the right buyers decide whether the offer fits them.\n\n## Lead With the Product Benefit\n\nUse the first lines of the page to explain what the product does and who it helps. Buyers should not have to decode a long description before understanding the offer.\n\n## Use Clear Images\n\nImages should show the actual product or offer state clearly. Avoid images that are too dark, too small, or unrelated to the campaign task.\n\n## Explain the Buyer Task\n\nEvery campaign needs a simple task path. Tell buyers what to buy, when to submit proof, and what they should expect after submission.\n\n## Reduce Support Questions\n\nAdd answers to the questions buyers usually ask before applying.\n\n- Is the campaign available in my country?\n- What proof is required?\n- How long does approval take?\n- When is cashback released?\n\n## Keep the Page Updated\n\nIf stock, pricing, instructions, or reward values change, update the product page quickly. Outdated campaign pages create confusion and can reduce trust even when the offer is legitimate.\n\nA better product page does not need to be long. It needs to be specific, current, and easy to scan.",
-      "contentHtml": "\u003cp>A promotion campaign starts before a buyer applies. The product page sets expectations, answers common questions, and helps the right buyers decide whether the offer fits them.\u003c/p>\n\u003ch2 id=\"lead-with-the-product-benefit\">Lead With the Product Benefit\u003c/h2>\n\u003cp>Use the first lines of the page to explain what the product does and who it helps. Buyers should not have to decode a long description before understanding the offer.\u003c/p>\n\u003ch2 id=\"use-clear-images\">Use Clear Images\u003c/h2>\n\u003cp>Images should show the actual product or offer state clearly. Avoid images that are too dark, too small, or unrelated to the campaign task.\u003c/p>\n\u003ch2 id=\"explain-the-buyer-task\">Explain the Buyer Task\u003c/h2>\n\u003cp>Every campaign needs a simple task path. Tell buyers what to buy, when to submit proof, and what they should expect after submission.\u003c/p>\n\u003ch2 id=\"reduce-support-questions\">Reduce Support Questions\u003c/h2>\n\u003cp>Add answers to the questions buyers usually ask before applying.\u003c/p>\n\u003cul>\u003cli>Is the campaign available in my country?\u003c/li>\u003cli>What proof is required?\u003c/li>\u003cli>How long does approval take?\u003c/li>\u003cli>When is cashback released?\u003c/li>\u003c/ul>\n\u003ch2 id=\"keep-the-page-updated\">Keep the Page Updated\u003c/h2>\n\u003cp>If stock, pricing, instructions, or reward values change, update the product page quickly. Outdated campaign pages create confusion and can reduce trust even when the offer is legitimate.\u003c/p>\n\u003cp>A better product page does not need to be long. It needs to be specific, current, and easy to scan.\u003c/p>",
+      "content": "A promotion campaign starts before a buyer applies. The product page sets expectations, answers common questions, and helps the right buyers decide whether the offer fits them.\r\n\r\n## Lead With the Product Benefit\r\n\r\nUse the first lines of the page to explain what the product does and who it helps. Buyers should not have to decode a long description before understanding the offer.\r\n\r\n## Use Clear Images\r\n\r\nImages should show the actual product or offer state clearly. Avoid images that are too dark, too small, or unrelated to the campaign task.\r\n\r\n## Explain the Buyer Task\r\n\r\nEvery campaign needs a simple task path. Tell buyers what to buy, when to submit proof, and what they should expect after submission.\r\n\r\n## Reduce Support Questions\r\n\r\nAdd answers to the questions buyers usually ask before applying.\r\n\r\n- Is the campaign available in my country?\r\n- What proof is required?\r\n- How long does approval take?\r\n- When is the campaign reviewed?\n\r\n## Keep the Page Updated\r\n\r\nIf stock, pricing, or instructions change, update the product page quickly. Outdated campaign pages create confusion and can reduce trust even when the offer is legitimate.\n\r\nA better product page does not need to be long. It needs to be specific, current, and easy to scan.",
+      "contentHtml": "\u003cp>A promotion campaign starts before a buyer applies. The product page sets expectations, answers common questions, and helps the right buyers decide whether the offer fits them.\u003c/p>\n\u003ch2 id=\"lead-with-the-product-benefit\">Lead With the Product Benefit\u003c/h2>\n\u003cp>Use the first lines of the page to explain what the product does and who it helps. Buyers should not have to decode a long description before understanding the offer.\u003c/p>\n\u003ch2 id=\"use-clear-images\">Use Clear Images\u003c/h2>\n\u003cp>Images should show the actual product or offer state clearly. Avoid images that are too dark, too small, or unrelated to the campaign task.\u003c/p>\n\u003ch2 id=\"explain-the-buyer-task\">Explain the Buyer Task\u003c/h2>\n\u003cp>Every campaign needs a simple task path. Tell buyers what to buy, when to submit proof, and what they should expect after submission.\u003c/p>\n\u003ch2 id=\"reduce-support-questions\">Reduce Support Questions\u003c/h2>\n\u003cp>Add answers to the questions buyers usually ask before applying.\u003c/p>\n\u003cul>\u003cli>Is the campaign available in my country?\u003c/li>\u003cli>What proof is required?\u003c/li>\u003cli>How long does approval take?\u003c/li>\u003cli>When is the campaign reviewed?\u003c/li>\u003c/ul>\n\u003ch2 id=\"keep-the-page-updated\">Keep the Page Updated\u003c/h2>\n\u003cp>If stock, pricing, or instructions change, update the product page quickly. Outdated campaign pages create confusion and can reduce trust even when the offer is legitimate.\u003c/p>\n\u003cp>A better product page does not need to be long. It needs to be specific, current, and easy to scan.\u003c/p>",
       "headings": [
         {
           "id": "lead-with-the-product-benefit",
@@ -388,7 +388,7 @@ export const blogData = {
         "slug": "promotinsight-editorial",
         "name": "PromotInsight Editorial",
         "title": "Marketplace Education Team",
-        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
         "avatar": ""
       },
       "featuredImage": "/blog/images/seller-product-page-optimization.svg",
@@ -403,7 +403,7 @@ export const blogData = {
       "updatedAt": "2026-06-04T09:00:00.000Z",
       "status": "published",
       "relatedPostIds": [
-        "cashback-campaign-guide",
+        "product-campaign-guide",
         "buyer-proof-checklist"
       ],
       "createdAt": "2026-05-24T09:00:00.000Z",
@@ -412,19 +412,19 @@ export const blogData = {
       "previousPost": null,
       "nextPost": {
         "id": "buyer-proof-checklist",
-        "title": "Buyer Proof Checklist for Faster Cashback Approval",
+        "title": "Buyer Proof Checklist for Faster Campaign Approval",
         "slug": "buyer-proof-checklist",
         "excerpt": "Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.",
         "category": {
           "slug": "buyer-guides",
           "name": "Buyer Guides",
-          "description": "Helpful guides for buyers applying to cashback and promotion campaigns."
+          "description": "Helpful guides for buyers applying to verified product campaigns."
         },
         "author": {
           "slug": "promotinsight-editorial",
           "name": "PromotInsight Editorial",
           "title": "Marketplace Education Team",
-          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+          "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
           "avatar": ""
         },
         "featuredImage": "/blog/images/buyer-proof-checklist.svg",
@@ -439,9 +439,9 @@ export const blogData = {
       },
       "relatedPosts": [
         {
-          "id": "cashback-campaign-guide",
-          "title": "How to Plan a Cashback Campaign That Buyers Trust",
-          "slug": "cashback-campaign-guide",
+          "id": "product-campaign-guide",
+          "title": "How to Plan a Product Campaign That Buyers Trust",
+          "slug": "product-campaign-guide",
           "excerpt": "A practical checklist for setting campaign terms, refund timing, proof requirements, and buyer expectations before launch.",
           "category": {
             "slug": "seller-growth",
@@ -452,34 +452,34 @@ export const blogData = {
             "slug": "promotinsight-editorial",
             "name": "PromotInsight Editorial",
             "title": "Marketplace Education Team",
-            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
             "avatar": ""
           },
-          "featuredImage": "/blog/images/cashback-campaign-guide.svg",
-          "featuredImageAlt": "Planning board showing a trusted cashback campaign workflow",
+          "featuredImage": "/blog/images/product-campaign-guide.svg",
+          "featuredImageAlt": "Planning board showing a trusted product campaign workflow",
           "featuredImageWidth": 1200,
           "featuredImageHeight": 630,
-          "canonicalPath": "/blog/cashback-campaign-guide/",
-          "canonicalUrl": "https://promotinsight.com/blog/cashback-campaign-guide/",
+          "canonicalPath": "/blog/product-campaign-guide/",
+          "canonicalUrl": "https://promotinsight.com/blog/product-campaign-guide/",
           "publishedAt": "2026-07-01T09:00:00.000Z",
           "updatedAt": "2026-07-10T09:00:00.000Z",
           "readingTime": 2
         },
         {
           "id": "buyer-proof-checklist",
-          "title": "Buyer Proof Checklist for Faster Cashback Approval",
+          "title": "Buyer Proof Checklist for Faster Campaign Approval",
           "slug": "buyer-proof-checklist",
           "excerpt": "Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.",
           "category": {
             "slug": "buyer-guides",
             "name": "Buyer Guides",
-            "description": "Helpful guides for buyers applying to cashback and promotion campaigns."
+            "description": "Helpful guides for buyers applying to verified product campaigns."
           },
           "author": {
             "slug": "promotinsight-editorial",
             "name": "PromotInsight Editorial",
             "title": "Marketplace Education Team",
-            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+            "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
             "avatar": ""
           },
           "featuredImage": "/blog/images/buyer-proof-checklist.svg",
@@ -497,9 +497,9 @@ export const blogData = {
   ],
   "postSummaries": [
     {
-      "id": "cashback-campaign-guide",
-      "title": "How to Plan a Cashback Campaign That Buyers Trust",
-      "slug": "cashback-campaign-guide",
+      "id": "product-campaign-guide",
+      "title": "How to Plan a Product Campaign That Buyers Trust",
+      "slug": "product-campaign-guide",
       "excerpt": "A practical checklist for setting campaign terms, refund timing, proof requirements, and buyer expectations before launch.",
       "category": {
         "slug": "seller-growth",
@@ -510,34 +510,34 @@ export const blogData = {
         "slug": "promotinsight-editorial",
         "name": "PromotInsight Editorial",
         "title": "Marketplace Education Team",
-        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
         "avatar": ""
       },
-      "featuredImage": "/blog/images/cashback-campaign-guide.svg",
-      "featuredImageAlt": "Planning board showing a trusted cashback campaign workflow",
+      "featuredImage": "/blog/images/product-campaign-guide.svg",
+      "featuredImageAlt": "Planning board showing a trusted product campaign workflow",
       "featuredImageWidth": 1200,
       "featuredImageHeight": 630,
-      "canonicalPath": "/blog/cashback-campaign-guide/",
-      "canonicalUrl": "https://promotinsight.com/blog/cashback-campaign-guide/",
+      "canonicalPath": "/blog/product-campaign-guide/",
+      "canonicalUrl": "https://promotinsight.com/blog/product-campaign-guide/",
       "publishedAt": "2026-07-01T09:00:00.000Z",
       "updatedAt": "2026-07-10T09:00:00.000Z",
       "readingTime": 2
     },
     {
       "id": "buyer-proof-checklist",
-      "title": "Buyer Proof Checklist for Faster Cashback Approval",
+      "title": "Buyer Proof Checklist for Faster Campaign Approval",
       "slug": "buyer-proof-checklist",
       "excerpt": "Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.",
       "category": {
         "slug": "buyer-guides",
         "name": "Buyer Guides",
-        "description": "Helpful guides for buyers applying to cashback and promotion campaigns."
+        "description": "Helpful guides for buyers applying to verified product campaigns."
       },
       "author": {
         "slug": "promotinsight-editorial",
         "name": "PromotInsight Editorial",
         "title": "Marketplace Education Team",
-        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
         "avatar": ""
       },
       "featuredImage": "/blog/images/buyer-proof-checklist.svg",
@@ -564,7 +564,7 @@ export const blogData = {
         "slug": "promotinsight-editorial",
         "name": "PromotInsight Editorial",
         "title": "Marketplace Education Team",
-        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+        "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
         "avatar": ""
       },
       "featuredImage": "/blog/images/seller-product-page-optimization.svg",
@@ -582,7 +582,7 @@ export const blogData = {
     {
       "slug": "buyer-guides",
       "name": "Buyer Guides",
-      "description": "Helpful guides for buyers applying to cashback and promotion campaigns.",
+      "description": "Helpful guides for buyers applying to verified product campaigns.",
       "count": 1,
       "updatedAt": "2026-06-18T09:00:00.000Z"
     },
@@ -599,7 +599,7 @@ export const blogData = {
       "slug": "promotinsight-editorial",
       "name": "PromotInsight Editorial",
       "title": "Marketplace Education Team",
-      "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.",
+      "bio": "The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.",
       "avatar": "",
       "count": 3,
       "updatedAt": "2026-07-10T09:00:00.000Z"

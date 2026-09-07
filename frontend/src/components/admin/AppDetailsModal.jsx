@@ -85,9 +85,6 @@ export default function AppDetailsModal({
                  />
                  <div>
                    <p className="text-sm font-bold text-gray-800 line-clamp-2">{selectedAppDetails.product_name}</p>
-                   <p className="text-xs text-gray-500 mt-2 bg-green-50 w-max px-2 py-1 rounded border border-green-100">
-                     Reward: <span className="text-green-600 font-black">${selectedAppDetails.reward}</span>
-                   </p>
                  </div>
                </div>
 

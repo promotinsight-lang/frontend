@@ -21,7 +21,6 @@ import {
   PLATFORM_CHARGE_CONDITION_KEYS,
   buildDefaultPlatformChargeConditions,
   buildDefaultBuyerRewardConditions,
-  formatBuyerRewardSummary,
   getPlatformChargeConditionLabel,
   parseBuyerRewardConditions,
   parsePlatformChargeConditions,
@@ -485,16 +484,6 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleConditionRewardChange = (value) => {
-    setFeeConfig(prev => ({
-      ...prev,
-      buyer_reward_conditions: {
-        ...prev.buyer_reward_conditions,
-        [activePlatformCondition]: value,
-      },
-    }));
-  };
-
   const handleClearCondition = () => {
     setFeeConfig(prev => ({
       ...prev,
@@ -643,19 +632,13 @@ export default function AdminDashboard() {
     }
     
     let conditionCharges;
-    let buyerRewardCharges;
 
     try {
       conditionCharges = conditionOptions.reduce((acc, { key, label }) => {
         const tiers = feeConfig.platform_charge_conditions?.[key] || [];
-        const rewardValue = feeConfig.buyer_reward_conditions?.[key];
-        const hasRewardValue = rewardValue !== '' && rewardValue !== null && rewardValue !== undefined;
         const hasAnyTierValue = tiers.some(hasTierValues);
 
-        if (!hasAnyTierValue && !hasRewardValue) return acc;
-        if (!hasAnyTierValue && hasRewardValue) {
-          throw new Error(`Please add at least one fee tier for ${label}, or clear its buyer reward.`);
-        }
+        if (!hasAnyTierValue) return acc;
 
         acc[key] = serializeTierList(tiers, {
           allowEmpty: false,
@@ -663,16 +646,6 @@ export default function AdminDashboard() {
         });
         return acc;
       }, {});
-      buyerRewardCharges = conditionOptions.reduce((acc, { key, label }) => {
-        if (!conditionCharges[key]) return acc;
-        const value = feeConfig.buyer_reward_conditions?.[key];
-        if (value !== '' && value !== null && value !== undefined && Number.isNaN(Number(value))) {
-          throw new Error(`Please enter a valid buyer reward for ${label}.`);
-        }
-        acc[key] = parseFloat(value || 0).toFixed(4);
-        return acc;
-      }, {});
-
       if (Object.keys(conditionCharges).length === 0) {
         throw new Error('Please configure at least one condition with a fee tier.');
       }
@@ -686,7 +659,7 @@ export default function AdminDashboard() {
       buyer_reward: '',
       platform_charge: JSON.stringify([]),
       platform_charge_conditions: JSON.stringify(conditionCharges),
-      buyer_reward_conditions: JSON.stringify(buyerRewardCharges),
+      buyer_reward_conditions: JSON.stringify({}),
       verification_fields: feeConfig.verification_fields,
     };
     
@@ -1567,7 +1540,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <p className="text-[11px] font-semibold text-gray-500 px-1">
-                  Platform charge and buyer reward are configured in USD. Seller-side local currency is handled separately on product posting.
+                  Platform charge is configured in USD. Seller-side local currency is handled separately on product posting.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 relative">
@@ -1579,7 +1552,7 @@ export default function AdminDashboard() {
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 min-w-[300px]">
                       <div>
                         <label className="block text-sm font-bold text-gray-800">Condition-Based Tariffs (USD)</label>
-                        <p className="text-[10px] text-gray-500">Set a platform charge and buyer reward for each campaign condition.</p>
+                        <p className="text-[10px] text-gray-500">Set a platform charge for each campaign condition.</p>
                       </div>
                     </div>
 
@@ -1597,21 +1570,6 @@ export default function AdminDashboard() {
                           </button>
                         );
                       })}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 min-w-[300px]">
-                      <div className="bg-white p-3 rounded-lg border border-emerald-100 shadow-sm">
-                        <label className="block text-[10px] uppercase font-bold text-gray-500 mb-1">{getPlatformChargeConditionLabel(activePlatformCondition)} Buyer Reward (USD)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={feeConfig.buyer_reward_conditions?.[activePlatformCondition] || ''}
-                          onChange={(e) => handleConditionRewardChange(e.target.value)}
-                          className="w-full p-2 border rounded-lg text-sm outline-none focus:border-emerald-500"
-                          placeholder="e.g. 5"
-                        />
-                      </div>
                     </div>
 
                     {ensureEditableTiers(feeConfig.platform_charge_conditions?.[activePlatformCondition]).map((tier, index) => (
@@ -1746,7 +1704,6 @@ export default function AdminDashboard() {
                     >
                       <AdminField label="Platform fee">{tierCount > 0 ? `${tierCount} tiers` : `${conf.platform_charge}%`}</AdminField>
                       <AdminField label="Condition fees">{conditionRuleCount > 0 ? `${conditionRuleCount} conditions` : 'Default only'}</AdminField>
-                      <AdminField label="Reward (USD)">{formatBuyerRewardSummary(conf)}</AdminField>
                       <AdminField label="Refund">{conf.buyer_refund_fee}%</AdminField>
                       <AdminField label="Deposit">{conf.seller_deposit_fee}%</AdminField>
                       <AdminField label="Withdraw">{conf.seller_withdrawal_fee}%</AdminField>
@@ -1759,7 +1716,7 @@ export default function AdminDashboard() {
                     <tr>
                       <th className="p-3">Country</th><th className="p-3">Platform</th><th className="p-3 text-center">Tiers Config.</th>
                       <th className="p-3 text-center">Condition Fees</th>
-                      <th className="p-3 text-center">Reward (USD)</th><th className="p-3 text-center">Refund Fee (%)</th>
+                      <th className="p-3 text-center">Refund Fee (%)</th>
                       <th className="p-3 text-center">Dep. Fee (%)</th><th className="p-3 text-center">W.Draw Fee (%)</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
@@ -1795,7 +1752,6 @@ export default function AdminDashboard() {
                               <span className="text-gray-400 text-xs">Default</span>
                             )}
                           </td>
-                          <td className="p-3 text-center font-semibold text-green-600 text-xs">{formatBuyerRewardSummary(conf)}</td>
                           <td className="p-3 text-center font-semibold text-red-500">{conf.buyer_refund_fee}%</td>
                           <td className="p-3 text-center font-semibold">{conf.seller_deposit_fee}%</td>
                           <td className="p-3 text-center font-semibold">{conf.seller_withdrawal_fee}%</td>
@@ -2126,8 +2082,8 @@ export default function AdminDashboard() {
                   <div>
                     <img src={p.image_url} alt="Product" className="w-full h-32 object-contain bg-white rounded mb-3 border p-2" />
                     <h4 className="font-bold text-gray-800 truncate">{p.product_name || p.store_name}</h4>
-                    <div className="flex justify-between text-sm mt-2"><span className="text-gray-600">Price: <b className="text-black">USD ${p.price}</b></span><span className="text-gray-600">Reward: <b className="text-green-600">USD ${p.reward}</b></span></div>
-                    <div className="flex justify-between text-[10px] mt-0.5"><span className="text-gray-500">~ {getConvertedPrice(p.price, p.country, p.platform)} {p.country}</span><span className="text-green-600/80">~ {getConvertedPrice(p.reward, p.country, p.platform)} {p.country}</span></div>
+                    <div className="text-sm mt-2"><span className="text-gray-600">Price: <b className="text-black">USD ${p.price}</b></span></div>
+                    <div className="text-[10px] mt-0.5"><span className="text-gray-500">~ {getConvertedPrice(p.price, p.country, p.platform)} {p.country}</span></div>
                     <p className="text-xs text-gray-500 mt-2 truncate">Platform: {p.platform} ({p.country}) | Qty: {p.required_orders}</p>
                     <div className="mt-3 bg-blue-50 p-2 rounded border border-blue-100 overflow-hidden">
                       <p className="text-xs text-blue-800 font-bold truncate">👤 {p.seller_name || 'N/A'}</p>
@@ -2186,7 +2142,6 @@ export default function AdminDashboard() {
                   )}
                   <AdminField label="Seller">{p.seller_name}</AdminField>
                   <AdminField label="Price">${p.price}</AdminField>
-                  <AdminField label="Reward"><span className="text-green-600">${p.reward}</span></AdminField>
                   <AdminField label="Status">{renderStatusBadge(p.status)}</AdminField>
                 </AdminMobileCard>
               ))}
@@ -2217,7 +2172,6 @@ export default function AdminDashboard() {
                       </td>
                       <td className="p-4">
                         <p className="text-gray-700">Price: <span className="font-bold">${p.price}</span></p>
-                        <p className="text-xs text-green-600 font-bold">Reward: ${p.reward}</p>
                       </td>
                       <td className="p-4">
                         {renderStatusBadge(p.status)}
@@ -2270,7 +2224,6 @@ export default function AdminDashboard() {
                   }
                 >
                   <AdminField label="Buyer email">{app.buyer_email}</AdminField>
-                  <AdminField label="Reward"><span className="text-green-600">${app.reward}</span></AdminField>
                   <AdminField label="Status">{renderStatusBadge(app.status)}</AdminField>
                   {app.order_submitted_at && (
                     <AdminField label="Order submitted">{new Date(app.order_submitted_at).toLocaleString()}</AdminField>
@@ -2319,7 +2272,6 @@ export default function AdminDashboard() {
                         <img src={app.image_url} alt="Product" className="w-10 h-10 rounded object-contain bg-white border shrink-0" />
                         <div className="min-w-0">
                           <p className="font-bold text-gray-800 w-48 truncate">{app.product_name}</p>
-                          <p className="text-xs text-green-600 font-bold">Reward: ${app.reward}</p>
                         </div>
                       </td>
                       <td className="p-4">
@@ -2702,7 +2654,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1">Primary Keyword</label>
-                    <input type="text" placeholder="cashback campaign guide" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.primary_keyword} onChange={e => updateBlogField('primary_keyword', e.target.value)} />
+                    <input type="text" placeholder="product campaign guide" className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] text-sm" value={newBlog.primary_keyword} onChange={e => updateBlogField('primary_keyword', e.target.value)} />
                   </div>
                 </div>
 

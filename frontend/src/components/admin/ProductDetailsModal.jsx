@@ -101,9 +101,6 @@ export default function ProductDetailsModal({
                 <span className="bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
                    <span className="text-xs text-gray-500">Price:</span> <b>USD ${selectedProductDetails.price}</b> <span className="text-[10px] text-gray-400 font-bold">({getConvertedPrice(selectedProductDetails.price, selectedProductDetails.country, selectedProductDetails.platform)} {getCurrencyForCountry(selectedProductDetails.country).code})</span>
                 </span>
-                <span className="bg-green-50 px-3 py-1.5 rounded-lg border border-green-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:gap-1">
-                   <span className="text-xs text-green-700">Reward:</span> <b className="text-green-600">USD ${selectedProductDetails.reward}</b> <span className="text-[10px] text-green-600/70 font-bold">({getConvertedPrice(selectedProductDetails.reward, selectedProductDetails.country, selectedProductDetails.platform)} {getCurrencyForCountry(selectedProductDetails.country).code})</span>
-                </span>
               </div>
             </div>
             <p className="flex items-center gap-2"><span className="font-semibold text-gray-500 w-24 shrink-0 inline-block">Status:</span> {renderStatusBadge(selectedProductDetails.status)}</p>

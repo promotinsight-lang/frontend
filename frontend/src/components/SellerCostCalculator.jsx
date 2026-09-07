@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calculator, RefreshCw, Info } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import {
   getConfiguredCampaignCategoryOptions,
   parsePlatformChargeConditions,
   parsePlatformChargeTiers,
-  parseBuyerRewardConditions,
-  resolveBuyerRewardForCategory,
   resolvePlatformChargeTiersForCategory,
 } from '../utils/campaignCategories';
 
@@ -22,7 +20,6 @@ export default function SellerCostCalculator() {
     platform: '',
     category: 'Need Review',
     price: 25.00,
-    reward: 5.00,
     qty: 10
   });
 
@@ -94,8 +91,6 @@ export default function SellerCostCalculator() {
           // Parse JSON Tiers for dynamic platform charge logic
           data.data.parsed_platform_charge = parsePlatformChargeTiers(data.data.platform_charge);
           data.data.parsed_platform_charge_conditions = parsePlatformChargeConditions(data.data.platform_charge_conditions);
-          data.data.parsed_buyer_reward_conditions = parseBuyerRewardConditions(data.data.buyer_reward_conditions);
-          
           setActiveConfig(data.data);
         } else {
           setActiveConfig(null);
@@ -120,24 +115,10 @@ export default function SellerCostCalculator() {
     }
   }, [activeConfig, calcData.category, availableCategoryOptions]);
 
-  useEffect(() => {
-    if (!activeConfig) return;
-
-    const rate = Number(activeConfig.exchange_rate) || 1;
-    const rewardValue = resolveBuyerRewardForCategory(activeConfig, calcData.category);
-    if (rewardValue > 0) {
-      setCalcData(prev => ({ ...prev, reward: (rewardValue * rate).toFixed(2) }));
-    }
-  }, [activeConfig, calcData.category]);
-
   const priceNum = parseFloat(calcData.price || 0);
-  const rewardNum = parseFloat(calcData.reward || 0);
-  const rewardDeposit = rewardNum;
   const exchangeRate = Number(activeConfig?.exchange_rate) || 1;
   const priceNumUSD = priceNum / exchangeRate;
   const platformChargeTiers = resolvePlatformChargeTiersForCategory(activeConfig, calcData.category);
-  const categoryRewardUSD = activeConfig ? resolveBuyerRewardForCategory(activeConfig, calcData.category) : 0;
-  const buyerRewardLocked = activeConfig && categoryRewardUSD > 0;
   
   // DYNAMIC TIER LOGIC FOR PLATFORM FEE
   const platformFee = (() => {
@@ -155,7 +136,7 @@ export default function SellerCostCalculator() {
     return priceNum * 0.10; // Default 10% fallback
   })();
   
-  const totalPerUnit = rewardDeposit + platformFee;
+  const totalPerUnit = platformFee;
   const grandTotalDeposit = totalPerUnit * parseInt(calcData.qty || 1);
 
   const handleCountryChange = (e) => {
@@ -183,7 +164,7 @@ export default function SellerCostCalculator() {
         </div>
         <p className="text-sm text-gray-500 mb-8 font-medium">{t('calc_desc')}</p>
         
-        <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('target_country')}</label>
             <select name="country" value={calcData.country} onChange={handleCountryChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-50 transition-all cursor-pointer">
@@ -215,7 +196,7 @@ export default function SellerCostCalculator() {
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('product_price')}</label>
             <div className="relative">
@@ -224,27 +205,9 @@ export default function SellerCostCalculator() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('buyer_reward')}</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-green-500">{calcCurrency}</span>
-              <input 
-                type="number" 
-                name="reward" 
-                value={calcData.reward} 
-                onChange={handleCalcChange}
-                readOnly={buyerRewardLocked}
-                className={`w-full ${inputPaddingClass} p-3.5 border rounded-xl font-bold outline-none transition-all ${buyerRewardLocked ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-emerald-50 border-emerald-200 text-emerald-700 focus:ring-2 focus:ring-emerald-500'}`}
-              />
-              {buyerRewardLocked && (
-                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400 uppercase bg-gray-200 px-1 rounded">{t('fixed')}</span>
-              )}
-            </div>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('target_qty')}</label>
+            <input type="number" name="qty" value={calcData.qty} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
           </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t('target_qty')}</label>
-          <input type="number" name="qty" value={calcData.qty} onChange={handleCalcChange} className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
         </div>
       </div>
 
@@ -259,10 +222,6 @@ export default function SellerCostCalculator() {
         <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-6 border-b border-gray-200 pb-2">{t('financial_summary')}</h3>
         
         <div className="space-y-4 mb-6">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 font-medium">{t('unit_cost')}</span>
-            <span className="font-bold text-gray-800">{calcCurrency}{rewardDeposit.toFixed(2)}</span>
-          </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600 font-medium flex items-center gap-1">
               {t('platform_fee')}{' '}
@@ -293,7 +252,6 @@ export default function SellerCostCalculator() {
              </h4>
              <div className="grid grid-cols-2 gap-y-2 text-xs font-medium text-blue-900">
                 <p>{t('platform')}: <b className="text-blue-700">{platformChargeTiers?.length > 0 ? t('tiered_fee') : `${activeConfig.platform_charge}%`}</b></p>
-                <p>{t('buyer_reward')}: <b className="text-blue-700">{categoryRewardUSD > 0 ? `${calcCurrency}${(categoryRewardUSD * exchangeRate).toFixed(2)}` : t('custom')}</b></p>
                 <p>Deposit: <b className="text-blue-700">{activeConfig.seller_deposit_fee}%</b></p>
                 <p>W.Draw: <b className="text-blue-700">{activeConfig.seller_withdrawal_fee}%</b></p>
              </div>

@@ -45,7 +45,7 @@ export default function RoleSelection() {
               <ShoppingCart size={40} />
             </div>
             <h2 className="text-2xl font-black text-gray-800 mb-2">I am a Buyer</h2>
-            <p className="text-sm text-gray-500 mb-6">I want to test products, provide feedback, and earn 100% cashback plus rewards.</p>
+            <p className="text-sm text-gray-500 mb-6">I want to test products and provide authentic feedback through verified campaigns.</p>
             <button className="mt-auto w-full bg-blue-50 text-[#0066ff] group-hover:bg-[#0066ff] group-hover:text-white py-3 rounded-xl font-bold transition-colors">
               Continue as Buyer
             </button>

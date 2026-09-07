@@ -12,7 +12,7 @@ categoryName: Seller Growth
 author: PromotInsight Editorial
 authorSlug: promotinsight-editorial
 authorName: PromotInsight Editorial
-featuredImage: /blog/images/cashback-campaign-guide.svg
+featuredImage: /blog/images/product-campaign-guide.svg
 featuredImageAlt: Campaign measurement dashboard
 publishedAt: 2026-07-20T09:00:00.000Z
 updatedAt: 2026-07-20T09:00:00.000Z

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, Wallet, CreditCard, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Copy } from 'lucide-react';
+import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, CreditCard, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Copy } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
 import LiveChatModal from '../components/LiveChatModal';
@@ -505,8 +505,6 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                       <div className="flex justify-between items-start mb-1">
                         <h3 className="text-sm font-bold text-gray-800 line-clamp-2">{app.product_name || `Order #${app.application_id}`}</h3>
                       </div>
-                      <p className="text-xs text-gray-500 mb-2">Reward: <span className="font-bold text-green-600">+{formatProduct(app.reward, app.country).formatted}</span></p>
-                      
                       <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${app.application_status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
                         {(app.application_status || '').replace('_', ' ')}
                       </span>
@@ -572,7 +570,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-bold text-gray-800 line-clamp-1">{app.product_name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">Earned: <span className="font-bold text-green-600">{formatProduct(parseFloat(app.price || 0) + parseFloat(app.reward || 0), app.country).formatted}</span></p>
+                    <p className="text-xs text-gray-500 mt-1">Completed: <span className="font-bold text-green-600">{formatProduct(app.price, app.country).formatted}</span></p>
                   </div>
                   <div className="shrink-0 bg-green-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm shadow-green-500/30">
                     <CheckCircle size={14}/> Success
@@ -939,9 +937,8 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
               </div>
               <h2 className="text-lg font-bold text-gray-800">{selectedItem.data.product_name}</h2>
               
-              <div className="bg-gray-50 p-4 rounded-xl mt-4 border border-gray-100 flex justify-between">
+              <div className="bg-gray-50 p-4 rounded-xl mt-4 border border-gray-100">
                 <div><p className="text-xs text-gray-500">Price</p><p className="text-lg font-bold text-gray-800">{formatProduct(selectedItem.data.price, selectedItem.data.country).formatted}</p></div>
-                <div className="text-right"><p className="text-xs text-gray-500">Reward</p><p className="text-lg font-bold text-green-600">+ {formatProduct(selectedItem.data.reward, selectedItem.data.country).formatted}</p></div>
               </div>
 
               {['pending', 'approved', 'order_submitted', 'order_approved', 'review_submitted', 'pending_refund', 'completed'].includes(selectedItem.data.application_status) && (
@@ -1128,11 +1125,11 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                      </p>
                   ) : selectedItem.data.category === 'Pre-Pay' ? (
                      <p className="text-xs text-green-700 font-medium leading-relaxed mb-3">
-                       Your funds (Product Price + Reward) have been successfully sent to your external payment account by the Admin. <strong className="text-green-800">Note: This amount is NOT added to your system wallet.</strong>
+                       Your product amount has been successfully processed by the Admin. <strong className="text-green-800">Note: This amount is NOT added to your system wallet.</strong>
                      </p>
                   ) : (
                      <p className="text-xs text-green-700 font-medium leading-relaxed mb-3">
-                       Your refund (Product Price + Reward) has been successfully added to your wallet. You can withdraw it at any time from the <strong className="text-green-800">My Wallet</strong> tab.
+                       Your product amount has been successfully updated in your account.
                      </p>
                   )}
                   

@@ -14,7 +14,7 @@ author: PromotInsight Editorial
 authorSlug: promotinsight-editorial
 authorName: PromotInsight Editorial
 authorTitle: Marketplace Education Team
-authorBio: The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.
+authorBio: The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.
 featuredImage: /blog/images/seller-product-page-optimization.svg
 featuredImageAlt: Product page layout with image, benefit, and proof sections highlighted
 featuredImageWidth: 1200
@@ -22,7 +22,7 @@ featuredImageHeight: 630
 publishedAt: 2026-05-29T09:00:00.000Z
 updatedAt: 2026-06-04T09:00:00.000Z
 status: published
-relatedPostIds: ["cashback-campaign-guide", "buyer-proof-checklist"]
+relatedPostIds: ["product-campaign-guide", "buyer-proof-checklist"]
 createdAt: 2026-05-24T09:00:00.000Z
 ---
 
@@ -47,10 +47,10 @@ Add answers to the questions buyers usually ask before applying.
 - Is the campaign available in my country?
 - What proof is required?
 - How long does approval take?
-- When is cashback released?
+- When is the campaign reviewed?
 
 ## Keep the Page Updated
 
-If stock, pricing, instructions, or reward values change, update the product page quickly. Outdated campaign pages create confusion and can reduce trust even when the offer is legitimate.
+If stock, pricing, or instructions change, update the product page quickly. Outdated campaign pages create confusion and can reduce trust even when the offer is legitimate.
 
 A better product page does not need to be long. It needs to be specific, current, and easy to scan.

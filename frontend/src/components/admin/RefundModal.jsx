@@ -53,7 +53,7 @@ export default function RefundModal({
             {selectedAppDetails.category === 'Pre-Pay' ? (
               <p className="text-sm text-orange-800 font-semibold leading-relaxed">You are marking this Pre-Pay application as paid. Send the funds directly to the buyer's external account (e.g. PayPal) and submit the proof below. <strong className="font-black text-red-600 block mt-2 bg-red-100 px-2 py-1 rounded">Funds will NOT be added to the system wallet.</strong></p>
             ) : (
-              <p className="text-sm text-green-800 font-semibold leading-relaxed">Funds (Product Price + Reward) will be added directly to the buyer's wallet. The buyer will be notified that they can withdraw this balance at any time.</p>
+              <p className="text-sm text-green-800 font-semibold leading-relaxed">The product amount will be added directly to the buyer's account after admin confirmation.</p>
             )}
         </div>
         <form onSubmit={submitRefund} className="space-y-4">

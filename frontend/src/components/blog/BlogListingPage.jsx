@@ -9,7 +9,7 @@ import { filterPosts, paginate, setDocumentMeta } from '../../utils/blogUtils';
 
 export default function BlogListingPage({
   title = 'PromotInsight Blog',
-  description = 'Guides and updates for running clearer cashback campaigns, improving product promotion results, and helping buyers submit better proof.',
+  description = 'Guides and updates for running clearer product campaigns, improving promotion results, and helping buyers submit better proof.',
   categorySlug = '',
   authorSlug = '',
   canonicalPath = '/blog/',

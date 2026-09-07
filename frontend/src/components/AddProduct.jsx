@@ -3,17 +3,15 @@ import { UploadCloud, Info, ShieldCheck, AlertTriangle, RefreshCw, Wallet } from
 import {
   getConfiguredCampaignCategoryOptions,
   normalizeCampaignCategory,
-  parseBuyerRewardConditions,
   parsePlatformChargeConditions,
   parsePlatformChargeTiers,
-  resolveBuyerRewardForCategory,
   resolvePlatformChargeTiersForCategory,
 } from '../utils/campaignCategories';
 
 export default function AddProduct({ onProductAdded }) {
   const [formData, setFormData] = useState({
     product_name: '', product_link: '', store_name: '', search_keyword: '', 
-    country: '', price: '', reward: '', required_orders: 1, 
+    country: '', price: '', reward: '0', required_orders: 1,
     instructions: '', platform: '', category: 'Need Review'
   });
   const [imageFile, setImageFile] = useState(null);
@@ -95,16 +93,7 @@ export default function AddProduct({ onProductAdded }) {
           // JSON Tier Parsing fix
           data.data.parsed_platform_charge = parsePlatformChargeTiers(data.data.platform_charge);
           data.data.parsed_platform_charge_conditions = parsePlatformChargeConditions(data.data.platform_charge_conditions);
-          data.data.parsed_buyer_reward_conditions = parseBuyerRewardConditions(data.data.buyer_reward_conditions);
-          
           setActiveConfig(data.data);
-          
-          const fetchedRate = data.data.exchange_rate ? parseFloat(data.data.exchange_rate) : 1;
-          const rewardValue = resolveBuyerRewardForCategory(data.data, formData.category);
-          if (rewardValue > 0) {
-              const localReward = (rewardValue * fetchedRate).toFixed(2);
-              setFormData(prev => ({ ...prev, reward: localReward }));
-          }
         } else {
           setActiveConfig(null);
         }
@@ -116,15 +105,6 @@ export default function AddProduct({ onProductAdded }) {
     };
     fetchDynamicFee();
   }, [formData.country, formData.platform]);
-
-  useEffect(() => {
-    if (!activeConfig) return;
-    const fetchedRate = activeConfig.exchange_rate ? parseFloat(activeConfig.exchange_rate) : 1;
-    const rewardValue = resolveBuyerRewardForCategory(activeConfig, formData.category);
-    if (rewardValue > 0) {
-      setFormData(prev => ({ ...prev, reward: (rewardValue * fetchedRate).toFixed(2) }));
-    }
-  }, [activeConfig, formData.category]);
 
   const handleCountryChange = (e) => {
     const selectedCountry = e.target.value;
@@ -154,10 +134,9 @@ export default function AddProduct({ onProductAdded }) {
   // 🔥 UPDATED CALCULATION LOGIC (JSON TIERS + EXCHANGE RATE)
   // ==========================================
   const priceNum = parseFloat(formData.price) || 0;
-  const rewardNum = parseFloat(formData.reward) || 0;
   const qtyNum = parseInt(formData.required_orders) || 1;
   
-  const rewardDepositPerOrderLocal = rewardNum;
+  const campaignCreditPerOrderLocal = 0;
   
   // 🔥 1. Exchange Rate agei ber kore nilam
   const exchangeRate = activeConfig && activeConfig.exchange_rate ? parseFloat(activeConfig.exchange_rate) : 1.0;
@@ -165,8 +144,6 @@ export default function AddProduct({ onProductAdded }) {
   // 🔥 2. Local Price ke USD te convert kora holo jate Database er USD Tier er sathe compare kora jay
   const priceNumUSD = priceNum / exchangeRate;
   const platformChargeTiers = resolvePlatformChargeTiersForCategory(activeConfig, formData.category);
-  const categoryRewardUSD = activeConfig ? resolveBuyerRewardForCategory(activeConfig, formData.category) : 0;
-  const buyerRewardLocked = activeConfig && categoryRewardUSD > 0;
   const availableCategoryOptions = useMemo(
     () => getConfiguredCampaignCategoryOptions(activeConfig),
     [activeConfig]
@@ -193,7 +170,7 @@ export default function AddProduct({ onProductAdded }) {
   const platformCommissionLocal = platformCommissionUSD * exchangeRate;
   
   // Total in Local Currency
-  const totalDepositLocal = (rewardDepositPerOrderLocal + platformCommissionLocal) * qtyNum;
+  const totalDepositLocal = (campaignCreditPerOrderLocal + platformCommissionLocal) * qtyNum;
 
   // 🔥 USD Conversion for Database submission
   const totalDepositUSD = totalDepositLocal / exchangeRate;
@@ -230,11 +207,13 @@ export default function AddProduct({ onProductAdded }) {
         if (key === 'product_link' && formData[key] && !formData[key].startsWith('http')) {
           submitData.append(key, `https://${formData[key]}`);
         } 
-        // 🔥 Price এবং Reward কে USD তে কনভার্ট করে API তে পাঠানো হচ্ছে
-        else if (key === 'price' || key === 'reward') {
+        else if (key === 'price') {
           const usdValue = (parseFloat(formData[key] || 0) / exchangeRate).toFixed(4);
           submitData.append(key, usdValue);
         } 
+        else if (key === 'reward') {
+          submitData.append(key, '0.0000');
+        }
         else {
           submitData.append(key, formData[key]);
         }
@@ -258,7 +237,7 @@ export default function AddProduct({ onProductAdded }) {
         alert(data.message || "Product published successfully!");
         setFormData(prev => ({
           ...prev, product_name: '', product_link: '', store_name: '', search_keyword: '', 
-          price: '', reward: '', required_orders: 1, instructions: '', category: 'Need Review'
+          price: '', reward: '0', required_orders: 1, instructions: '', category: 'Need Review'
         }));
         setImageFile(null); setImagePreview(null);
         if(onProductAdded) onProductAdded();
@@ -350,7 +329,7 @@ export default function AddProduct({ onProductAdded }) {
         </div>
 
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Product Price ({currency}) *</label>
               <input required type="number" step="0.01" min="0.01" name="price" value={formData.price} onChange={handleChange} 
@@ -358,30 +337,11 @@ export default function AddProduct({ onProductAdded }) {
                 placeholder="0.00" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1 flex items-center justify-between">
-                 <span>Buyer Reward ({currency}) *</span>
-                 {buyerRewardLocked && <span className="text-[9px] bg-gray-200 text-gray-600 px-1 rounded">Fixed by Admin</span>}
-              </label>
-              <input 
-                required 
-                type="number" 
-                step="0.01" 
-                min="0" 
-                name="reward" 
-                value={formData.reward} 
-                onChange={handleChange} 
-                readOnly={buyerRewardLocked}
-                className={`w-full p-3 border rounded-xl outline-none transition-all text-lg font-bold ${buyerRewardLocked ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-50 focus:bg-white text-green-600 focus:border-green-500'}`} 
-                placeholder="0.00" 
-              />
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Quantity (Orders) *</label>
+              <input required type="number" min="1" name="required_orders" value={formData.required_orders} onChange={handleChange}
+                className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] transition-all bg-gray-50 focus:bg-white text-lg font-bold"
+                placeholder="1" />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Quantity (Orders) *</label>
-            <input required type="number" min="1" name="required_orders" value={formData.required_orders} onChange={handleChange} 
-              className="w-full p-3 border rounded-xl outline-none focus:border-[#0066ff] transition-all bg-gray-50 focus:bg-white text-lg font-bold" 
-              placeholder="1" />
           </div>
 
           <div>
@@ -432,7 +392,7 @@ export default function AddProduct({ onProductAdded }) {
               )}
            </div>
            <p className="text-[11px] text-gray-500 font-semibold mb-3">
-             Platform charge and buyer reward are stored in USD. Seller price and reward inputs stay in the selected country's local currency.
+             Platform charge is stored in USD. Seller price input stays in the selected country's local currency.
            </p>
 
            <div className="flex flex-col md:flex-row gap-4">
@@ -444,7 +404,6 @@ export default function AddProduct({ onProductAdded }) {
                        <span>Platform Charge:</span> 
                        <b className="text-[#0066ff]">{platformChargeTiers?.length > 0 ? 'Tiered Fee' : `${activeConfig.platform_charge}%`}</b>
                      </li>
-                     <li className="flex justify-between"><span>Buyer Reward:</span> <b>{categoryRewardUSD > 0 ? `${currency}${(categoryRewardUSD * exchangeRate).toFixed(2)}` : 'Custom'}</b></li>
                      <li className="flex justify-between"><span>Deposit Fee:</span> <b>{activeConfig.seller_deposit_fee}%</b></li>
                      <li className="flex justify-between"><span>W.Draw Fee:</span> <b>{activeConfig.seller_withdrawal_fee}%</b></li>
                      <li className="flex justify-between mt-1 pt-1 border-t border-gray-100">
@@ -458,8 +417,8 @@ export default function AddProduct({ onProductAdded }) {
              <div className={`bg-white p-4 rounded-xl border border-yellow-200 ${activeConfig ? 'w-full md:w-2/3' : 'w-full'}`}>
                 <div className="space-y-2 text-sm text-gray-700">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-500">Reward Deposit</span>
-                    <span className="font-bold text-gray-800">{currency}{rewardDepositPerOrderLocal.toFixed(2)}</span>
+                    <span className="font-semibold text-gray-500">Campaign Credit</span>
+                    <span className="font-bold text-gray-800">{currency}{campaignCreditPerOrderLocal.toFixed(2)}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">

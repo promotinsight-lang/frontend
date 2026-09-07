@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
   <title id="title">Buyer proof checklist</title>
-  <desc id="desc">A checklist showing buyer proof steps for cashback approval.</desc>
+  <desc id="desc">A checklist showing buyer proof steps for campaign approval.</desc>
   <rect width="1200" height="630" fill="#f8fafc"/>
   <rect x="130" y="72" width="530" height="486" rx="28" fill="#ffffff" stroke="#cbd5e1" stroke-width="4"/>
   <rect x="726" y="120" width="330" height="390" rx="28" fill="#0f172a"/>

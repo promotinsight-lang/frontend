@@ -211,7 +211,7 @@ export default function UserProfileModal({
                        {app.image_url ? (<img src={app.image_url} alt="Product" className="w-10 h-10 object-contain border rounded bg-gray-50 p-0.5 shrink-0" />) : (<div className="w-10 h-10 bg-gray-100 border rounded flex items-center justify-center text-[8px] text-gray-400 shrink-0">No Img</div>)}
                        <div className="flex-1 min-w-0">
                          <p className="text-sm font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">{app.product_name}</p>
-                         {selectedUserProfile.role === 'seller' ? (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Buyer: {app.buyer_email}</p>) : (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Reward: <span className="text-green-600 font-bold">${app.reward}</span></p>)}
+                         {selectedUserProfile.role === 'seller' ? (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Buyer: {app.buyer_email}</p>) : (<p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">Status: <span className="font-bold">{app.status.replace('_', ' ')}</span></p>)}
                        </div>
                        <span className={`text-[9px] font-bold uppercase px-2 py-1 rounded shrink-0 hidden sm:block ${app.status === 'completed' ? 'bg-green-100 text-green-700' : app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{app.status.replace('_', ' ')}</span>
                     </div>

@@ -1,20 +1,20 @@
 ---
 id: buyer-proof-checklist
-title: Buyer Proof Checklist for Faster Cashback Approval
+title: Buyer Proof Checklist for Faster Campaign Approval
 slug: buyer-proof-checklist
 excerpt: Use this checklist to submit cleaner campaign proof and avoid delays when a seller reviews your order.
-metaTitle: Buyer Proof Checklist for Cashback Approval | PromotInsight
-metaDescription: Follow this buyer proof checklist to submit complete campaign evidence, reduce review delays, and receive cashback faster.
-primaryKeyword: cashback proof checklist
+metaTitle: Buyer Proof Checklist for Campaign Approval | PromotInsight
+metaDescription: Follow this buyer proof checklist to submit complete campaign evidence and reduce review delays.
+primaryKeyword: campaign proof checklist
 category: Buyer Guides
 categorySlug: buyer-guides
 categoryName: Buyer Guides
-categoryDescription: Helpful guides for buyers applying to cashback and promotion campaigns.
+categoryDescription: Helpful guides for buyers applying to verified product campaigns.
 author: PromotInsight Editorial
 authorSlug: promotinsight-editorial
 authorName: PromotInsight Editorial
 authorTitle: Marketplace Education Team
-authorBio: The PromotInsight editorial team writes practical playbooks for sellers and buyers using cashback promotions responsibly.
+authorBio: The PromotInsight editorial team writes practical playbooks for sellers and buyers using product campaigns responsibly.
 featuredImage: /blog/images/buyer-proof-checklist.svg
 featuredImageAlt: Buyer checklist with order proof and approval steps
 featuredImageWidth: 1200
@@ -22,15 +22,15 @@ featuredImageHeight: 630
 publishedAt: 2026-06-18T09:00:00.000Z
 updatedAt: 2026-06-18T09:00:00.000Z
 status: published
-relatedPostIds: ["cashback-campaign-guide"]
+relatedPostIds: ["product-campaign-guide"]
 createdAt: 2026-06-15T09:00:00.000Z
 ---
 
-Submitting clear proof is the easiest way to avoid cashback delays. Sellers need enough information to verify your campaign task, and support teams need a clean record if anything needs review.
+Submitting clear proof is the easiest way to avoid review delays. Sellers need enough information to verify your campaign task, and support teams need a clean record if anything needs review.
 
 ## Check the Campaign Instructions First
 
-Before placing an order, read the campaign instructions from top to bottom. Make sure the product, reward amount, order timing, and proof requirements match what you plan to submit.
+Before placing an order, read the campaign instructions from top to bottom. Make sure the product, order timing, and proof requirements match what you plan to submit.
 
 ## Save the Right Evidence
 
@@ -53,4 +53,4 @@ Many delays happen because proof is incomplete or submitted in the wrong place. 
 
 Do not upload passwords, private payment details, full card numbers, or unrelated personal documents. Campaign verification should never require sensitive account access.
 
-Clear proof helps everyone move faster. When your submission matches the instructions, sellers can approve confidently and your cashback path stays predictable.
+Clear proof helps everyone move faster. When your submission matches the instructions, sellers can approve confidently and your campaign path stays predictable.

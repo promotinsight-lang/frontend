@@ -161,7 +161,7 @@ export default function BlogDetails() {
 
               <section className="mt-8 rounded-lg bg-slate-950 p-6 text-white md:p-8" aria-labelledby="blog-cta">
                 <h2 id="blog-cta" className="text-2xl font-black">Ready to run a clearer campaign?</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Use PromotInsight to manage promotion applications, buyer proof, seller review, and cashback status in one workflow.</p>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Use PromotInsight to manage promotion applications, buyer proof, seller review, and campaign status in one workflow.</p>
                 <Link to="/register" className="mt-5 inline-flex rounded-lg bg-emerald-500 px-5 py-3 text-sm font-black text-white transition hover:bg-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-white">
                   Create an account
                 </Link>
