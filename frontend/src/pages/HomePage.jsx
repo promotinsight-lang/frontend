@@ -1,24 +1,24 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard, TrendingUp, ShieldCheck, Zap, CheckCircle, Wallet, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, CreditCard } from 'lucide-react';
+import { Search, Briefcase, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard, TrendingUp, ShieldCheck, Zap, CheckCircle, Wallet, ArrowRight, ShoppingCart } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useLanguage } from '../i18n/LanguageContext';
 
 
 export default function HomePage() {
-  const { t, language } = useLanguage();
-  const [user, setUser] = useState(null);
-  const [isAccountDisabled, setIsAccountDisabled] = useState(false);
+  const { t } = useLanguage();
+  const [user] = useState(null);
+  const [isAccountDisabled] = useState(false);
 
   // Landing Page States
   const [workTab, setWorkTab] = useState('buyer'); 
   const [openFaq, setOpenFaq] = useState(0);
   
   // ⚡ Live Feed States
-  const [liveFeed, setLiveFeed] = useState([]);
-  const [feedLoading, setFeedLoading] = useState(true);
-  const [publicStats, setPublicStats] = useState({ sellers: 435, buyers: 4560 });
+  const [liveFeed] = useState([]);
+  const [feedLoading] = useState(true);
+  const [publicStats] = useState({ sellers: 435, buyers: 4560 });
 
 
 
@@ -28,7 +28,7 @@ export default function HomePage() {
       { q: t('faq2_q'), a: t('faq2_a') },
       { q: t('faq3_q'), a: t('faq3_a') },
     ],
-    [t, language]
+    [t]
   );
 
   return (
@@ -47,14 +47,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto text-center relative z-10">
           
           {/* 1. Dynamic Promo Badge */}
-          {user?.role === 'seller' ? (
+          {user?.role === 'seller' && (
             <div className="inline-flex items-center gap-2 bg-emerald-500 text-white px-5 py-2 rounded-full font-black text-xs md:text-sm tracking-wide mb-6 shadow-lg shadow-emerald-500/30">
                <ShieldCheck size={18} /> {t('seller_badge')}
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-5 py-2 rounded-full font-black text-xs md:text-sm tracking-wide mb-6 shadow-lg shadow-yellow-500/30 animate-bounce">
-               <CreditCard size={18} className="text-yellow-900" /> {t('buyer_badge')}
-            </div>
+             </div>
           )}
           
           <div className="block mb-4">
@@ -115,63 +111,6 @@ export default function HomePage() {
 
         </div>
       </section>
-
-
-
-      {/* BUYER EXCLUSIVE BANNER (Shows only to Buyers instead of Calculator) */}
-      {user?.role === 'buyer' && (
-      <section className="relative z-20 -mt-20 max-w-5xl mx-auto px-4 w-full mb-16">
-        <div className="bg-gradient-to-r from-[#10b981] to-emerald-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row items-center animate-fade-in-up border border-emerald-500">
-          
-          <div className="w-full md:w-3/5 p-8 lg:p-12 text-white">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full mb-4 border border-white/30 backdrop-blur-sm">
-              <Star size={16} className="text-yellow-300 fill-current"/>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-50">{t('buyer_exclusive')}</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
-              {t('buyer_banner_title')} <span className="text-yellow-300">{t('buyer_banner_extra')}</span>
-            </h2>
-            <p className="text-emerald-100 text-sm md:text-base font-medium mb-8 max-w-md">
-              {t('buyer_banner_desc')}
-            </p>
-            <div className="flex gap-4">
-              <Link to="/marketplace" className="bg-white text-emerald-700 hover:bg-gray-50 px-6 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center gap-2">
-                <ShoppingCart size={18}/> {t('claim_products')}
-              </Link>
-            </div>
-          </div>
-
-          <div className="w-full md:w-2/5 bg-white/10 p-8 lg:p-10 flex flex-col justify-center items-center gap-4 backdrop-blur-md border-l border-white/10 h-full">
-             
-             <div className="bg-white p-5 rounded-2xl shadow-xl text-center transform hover:scale-105 transition-transform w-full max-w-sm">
-                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                   <Wallet size={24}/>
-                </div>
-                <p className="text-gray-500 font-bold text-xs uppercase mb-1">{t('potential_earnings')}</p>
-                <h3 className="text-3xl font-black text-gray-900">$350+</h3>
-             </div>
-
-             <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-5 rounded-2xl shadow-xl border border-yellow-200 text-center transform hover:scale-105 transition-transform w-full max-w-sm">
-                <div className="w-12 h-12 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
-                   <CreditCard size={24}/>
-                </div>
-                <p className="text-yellow-800 font-bold text-xs uppercase mb-1">{t('loan_credit_label')}</p>
-                <h3 className="text-2xl font-black text-gray-900 mb-2">{t('loan_credit_title')}</h3>
-                <p className="text-xs text-gray-600 font-semibold mb-3 leading-relaxed">{t('loan_credit_desc')}</p>
-                <div className="bg-white border border-emerald-100 rounded-xl p-3 mb-3">
-                  <p className="text-sm font-black text-emerald-700">{t('loan_credit_subtitle')}</p>
-                  <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-relaxed">{t('loan_credit_subdesc')}</p>
-                </div>
-                <Link to="/profile" className="inline-block bg-gray-900 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors shadow-sm mt-1">
-                   {t('view_account')}
-                </Link>
-             </div>
-
-          </div>
-
-        </div>
-      </section>
-      )}
 
       {/* LIVE ACTIVITY FEED */}
       <section className="py-10 bg-white border-y border-gray-100">

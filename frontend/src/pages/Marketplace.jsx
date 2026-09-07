@@ -346,7 +346,7 @@ export default function Marketplace() {
             ) : (
               <>
                 <p className="text-gray-500 mb-8 max-w-md text-sm leading-relaxed">
-                  {user?.role === 'seller' ? 'Please complete your seller verification to list products and process wallet deposits.' : 'Please complete your verification to unlock products and start earning 100% cashback.'}
+                  {user?.role === 'seller' ? 'Please complete your seller verification to list products and process wallet deposits.' : 'Please complete your verification to unlock products.'}
                 </p>
                 <Link to="/verification" className="bg-[#10b981] hover:bg-[#059669] text-white px-8 py-3 rounded-full font-bold transition-all shadow-md">Verify Now</Link>
               </>
@@ -418,7 +418,6 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
   const canSubmitOrder = ['approved', 'pending'].includes(applicationStatus);
   const applicationId = application?.application_id || application?.id;
   const priceDisplay = formatProductMoney(product.price, product.country);
-  const rewardDisplay = formatProductMoney(product.reward, product.country);
   const cardLabel = product.category || 'General';
   const statusLabel = isSoldOut ? 'Closed' : `${availableQty} left`;
 
@@ -460,14 +459,10 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
           {product.product_name || 'Premium product'}
         </h3>
 
-        <div className="mb-3 flex items-end justify-between gap-3 border-t border-gray-100 pt-3">
+        <div className="mb-3 border-t border-gray-100 pt-3">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Price</p>
             <p className={`text-lg font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>{priceDisplay.formatted}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Reward</p>
-            <p className={`text-base font-black ${isSoldOut ? 'text-gray-400' : 'text-emerald-600'}`}>+{rewardDisplay.formatted}</p>
           </div>
         </div>
 

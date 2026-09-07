@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Check, ShieldAlert, Lock, Eye, Plus, Copy } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Lock, Eye, Plus } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { formatProductMoney } from '../utils/currency';
 
@@ -11,7 +11,6 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
-  const [copied, setCopied] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [isAccountDisabled, setIsAccountDisabled] = useState(false);
@@ -41,7 +40,7 @@ export default function ProductDetails() {
         } else {
           setError(data.message || "Product not found");
         }
-      } catch (err) {
+      } catch {
         setError("Failed to fetch product details.");
       } finally {
         setLoading(false);
@@ -69,13 +68,7 @@ export default function ProductDetails() {
       }
     };
     fetchMyApplications();
-  }, [id]);
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  }, [id, navigate]);
 
   const handleApply = async () => {
     if (!user) {
@@ -113,7 +106,7 @@ export default function ProductDetails() {
       } else {
         alert(result.message || "Failed to apply");
       }
-    } catch (e) {
+    } catch {
       alert("Error applying for product. Please try again.");
     } finally {
       setIsApplying(false);
@@ -154,7 +147,6 @@ export default function ProductDetails() {
   const availableQty = Math.max(0, targetQty - appliedQty);
   const isSoldOut = (targetQty > 0 && availableQty === 0) || product.status === 'stopped';
   const priceDisplay = formatProductMoney(product.price, product.country);
-  const rewardDisplay = formatProductMoney(product.reward, product.country);
   const statusLabel = isSoldOut ? 'Closed' : `${availableQty} left`;
   const isVerified = user && user.verification_status === 'approved';
 
@@ -211,18 +203,11 @@ export default function ProductDetails() {
               {product.product_name}
             </h1>
 
-            <div className="flex items-center gap-6 mb-8 pb-6 border-b border-gray-100">
+            <div className="mb-8 pb-6 border-b border-gray-100">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Price</p>
                 <p className={`text-3xl font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>
                   {priceDisplay.formatted}
-                </p>
-              </div>
-              <div className="h-12 w-px bg-gray-200"></div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#10b981] mb-1">Cashback Reward</p>
-                <p className={`text-3xl font-black ${isSoldOut ? 'text-gray-400' : 'text-[#10b981]'}`}>
-                  +{rewardDisplay.formatted}
                 </p>
               </div>
             </div>
@@ -242,7 +227,7 @@ export default function ProductDetails() {
               ) : !user ? (
                 <div className="space-y-3">
                   <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-100 text-sm">
-                    <strong>Want this reward?</strong> Log in or sign up to claim this offer!
+                    <strong>Want this offer?</strong> Log in or sign up to claim it.
                   </div>
                   <button onClick={() => navigate('/login')} className="w-full bg-[#10b981] hover:bg-[#059669] text-white py-4 rounded-full font-bold text-lg shadow-md transition-all flex justify-center items-center gap-2">
                     Log in to Order
