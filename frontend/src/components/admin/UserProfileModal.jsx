@@ -145,7 +145,7 @@ export default function UserProfileModal({
               )}
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">{selectedUserProfile.role === 'seller' ? 'Email Address:' : 'PayPal Email:'}</span> <span className="break-all">{selectedUserProfile.paypal_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">WhatsApp:</span> <span className="break-all">{selectedUserProfile.whatsapp_account || 'N/A'}</span></p>
-              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">{selectedUserProfile.role === 'seller' ? 'WeChat ID:' : 'Facebook ID:'}</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
+              <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">{selectedUserProfile.role === 'seller' ? 'WeChat ID:' : 'Facebook URL:'}</span> <span className="break-all">{selectedUserProfile.facebook_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Telegram:</span> <span className="break-all">{selectedUserProfile.telegram_account || 'N/A'}</span></p>
               <p className="flex flex-col sm:flex-row"><span className="font-bold text-gray-700 w-32 shrink-0">Verification:</span> <span className="uppercase font-bold text-indigo-600">{selectedUserProfile.verification_status}</span></p>
               

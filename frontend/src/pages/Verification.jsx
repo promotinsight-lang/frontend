@@ -26,6 +26,11 @@ const DEFAULT_PLATFORM_FIELDS = [
   { key: 'verification_image_url', label: 'Profile Screenshot', type: 'image', required: false, placeholder: '' },
 ];
 
+const BUYER_REQUIRED_CONTACT_FIELDS = [
+  { key: 'whatsapp_account', label: 'WhatsApp Number', type: 'tel', required: true, placeholder: '+1 555 123 4567' },
+  { key: 'facebook_account', label: 'Facebook URL', type: 'url', required: true, placeholder: 'https://www.facebook.com/your.profile' },
+];
+
 const Verification = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -244,7 +249,11 @@ const Verification = () => {
   };
 
   const normalizeGlobalField = (field) => {
-    if (field.key === 'whatsapp_account') return { ...field, required: false };
+    if (field.key === 'whatsapp_account') {
+      return isBuyer
+        ? { ...field, label: 'WhatsApp Number', type: 'tel', required: true, placeholder: '+1 555 123 4567' }
+        : { ...field, required: false };
+    }
     if (field.key === 'paypal_account') {
       return isBuyer
         ? { ...field, label: 'PayPal Email Address', placeholder: 'yourname@email.com' }
@@ -252,11 +261,25 @@ const Verification = () => {
     }
     if (field.key === 'facebook_account') {
       return isBuyer
-        ? { ...field, label: 'Facebook ID', type: 'text', placeholder: 'Enter your Facebook ID' }
-        : { ...field, label: 'WeChat ID', type: 'text', placeholder: 'Enter your WeChat ID' };
+        ? { ...field, label: 'Facebook URL', type: 'url', required: true, placeholder: 'https://www.facebook.com/your.profile' }
+        : { ...field, label: 'WeChat ID', type: 'text', required: false, placeholder: 'Enter your WeChat ID' };
     }
     return field;
   };
+
+  const displayGlobalFields = (() => {
+    const sourceFields = formConfig.global_fields.map(normalizeGlobalField);
+    if (!isBuyer) return sourceFields;
+
+    const fieldsByKey = new Map(sourceFields.map((field) => [field.key, field]));
+    for (const requiredField of BUYER_REQUIRED_CONTACT_FIELDS) {
+      fieldsByKey.set(requiredField.key, normalizeGlobalField({
+        ...(fieldsByKey.get(requiredField.key) || {}),
+        ...requiredField,
+      }));
+    }
+    return Array.from(fieldsByKey.values());
+  })();
 
   const renderPlatformFieldInput = (platformName, field) => {
     const normalizedField = normalizePlatformField(field);
@@ -330,6 +353,18 @@ const Verification = () => {
       setMessage({ type: 'error', text: 'Please select at least one shopping platform.' });
       return;
     }
+    if (isBuyer) {
+      const whatsapp = String(globalValues.whatsapp_account || '').trim();
+      const facebookUrl = String(globalValues.facebook_account || '').trim();
+      if (!whatsapp) {
+        setMessage({ type: 'error', text: 'WhatsApp Number is required for buyer approval.' });
+        return;
+      }
+      if (!facebookUrl) {
+        setMessage({ type: 'error', text: 'Facebook URL is required for buyer approval.' });
+        return;
+      }
+    }
 
     setSubmitLoading(true);
     try {
@@ -380,6 +415,7 @@ const Verification = () => {
         onChange={(e) => onChange(e.target.value)}
         type={inputType}
         placeholder={field.placeholder || field.label}
+        pattern={field.key === 'whatsapp_account' ? '^\\+?[0-9][0-9\\s().-]{6,}$' : undefined}
         className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 text-sm focus:border-[#0066ff] focus:bg-white outline-none transition-all"
       />
     );
@@ -571,13 +607,13 @@ const Verification = () => {
                   </div>
                 )}
 
-                {formConfig.global_fields.length > 0 && (
+                {displayGlobalFields.length > 0 && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-bold text-[#0066ff] uppercase tracking-wider border-b border-blue-100 pb-1">
                       Account &amp; contact details
                     </h3>
-                    {formConfig.global_fields.map((field) => {
-                      const fieldDef = normalizeGlobalField(field);
+                    {displayGlobalFields.map((field) => {
+                      const fieldDef = field;
                       return (
                         <div key={fieldDef.key}>
                           <label className="block text-xs font-bold text-gray-600 mb-1">

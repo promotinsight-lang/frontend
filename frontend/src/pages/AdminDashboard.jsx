@@ -181,7 +181,7 @@ const getVerificationGlobalDetails = (verification) => {
   return {
     email: global.paypal_account || verification?.paypal_account || '',
     whatsapp: global.whatsapp_account || verification?.whatsapp_account || '',
-    wechat: global.facebook_account || verification?.facebook_account || '',
+    socialAccount: global.facebook_account || verification?.facebook_account || '',
     telegram: global.telegram_account || verification?.telegram_account || '',
   };
 };
@@ -1644,7 +1644,7 @@ export default function AdminDashboard() {
               <h3 className="font-bold text-xl text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
                 <ShieldCheck size={22} className="text-green-600" /> Global Buyer Verification Fields
               </h3>
-              <p className="text-xs text-gray-500 mb-2">Email, WhatsApp, WeChat, Telegram, etc. — buyer যেকোনো country/platform বেছে নিলেও দেখাবে।</p>
+              <p className="text-xs text-gray-500 mb-2">Email, WhatsApp, Facebook URL, Telegram, etc. — buyer যেকোনো country/platform বেছে নিলেও দেখাবে।</p>
               <VerificationFieldsGuide variant="global" />
               {verificationConfigLoading ? (
                 <p className="text-sm text-gray-500">Loading...</p>
@@ -2051,7 +2051,7 @@ export default function AdminDashboard() {
                       <p className="text-xs font-semibold text-gray-400">Payment & Contacts</p>
                       <p className="font-medium text-gray-700 break-all">{v.role === 'seller' ? 'Email Address' : 'PayPal Email'}: {contactDetails.email || 'N/A'}</p>
                       <p className="font-medium text-gray-700 break-all">WhatsApp: {contactDetails.whatsapp || 'N/A'}</p>
-                      <p className="font-medium text-gray-700 break-all">{v.role === 'seller' ? 'WeChat ID' : 'Facebook ID'}: {contactDetails.wechat || 'N/A'}</p>
+                      <p className="font-medium text-gray-700 break-all">{v.role === 'seller' ? 'WeChat ID' : 'Facebook URL'}: {contactDetails.socialAccount || 'N/A'}</p>
                       <p className="font-medium text-gray-700 break-all">Telegram: {contactDetails.telegram || 'N/A'}</p>
                     </div>
                   </div>

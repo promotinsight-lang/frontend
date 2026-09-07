@@ -60,8 +60,8 @@ export default function VerificationFieldsGuide({ variant = 'global' }) {
                   </tr>
                   <tr>
                     <td className="py-1 pr-2">facebook_account</td>
-                    <td>WeChat ID</td>
-                    <td>your_wechat_id</td>
+                    <td>Facebook URL</td>
+                    <td>https://www.facebook.com/your.profile</td>
                   </tr>
                 </tbody>
               </table>
