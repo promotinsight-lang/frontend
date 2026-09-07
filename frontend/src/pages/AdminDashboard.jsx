@@ -216,6 +216,8 @@ export default function AdminDashboard() {
   const [historyRefunds, setHistoryRefunds] = useState([]); 
   
   const [, setPaymentSettings] = useState([]);
+  const [platformSettings, setPlatformSettings] = useState({ facebook_group_url: '' });
+  const [platformSettingsLoading, setPlatformSettingsLoading] = useState(false);
   const [applications, setApplications] = useState([]); 
   const [verifications, setVerifications] = useState([]); 
   const [appeals, setAppeals] = useState([]); 
@@ -742,6 +744,19 @@ export default function AdminDashboard() {
     } catch {}
   };
 
+  const fetchPlatformSettings = async () => {
+    setPlatformSettingsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/platform-settings`, { headers: getAuthHeaders(), credentials: 'include' });
+      const data = await res.json();
+      if (data.success) setPlatformSettings(data.data || { facebook_group_url: '' });
+    } catch {
+      setPlatformSettings({ facebook_group_url: '' });
+    } finally {
+      setPlatformSettingsLoading(false);
+    }
+  };
+
   const fetchApplications = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/applications/all`, { headers: getAuthHeaders(), credentials: 'include' });
@@ -848,7 +863,7 @@ export default function AdminDashboard() {
     if (activeTab === 'history') fetchRefunds(); 
     if (activeTab === 'products' || activeTab === 'all-products') fetchProducts();
     fetchAllFeeConfigs(); // 🔥 Exchange rates সব ট্যাবের জন্য লোড হবে
-    if (activeTab === 'settings') { fetchSettings(); fetchGlobalVerificationFields(); } 
+    if (activeTab === 'settings') { fetchSettings(); fetchPlatformSettings(); fetchGlobalVerificationFields(); }
     if (activeTab === 'applications') fetchApplications();
     if (activeTab === 'verify-requests') fetchVerifications(); 
     if (activeTab === 'appeals') fetchAppeals(); 
@@ -869,6 +884,16 @@ export default function AdminDashboard() {
       if (res.ok) { if (!options.silent) alert(data.message || 'Action successful'); return true; } 
       else { if (!options.silent) alert(data.message || 'Action failed'); return false; }
     } catch { if (!options.silent) alert('Connection Error.'); return false; }
+  };
+
+  const savePlatformSettings = async (e) => {
+    e.preventDefault();
+    const success = await handleAction(
+      `${API_BASE}/api/admin/platform-settings`,
+      'PUT',
+      { facebook_group_url: platformSettings.facebook_group_url }
+    );
+    if (success) fetchPlatformSettings();
   };
 
   const approveDeposit = async (id) => { if(window.confirm('Approve Deposit?')) { if(await handleAction(`${API_BASE}/api/admin/deposits/${id}/approve`)) fetchDeposits(); } };
@@ -1208,7 +1233,7 @@ export default function AdminDashboard() {
             if(activeTab === 'announcements') fetchAnnouncements();
             if(activeTab === 'blogs') fetchAdminBlogs();
             fetchAllFeeConfigs(); // 🔥 রিফ্রেশ বাটনেও রেট ফেচ হবে
-            if(activeTab === 'settings') { fetchSettings(); fetchGlobalVerificationFields(); }
+            if(activeTab === 'settings') { fetchSettings(); fetchPlatformSettings(); fetchGlobalVerificationFields(); }
           }} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-all">
             <RefreshCcw size={20} />
           </button>
@@ -1520,6 +1545,44 @@ export default function AdminDashboard() {
         {/* SETTINGS TAB (DYNAMIC FEES) */}
         {activeTab === 'settings' && (
           <div className="space-y-8 animate-fade-in-up mt-6 max-w-5xl mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
+              <h3 className="font-bold text-xl text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                <MessageCircle size={22} className="text-[#1877f2]" /> Facebook Group Contact
+              </h3>
+              <form onSubmit={savePlatformSettings} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black uppercase text-gray-600 mb-1">Facebook Group URL</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://www.facebook.com/groups/your-group-id"
+                    value={platformSettings.facebook_group_url || ''}
+                    onChange={(e) => setPlatformSettings((prev) => ({ ...prev, facebook_group_url: e.target.value }))}
+                    className="w-full p-3 bg-gray-50 border rounded-lg font-semibold text-sm text-gray-800 outline-none focus:border-[#1877f2] focus:bg-white"
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="submit"
+                    disabled={platformSettingsLoading}
+                    className="w-full sm:w-auto bg-[#1877f2] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#0f5fc9] disabled:opacity-50"
+                  >
+                    {platformSettingsLoading ? 'Saving...' : 'Save Facebook Group URL'}
+                  </button>
+                  {platformSettings.facebook_group_url && (
+                    <a
+                      href={platformSettings.facebook_group_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full sm:w-auto border border-blue-100 bg-blue-50 text-[#1877f2] px-6 py-2.5 rounded-xl text-sm font-bold text-center hover:bg-blue-100"
+                    >
+                      Open Group
+                    </a>
+                  )}
+                </div>
+              </form>
+            </div>
+
             <div className="bg-white rounded-xl shadow-sm border p-4 sm:p-6">
               <h3 className="font-bold text-xl text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                 <Settings size={22} className="text-[#0066ff]" /> Dynamic Tariffs & Fee Configuration

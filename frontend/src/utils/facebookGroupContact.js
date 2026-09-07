@@ -1,7 +1,18 @@
 const DEFAULT_FACEBOOK_GROUP_URL = 'https://www.facebook.com/promotinsight';
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export const getFacebookGroupUrl = () =>
   import.meta.env.VITE_FACEBOOK_GROUP_URL || DEFAULT_FACEBOOK_GROUP_URL;
+
+export const fetchFacebookGroupUrl = async () => {
+  try {
+    const res = await fetch(`${API}/api/config/platform-settings`);
+    const data = await res.json();
+    return data?.data?.facebook_group_url || getFacebookGroupUrl();
+  } catch {
+    return getFacebookGroupUrl();
+  }
+};
 
 export const buildFacebookOrderRequestMessage = ({ product, application }) => {
   const productUrl =
@@ -41,8 +52,23 @@ export const copyTextToClipboard = async (text) => {
 };
 
 export const openFacebookGroupContact = async ({ product, application }) => {
+  const facebookWindow = window.open('', '_blank');
+  if (facebookWindow) facebookWindow.opener = null;
   const message = buildFacebookOrderRequestMessage({ product, application });
-  const copied = await copyTextToClipboard(message);
-  window.open(getFacebookGroupUrl(), '_blank', 'noopener,noreferrer');
+  let copied;
+
+  try {
+    copied = await copyTextToClipboard(message);
+  } catch {
+    copied = false;
+  }
+
+  const facebookUrl = await fetchFacebookGroupUrl();
+  if (facebookWindow) {
+    facebookWindow.location.href = facebookUrl;
+  } else {
+    window.open(facebookUrl, '_blank', 'noopener,noreferrer');
+  }
+
   return copied;
 };
