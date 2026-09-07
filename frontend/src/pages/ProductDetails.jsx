@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShieldAlert, Lock, Eye, Plus } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Lock, Eye, Plus, MessageCircle, ExternalLink } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { formatProductMoney } from '../utils/currency';
+import { openFacebookGroupContact } from '../utils/facebookGroupContact';
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export default function ProductDetails() {
   const [user, setUser] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState(null);
+  const [currentApplication, setCurrentApplication] = useState(null);
   const [isAccountDisabled, setIsAccountDisabled] = useState(false);
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function ProductDetails() {
           const existingApp = (data.data || []).find(app => String(app.product_id) === String(id));
           if (existingApp) {
             setApplicationStatus(existingApp.status);
+            setCurrentApplication(existingApp);
           }
         }
       } catch (error) {
@@ -100,9 +103,10 @@ export default function ProductDetails() {
 
       const result = await res.json();
       if (res.ok) {
-        setApplicationStatus(result.application?.status || 'approved');
-        alert("Order is ready. Submit your order details from My Orders.");
-        navigate('/dashboard?tab=active');
+        const nextApplication = result.application || {};
+        setApplicationStatus(nextApplication.status || 'approved');
+        setCurrentApplication(nextApplication);
+        alert("Order request saved. Use the Facebook group button to contact directly.");
       } else {
         alert(result.message || "Failed to apply");
       }
@@ -110,6 +114,19 @@ export default function ProductDetails() {
       alert("Error applying for product. Please try again.");
     } finally {
       setIsApplying(false);
+    }
+  };
+
+  const handleFacebookContact = async () => {
+    try {
+      const copied = await openFacebookGroupContact({ product, application: currentApplication });
+      alert(copied
+        ? 'Order request text copied. Paste it in the Facebook group.'
+        : 'Facebook group opened. Please copy your order request details manually.'
+      );
+    } catch {
+      alert('Could not copy the request text, but the Facebook group will open.');
+      window.open(import.meta.env.VITE_FACEBOOK_GROUP_URL || 'https://www.facebook.com/promotinsight', '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -246,9 +263,14 @@ export default function ProductDetails() {
                   Campaign Closed
                 </button>
               ) : applicationStatus ? (
-                <button onClick={() => navigate('/dashboard?tab=active')} className="w-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 py-4 rounded-full font-bold text-lg transition-all flex justify-center items-center gap-2">
-                  <Eye size={20} /> View Your Order
-                </button>
+                <div className="space-y-3">
+                  <button onClick={handleFacebookContact} className="w-full bg-[#1877f2] text-white hover:bg-[#0f5fc9] py-4 rounded-full font-bold text-lg transition-all flex justify-center items-center gap-2">
+                    <MessageCircle size={20} /> Contact in Facebook Group <ExternalLink size={18} />
+                  </button>
+                  <button onClick={() => navigate('/dashboard?tab=active')} className="w-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 py-4 rounded-full font-bold text-lg transition-all flex justify-center items-center gap-2">
+                    <Eye size={20} /> View Your Order
+                  </button>
+                </div>
               ) : (
                 <button 
                   onClick={handleApply} 

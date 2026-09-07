@@ -1,11 +1,12 @@
 import {  useState, useEffect  } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, Filter, Home
+  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, Filter, Home, MessageCircle, ExternalLink
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import SidebarMenu from '../components/SidebarMenu';
 import { formatProductMoney } from '../utils/currency';
+import { openFacebookGroupContact } from '../utils/facebookGroupContact';
 
 export default function Marketplace() {
   const navigate = useNavigate();
@@ -147,12 +148,25 @@ export default function Marketplace() {
             application_status: result.application?.status || 'approved',
           }
         }));
-        alert("Order is ready. Submit your order details from My Orders.");
+        alert("Order request saved. Use the Facebook group button to contact directly.");
       } else {
         alert(result.message || "Failed to apply");
       }
     } catch {
       alert("Error applying for product. Please try again.");
+    }
+  };
+
+  const handleFacebookContact = async (product, application) => {
+    try {
+      const copied = await openFacebookGroupContact({ product, application });
+      alert(copied
+        ? 'Order request text copied. Paste it in the Facebook group.'
+        : 'Facebook group opened. Please copy your order request details manually.'
+      );
+    } catch {
+      alert('Could not copy the request text, but the Facebook group will open.');
+      window.open(import.meta.env.VITE_FACEBOOK_GROUP_URL || 'https://www.facebook.com/promotinsight', '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -387,6 +401,7 @@ export default function Marketplace() {
                       navigate={navigate}
                       isFavorite={favoriteProductIds.includes(String(product.id))}
                       onToggleFavorite={toggleFavorite}
+                      onFacebookContact={handleFacebookContact}
                     />
                   ))}
               </div>
@@ -408,7 +423,7 @@ export default function Marketplace() {
 }
 
 // 🌿 CLEAN PRODUCT CARD
-function ProductCard({ product, user, application, onApply, navigate, isFavorite, onToggleFavorite }) {
+function ProductCard({ product, user, application, onApply, navigate, isFavorite, onToggleFavorite, onFacebookContact }) {
   const targetQty = parseInt(product.required_orders) || 0;
   const appliedQty = parseInt(product.application_count) || 0;
   const availableQty = Math.max(0, targetQty - appliedQty);
@@ -471,18 +486,28 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
             <Eye size={16} /> View Details
           </button>
         ) : hasExistingApplication && canSubmitOrder ? (
-          <div className="mt-auto grid grid-cols-2 gap-2">
-            <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-3 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-100">
-              <Eye size={14} /> View
+          <div className="mt-auto space-y-2">
+            <button onClick={() => onFacebookContact?.(product, application)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1877f2] px-3 py-3 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-[#0f5fc9]">
+              <MessageCircle size={14} /> Facebook Group <ExternalLink size={13} />
             </button>
-            <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}&action=order` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-3 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
-              <ShoppingBag size={14} /> Order
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-3 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-100">
+                <Eye size={14} /> View
+              </button>
+              <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}&action=order` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-3 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+                <ShoppingBag size={14} /> Order
+              </button>
+            </div>
           </div>
         ) : hasExistingApplication ? (
-          <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
-            <Eye size={16} /> View Order
-          </button>
+          <div className="mt-auto space-y-2">
+            <button onClick={() => onFacebookContact?.(product, application)} className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1877f2] px-3 py-3 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-[#0f5fc9]">
+              <MessageCircle size={14} /> Facebook Group <ExternalLink size={13} />
+            </button>
+            <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+              <Eye size={16} /> View Order
+            </button>
+          </div>
         ) : isSoldOut ? (
           <button disabled className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-gray-100 px-4 py-3 text-sm font-bold text-gray-400">
             Closed
