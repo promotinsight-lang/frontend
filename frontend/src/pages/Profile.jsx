@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { ChevronDown, ChevronUp, User, Mail, Lock, ShieldAlert, ShieldCheck, Clock, Loader2, Edit2, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, User, Mail, Lock, ShieldAlert, ShieldCheck, Clock, Loader2, Edit2, Check, X, CreditCard } from 'lucide-react';
 
 const Profile = () => {
   const [openSection, setOpenSection] = useState('basic'); 
@@ -205,6 +205,31 @@ const Profile = () => {
             </div>
           )}
         </div>
+
+        {userProfile?.role === 'buyer' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+            <button onClick={() => toggleSection('loan-credit')} className="w-full flex justify-between items-center p-5 bg-white hover:bg-gray-50 transition-colors focus:outline-none">
+              <span className="font-black text-gray-800 text-lg flex items-center gap-2">
+                <CreditCard className="text-[#0066ff]" size={20}/> Loan Credit
+              </span>
+              {openSection === 'loan-credit' ? <ChevronUp size={20} className="text-[#0066ff]" /> : <ChevronDown size={20} className="text-gray-400" />}
+            </button>
+
+            {openSection === 'loan-credit' && (
+              <div className="p-5 border-t border-gray-100 bg-gray-50/50">
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
+                  <p className="text-xs text-blue-700 font-black uppercase mb-1">Available Loan Credit</p>
+                  <p className="text-3xl font-black text-blue-900">
+                    USD ${Number(userProfile?.loan_credit_balance || 0).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-blue-700 font-semibold mt-3 leading-relaxed">
+                    Your loan credit balance is managed by admin and is visible here whenever credit is assigned to your buyer account.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 2️⃣ VERIFICATION INFO ACCORDION */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">

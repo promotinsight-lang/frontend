@@ -9,10 +9,10 @@ const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 const socket = io(BACKEND_URL, { withCredentials: true, autoConnect: false });
 
 const AUTO_REPLY_MESSAGES = [
-  'Welcome to PromotInsight! You are in the right place to earn rewards, get signup bonuses, and grow with trusted campaigns.',
-  'Buyers can earn product rewards, unlock the $10 signup bonus after 5 completed orders, and get referral bonuses. Sellers can reach real verified buyers for authentic engagement.',
+  'Welcome to PromotInsight! You are in the right place to join trusted campaigns and manage your buyer account clearly.',
+  'Buyers can complete verified product campaigns and view admin-managed loan credit from their account profile. Sellers can reach real verified buyers for authentic engagement.',
   'Your trust matters here: verified users, admin-verified orders, wallet tracking, and support are all designed to keep the process clear and secure.',
-  'Tell us what you need today: earning as a buyer, promoting as a seller, referral bonuses, wallet help, or order support.'
+  'Tell us what you need today: buyer account help, loan credit, seller campaigns, wallet help, or order support.'
 ];
 
 const AutoReplyCard = () => (
@@ -247,7 +247,7 @@ export default function Support() {
                 <div className="flex-1">
                   <h1 className="text-4xl font-black text-gray-900 mb-4">Contact Support</h1>
                   <p className="text-gray-500 mb-8 leading-relaxed">
-                    Facing issues with an order dispute, wallet withdrawal, or account access? Send us a message and our admin team will resolve it manually.
+                    Facing issues with an order dispute, loan credit, wallet balance, or account access? Send us a message and our admin team will resolve it manually.
                   </p>
 
                   <div className="space-y-6">

@@ -11,7 +11,7 @@ const BottomNavbar = () => {
   const params = new URLSearchParams(location.search);
   const tab = params.get('tab');
   const onDashboard = location.pathname === '/dashboard';
-  const utilityTabs = ['wallet', 'support', 'referral', 'announcements'];
+  const utilityTabs = ['wallet', 'support', 'announcements'];
   const isOrders =
     onDashboard && (!tab || !utilityTabs.includes(tab));
   const isWallet = onDashboard && tab === 'wallet';

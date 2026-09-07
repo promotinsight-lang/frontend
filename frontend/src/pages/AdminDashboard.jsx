@@ -951,6 +951,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const updateLoanCredit = async (id, oldAmount) => {
+    const amount = prompt("Enter buyer loan credit amount (USD):", Number(oldAmount || 0).toFixed(2));
+    if (amount === null) return;
+
+    const loanCredit = Number(amount);
+    if (!Number.isFinite(loanCredit) || loanCredit < 0) {
+      alert("Loan credit must be a valid non-negative amount.");
+      return;
+    }
+
+    if (await handleAction(`${API_BASE}/api/users/${id}/loan-credit`, 'PATCH', { loan_credit_balance: loanCredit })) {
+      setSelectedUserProfile((prev) => prev?.id === id ? { ...prev, loan_credit_balance: loanCredit } : prev);
+      fetchUsers('buyer');
+    }
+  };
+
   const openTicketView = async (ticket) => {
     setSelectedTicket(ticket); setShowTicketViewModal(true); setRepliesLoading(true);
     try {
@@ -2879,6 +2895,7 @@ export default function AdminDashboard() {
               setSelectedAppDetails(app);
               setShowAppDetailsModal(true);
             }}
+            onUpdateLoanCredit={updateLoanCredit}
           />
         )}
 

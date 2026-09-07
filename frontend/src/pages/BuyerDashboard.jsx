@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, Wallet, History, Eye, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Users, Copy } from 'lucide-react';
+import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, Wallet, CreditCard, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Copy } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
 import LiveChatModal from '../components/LiveChatModal';
@@ -13,7 +13,6 @@ const BuyerDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('active'); 
   const [applications, setApplications] = useState([]);
-  const [withdrawals, setWithdrawals] = useState([]); 
   const [announcements, setAnnouncements] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [isAccountDisabled, setIsAccountDisabled] = useState(false); 
@@ -26,24 +25,8 @@ const BuyerDashboard = () => {
   
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-
   const [orderForm, setOrderForm] = useState({ order_number: '', order_total_amount: '', order_paypal_address: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
   const [reviewForm, setReviewForm] = useState({ review_link: '', review_screenshot_url: '', review_screenshot_url_2: '' });
-  
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedMethodData, setSelectedMethodData] = useState(null);
-  const [withdrawForm, setWithdrawForm] = useState({ 
-    amount: '', 
-    payment_method: '', 
-    account_details: '',
-    crypto_address: '',
-    crypto_network: '',
-    crypto_memo: '',
-    qr_code_url: '' 
-  });
-  const [isUploadingWithdrawQR, setIsUploadingWithdrawQR] = useState(false);
 
   const [supportTickets, setSupportTickets] = useState([]);
   const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
@@ -59,7 +42,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
-    if (tab) setActiveTab(tab);
+    if (tab) setActiveTab(tab === 'referral' ? 'wallet' : tab);
 
     const appIdParam = params.get('appId');
     const action = params.get('action');
@@ -100,10 +83,10 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
           localStorage.setItem('user', JSON.stringify({ 
             ...lsUser, 
             wallet_balance: profileData.user.wallet_balance, 
+            loan_credit_balance: profileData.user.loan_credit_balance,
             wallet_breakdown: profileData.user.wallet_breakdown,
             is_active: profileData.user.is_active, 
             is_frozen: profileData.user.is_frozen,
-            referral_code: profileData.user.referral_code 
           }));
           
           if (profileData.user.is_active === false) {
@@ -131,25 +114,6 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       const appData = await appRes.json();
       if (appRes.ok) setApplications(appData.data || []);
       
-      if (activeTab === 'wallet') {
-         const wRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals/my`, {
-            headers: {},
-            credentials: 'include'
-         });
-         const wData = await wRes.json();
-         if (wRes.ok) setWithdrawals(wData.data || []);
-
-         // Fetch dynamic payment methods
-         const pmRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/payment-methods/list`, {
-            headers: {},
-            credentials: 'include'
-         });
-         const pmData = await pmRes.json();
-         if (pmRes.ok && pmData.success) {
-            setPaymentMethods(pmData.data || []);
-         }
-      }
-
       if (activeTab === 'support') {
          const tRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/support/my`, {
             headers: {},
@@ -174,9 +138,8 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const walletBreakdown = storedUser.wallet_breakdown || {};
   const walletBalance = Number(storedUser.wallet_balance || 0);
-  const withdrawableBalance = Number(walletBreakdown.withdrawable_balance || 0);
+  const loanCreditBalance = Number(storedUser.loan_credit_balance || 0);
 
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
@@ -213,30 +176,6 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       alert("Image upload failed! Please try again.");
     } finally {
       setIsUploadingImage(false);
-    }
-  };
-
-  const handleWithdrawQrUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsUploadingWithdrawQR(true);
-    try {
-      const cloudData = new FormData();
-      cloudData.append("file", file);
-      cloudData.append("upload_preset", "promot_insight_preset");
-      cloudData.append("cloud_name", "dtlkf5smb");
-
-      const res = await fetch("https://api.cloudinary.com/v1_1/dtlkf5smb/image/upload", {
-        method: "POST", body: cloudData,
-      });
-      const cloudJson = await res.json();
-      if (cloudJson.secure_url) {
-        setWithdrawForm(prev => ({ ...prev, qr_code_url: cloudJson.secure_url }));
-      }
-    } catch {
-      alert("QR Code upload failed!");
-    } finally {
-      setIsUploadingWithdrawQR(false);
     }
   };
 
@@ -289,59 +228,6 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleMethodChange = (methodName) => {
-    const method = paymentMethods.find(m => m.name === methodName);
-    setSelectedMethodData(method);
-    setWithdrawForm(prev => ({
-      ...prev, 
-      payment_method: methodName,
-      crypto_network: '', // reset network on change
-    }));
-  };
-
-  const submitWithdrawal = async (e) => {
-     e.preventDefault();
-     
-     // 🔥 NEW: Check Balance before submitting
-     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-     const currentBalance = Number(storedUser.wallet_balance || 0);
-     const walletBreakdown = storedUser.wallet_breakdown || {};
-     const withdrawableBalance = Number(walletBreakdown.withdrawable_balance || 0);
-     const requestedAmount = Number(withdrawForm.amount);
-
-     if (requestedAmount > currentBalance) {
-         alert("Insufficient wallet balance! You cannot withdraw more than you have.");
-         return; 
-     }
-
-     if (requestedAmount > withdrawableBalance) {
-         alert(`You can withdraw up to $${withdrawableBalance.toFixed(2)} USD now. Reward balance must reach $${Number(walletBreakdown.reward_min_withdrawal || 10).toFixed(2)}, and signup bonus unlocks after ${walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.`);
-         return;
-     }
-
-     setIsSubmitting(true);
-     try {
-       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         credentials: 'include',
-         body: JSON.stringify(withdrawForm)
-       });
-       const data = await res.json();
-       if(res.ok) {
-         alert('Withdrawal requested successfully!');
-         setWithdrawForm({ amount: '', payment_method: 'PayPal', account_details: '' });
-         fetchData(); 
-       } else {
-         alert(data.message || 'Failed to request withdrawal');
-       }
-     } catch {
-       alert('Server error');
-     } finally {
-       setIsSubmitting(false);
-     }
   };
 
   const handleCreateTicket = async (e) => {
@@ -507,11 +393,10 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
           {activeTab === 'wallet' ? 'My Wallet' 
             : activeTab === 'support' ? 'Support Tickets' 
             : activeTab === 'announcements' ? 'Announcements' 
-            : activeTab === 'referral' ? 'Refer & Earn'
             : 'My Orders'}
         </h1>
         
-        {activeTab !== 'wallet' && activeTab !== 'support' && activeTab !== 'announcements' && activeTab !== 'referral' && (
+        {activeTab !== 'wallet' && activeTab !== 'support' && activeTab !== 'announcements' && (
           <>
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
@@ -558,39 +443,6 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
       <div className="max-w-2xl mx-auto w-full px-4 mt-6">
         
         {loading && <div className="text-center py-10 text-gray-400 font-semibold animate-pulse">Loading data...</div>}
-
-        {!loading && activeTab === 'referral' && (
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 text-center animate-fade-in-up">
-            <div className="w-20 h-20 bg-blue-50 text-[#0066ff] rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users size={40} />
-            </div>
-            <h2 className="text-2xl font-black text-gray-800 mb-2">Invite Friends & Earn Bonuses!</h2>
-            <p className="text-gray-500 text-sm mb-8 max-w-md mx-auto leading-relaxed">
-              Share your referral link. Refer a buyer and earn <strong className="text-green-600">USD $10 {formatWallet(10).secondary ? `(${formatWallet(10).primary}) ` : ''}bonus</strong> after the buyer completes 5 orders and you also have 5 completed orders. Refer a seller and earn <strong className="text-green-600">USD $15</strong> after that seller completes 5 orders.
-            </p>
-            
-            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 max-w-md mx-auto">
-              <p className="text-xs font-bold text-gray-500 uppercase mb-3 tracking-wider">Your Unique Referral Link</p>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={`${window.location.origin}/register?ref=${JSON.parse(localStorage.getItem('user') || '{}').referral_code || 'Loading...'}`} 
-                  className="flex-1 p-3 text-sm font-mono border border-gray-300 rounded-xl bg-white outline-none text-gray-700" 
-                />
-                <button 
-                  onClick={() => { 
-                    navigator.clipboard.writeText(`${window.location.origin}/register?ref=${JSON.parse(localStorage.getItem('user') || '{}').referral_code}`); 
-                    alert("Referral Link Copied!"); 
-                  }} 
-                  className="bg-[#0066ff] hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-bold transition-colors shadow-md"
-                >
-                  Copy
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {!loading && activeTab === 'announcements' && (
           <div className="space-y-4 animate-fade-in-up">
@@ -759,200 +611,40 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
         {!loading && activeTab === 'wallet' && (
           <div className="space-y-6">
-             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Wallet size={20} className="text-green-500"/> Request Withdrawal</h3>
-                 <div className="flex flex-col items-end">
-                   {(() => {
-                     const bal = formatWallet(walletBalance);
-                     return (
-                       <>
-                         <span className="bg-green-100 text-green-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-green-200 shadow-sm">
-                           Bal: {bal.primary} <span className="text-[10px] opacity-80">{bal.code}</span>
-                         </span>
-                         {bal.secondary && (
-                           <span className="text-[10px] font-bold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                             {bal.secondary}
-                           </span>
-                         )}
-                       </>
-                     );
-                   })()}
-                 </div>
-               </div>
-               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
-                 <div className="bg-green-50 border border-green-100 rounded-xl p-3">
-                   <p className="text-[10px] font-black uppercase text-green-700 mb-1">Reward Balance</p>
-                   <p className="text-lg font-black text-green-800">{formatWallet(walletBreakdown.reward_balance || 0).primary}</p>
-                   <p className="text-[10px] text-green-700 font-semibold mt-1">
-                     Withdraw when reward reaches ${Number(walletBreakdown.reward_min_withdrawal || 10).toFixed(2)}
-                   </p>
-                 </div>
-                 <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-3">
-                   <p className="text-[10px] font-black uppercase text-yellow-700 mb-1">Signup Bonus</p>
-                   <p className="text-lg font-black text-yellow-800">{formatWallet(walletBreakdown.signup_bonus_balance || 0).primary}</p>
-                   <p className="text-[10px] text-yellow-700 font-semibold mt-1">
-                     {walletBreakdown.signup_bonus_unlocked
-                       ? 'Unlocked'
-                       : `${walletBreakdown.completed_orders || 0}/${walletBreakdown.signup_bonus_min_completed_orders || 5} orders completed`}
-                   </p>
-                 </div>
-                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
-                   <p className="text-[10px] font-black uppercase text-purple-700 mb-1">Referral Bonus</p>
-                   <p className="text-lg font-black text-purple-800">{formatWallet(walletBreakdown.other_bonus_balance || 0).primary}</p>
-                   <p className="text-[10px] text-purple-700 font-semibold mt-1">
-                     Buyer referral: $10. Seller referral: $15 after seller completes 5 orders.
-                   </p>
-                 </div>
-                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                   <p className="text-[10px] font-black uppercase text-blue-700 mb-1">Withdrawable Now</p>
-                   <p className="text-lg font-black text-blue-800">{formatWallet(withdrawableBalance).primary}</p>
-                   <p className="text-[10px] text-blue-700 font-semibold mt-1">Only eligible balance can be requested</p>
-                 </div>
-               </div>
-             <form onSubmit={submitWithdrawal} className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div>
-                     <label className="block text-xs font-bold text-gray-600 mb-1">Amount (USD)</label>
-                     <input 
-                       required 
-                       type="number" 
-                       step="0.01" 
-                       min="1" 
-                       max={withdrawableBalance} 
-                       className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" 
-                       value={withdrawForm.amount} 
-                       onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} 
-                       placeholder={withdrawableBalance > 0 ? `e.g. ${Math.min(10, withdrawableBalance).toFixed(2)}` : 'No eligible balance'} 
-                     />
-                     <p className="text-[10px] text-gray-500 font-bold mt-1">
-                       Reward needs at least USD ${Number(walletBreakdown.reward_min_withdrawal || 10).toFixed(2)}. Signup bonus unlocks after {walletBreakdown.signup_bonus_min_completed_orders || 5} completed orders.
-                     </p>
-                     {withdrawForm.amount && (() => {
-                       const est = formatWallet(withdrawForm.amount);
-                       return (
-                         <p className="text-[11px] text-[#0066ff] font-bold mt-1.5 flex items-center gap-1 bg-blue-50 w-max px-2 py-1 rounded border border-blue-100">
-                           You will receive: ~ {est.primary} {est.code !== 'USD' && `(${est.code})`}
-                         </p>
-                       );
-                     })()}
-                   </div>
-                   <div>
-                     <label className="block text-xs font-bold text-gray-600 mb-1">Payment Method</label>
-                     <select required className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.payment_method} onChange={e => handleMethodChange(e.target.value)}>
-                       <option value="">Select Method</option>
-                       {paymentMethods.map(method => (
-                         <option key={method.id} value={method.name}>{method.name}</option>
-                       ))}
-                     </select>
-                   </div>
-                 </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <CreditCard size={20} className="text-[#0066ff]"/> Loan Credit
+                </h3>
+                <div className="flex flex-col items-start sm:items-end">
+                  <span className="bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-blue-200 shadow-sm">
+                    Credit: {formatWallet(loanCreditBalance).primary}
+                  </span>
+                  {formatWallet(loanCreditBalance).secondary && (
+                    <span className="text-[10px] font-bold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                      {formatWallet(loanCreditBalance).secondary}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                 {selectedMethodData && (
-                   <div className="space-y-4 animate-fade-in">
-                     {selectedMethodData.requires_account_details && (
-                       <div>
-                         <label className="block text-xs font-bold text-gray-600 mb-1">{selectedMethodData.name} Account Details</label>
-                         <input required type="text" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.account_details} onChange={e => setWithdrawForm({...withdrawForm, account_details: e.target.value})} placeholder={selectedMethodData.example_address || "Provide exact receiving details"} />
-                       </div>
-                     )}
-
-                     {selectedMethodData.requires_address && (
-                       <div>
-                         <label className="block text-xs font-bold text-gray-600 mb-1">Wallet Address</label>
-                         <input required type="text" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.crypto_address} onChange={e => setWithdrawForm({...withdrawForm, crypto_address: e.target.value})} placeholder={selectedMethodData.example_address || "Enter crypto wallet address"} />
-                       </div>
-                     )}
-
-                     {selectedMethodData.requires_network && selectedMethodData.networks && (
-                       <div>
-                         <label className="block text-xs font-bold text-gray-600 mb-1">Network</label>
-                         <select required className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.crypto_network} onChange={e => setWithdrawForm({...withdrawForm, crypto_network: e.target.value})}>
-                           <option value="">Select Network</option>
-                           {selectedMethodData.networks.map(net => (
-                             <option key={net.id} value={net.code}>{net.name} ({net.code})</option>
-                           ))}
-                         </select>
-                       </div>
-                     )}
-
-                     {selectedMethodData.requires_memo && (
-                       <div>
-                         <label className="block text-xs font-bold text-gray-600 mb-1">Memo / Tag</label>
-                         <input required type="text" className="w-full p-3 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:border-blue-500 outline-none" value={withdrawForm.crypto_memo} onChange={e => setWithdrawForm({...withdrawForm, crypto_memo: e.target.value})} placeholder={selectedMethodData.example_memo || "Enter Memo/Tag"} />
-                       </div>
-                     )}
-                   </div>
-                 )}
-
-                 {/* 🔥 NEW: User Uploads Receiving QR Code */}
-                 <div className="bg-white p-3 rounded-lg border border-gray-200 mb-4">
-                    <label className="block text-xs font-bold text-gray-700 mb-2">My Receiving QR Code (Optional)</label>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      onChange={handleWithdrawQrUpload} 
-                      className="w-full text-xs file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                    />
-                    {isUploadingWithdrawQR && <p className="text-[10px] text-blue-600 mt-1 animate-pulse font-bold">Uploading QR Code...</p>}
-                    {withdrawForm.qr_code_url && (
-                      <div className="mt-2 relative inline-block">
-                        <img src={withdrawForm.qr_code_url} alt="QR Code" className="w-20 h-20 object-contain border rounded shadow-sm p-1 bg-gray-50" />
-                        <button 
-                          type="button"
-                          onClick={() => setWithdrawForm({...withdrawForm, qr_code_url: ''})} 
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600"
-                        >
-                          <X size={12}/>
-                        </button>
-                      </div>
-                    )}
-                 </div>
-
-                 <button type="submit" disabled={isSubmitting || !withdrawForm.payment_method || withdrawableBalance <= 0 || Number(withdrawForm.amount || 0) <= 0 || Number(withdrawForm.amount || 0) > withdrawableBalance} className="w-full py-3 bg-[#0066ff] text-white rounded-lg font-bold shadow-md hover:bg-blue-700 disabled:opacity-50">
-                   Submit Request
-                 </button>
-               </form>
-             </div>
-
-             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><History size={20} className="text-blue-500"/> Withdrawal History</h3>
-               {withdrawals.length === 0 ? (
-                 <p className="text-gray-500 text-sm text-center py-6">No withdrawal records found.</p>
-               ) : (
-                 <div className="space-y-3">
-                   {withdrawals.map(w => {
-                     const wAmt = formatWallet(w.amount);
-                     return (
-                     <div key={w.id} className="flex justify-between items-center p-3 border border-gray-100 bg-gray-50 rounded-lg">
-                       <div>
-                         <p className="font-bold text-gray-800">
-                           {wAmt.primary}
-                           {wAmt.secondary && (
-                           <span className="text-[10px] text-green-600 font-bold ml-1 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
-                             ({wAmt.secondary})
-                           </span>
-                           )}
-                         </p>
-                         <p className="text-[10px] text-gray-500 font-bold mt-1">via {w.payment_method}</p>
-                         <p className="text-[10px] text-gray-400 mt-0.5">{new Date(w.created_at).toLocaleString()}</p>
-                       </div>
-                       <div className="flex flex-col items-end gap-1">
-                         <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase border ${w.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : w.status === 'rejected' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
-                           {w.status}
-                         </span>
-                         <button 
-                           onClick={() => { setSelectedWithdrawal(w); setShowWithdrawModal(true); }} 
-                           className="text-[#0066ff] hover:underline text-[10px] font-bold flex items-center gap-1 mt-1"
-                         >
-                           <Eye size={12}/> View Details
-                         </button>
-                       </div>
-                     </div>
-                   );})}
-                 </div>
-               )}
-             </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                  <p className="text-[10px] font-black uppercase text-blue-700 mb-1">Available Loan Credit</p>
+                  <p className="text-2xl font-black text-blue-900">{formatWallet(loanCreditBalance).primary}</p>
+                  <p className="text-[11px] text-blue-700 font-semibold mt-2">
+                    This credit is managed by admin and shown directly on your buyer account.
+                  </p>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <p className="text-[10px] font-black uppercase text-gray-500 mb-1">Wallet Balance</p>
+                  <p className="text-2xl font-black text-gray-900">{formatWallet(walletBalance).primary}</p>
+                  <p className="text-[11px] text-gray-500 font-semibold mt-2">
+                    Buyer withdrawal requests are currently disabled.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1013,75 +705,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
       </div>
 
-      {/* 💸 Withdrawal Details Modal */}
-      {showWithdrawModal && selectedWithdrawal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl animate-slide-up">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <Wallet size={20} className="text-blue-500"/> Withdrawal Details
-              </h3>
-              <button onClick={() => setShowWithdrawModal(false)} className="text-gray-400 hover:text-red-500"><X size={20} /></button>
-            </div>
-            
-            <div className="space-y-3 text-sm text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-gray-500">Amount:</span> 
-                <div className="text-right">
-                  {(() => {
-                    const wDetail = formatWallet(selectedWithdrawal.amount);
-                    return (
-                      <>
-                        <span className="font-black text-green-600 text-lg">{wDetail.primary}</span>
-                        {wDetail.secondary && (
-                          <p className="text-[10px] font-bold text-gray-500 mt-0.5 bg-gray-100 px-2 py-0.5 rounded border border-gray-200 w-max ml-auto">
-                            {wDetail.secondary}
-                          </p>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-              <div className="w-full h-px bg-gray-200"></div>
-              <p className="flex justify-between"><span className="font-bold text-gray-500">Method:</span> <span className="font-semibold">{selectedWithdrawal.payment_method}</span></p>
-              <div className="w-full h-px bg-gray-200"></div>
-              <p className="flex justify-between items-start"><span className="font-bold text-gray-500 shrink-0">Account:</span> <span className="text-right font-mono text-xs break-all bg-white p-1 border rounded">{selectedWithdrawal.account_details}</span></p>
-              <div className="w-full h-px bg-gray-200"></div>
-              <p className="flex justify-between"><span className="font-bold text-gray-500">Date:</span> <span>{new Date(selectedWithdrawal.created_at).toLocaleString()}</span></p>
-              <div className="w-full h-px bg-gray-200"></div>
-              <p className="flex justify-between items-center"><span className="font-bold text-gray-500">Status:</span> 
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${selectedWithdrawal.status === 'approved' ? 'bg-green-100 text-green-700' : selectedWithdrawal.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                  {selectedWithdrawal.status}
-                </span>
-              </p>
-
-              {(selectedWithdrawal.transaction_id || selectedWithdrawal.screenshot_url) && (
-                <>
-                  <div className="w-full h-px bg-gray-200 mt-4 mb-2"></div>
-                  <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg">
-                    <p className="font-bold text-blue-800 text-xs mb-2 uppercase border-b border-blue-200 pb-1">Admin Payment Proof</p>
-                    {selectedWithdrawal.transaction_id && (
-                       <p className="text-xs mb-2"><span className="font-semibold text-gray-600">Trx ID:</span> <span className="font-mono font-bold bg-white px-1 border rounded text-gray-800">{selectedWithdrawal.transaction_id}</span></p>
-                    )}
-                    {selectedWithdrawal.screenshot_url && (
-                       <a href={selectedWithdrawal.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#0066ff] font-bold hover:underline text-xs bg-white px-2 py-1 rounded border border-blue-200 w-max shadow-sm">
-                         <ImageIcon size={14} /> View Screenshot
-                       </a>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-            
-            <div className="mt-6">
-              <button onClick={() => setShowWithdrawModal(false)} className="w-full bg-gray-200 text-gray-800 font-bold py-2.5 rounded-xl hover:bg-gray-300 transition-colors">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🛒 Submit Order Modal 🔥 UPDATE: Firebase Image Upload */}
+      {/* Submit Order Modal */}
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
@@ -1556,3 +1180,4 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 };
 
 export default BuyerDashboard;
+

@@ -30,7 +30,8 @@ export default function UserProfileModal({
   setProfileViewMode,
   onClose,
   onViewProduct,
-  onViewApp
+  onViewApp,
+  onUpdateLoanCredit
 }) {
   if (!selectedUserProfile) return null;
 
@@ -69,7 +70,21 @@ export default function UserProfileModal({
               <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-xs font-bold uppercase">Rank: {selectedUserProfile.user_rank || 'New User'}</span>
               <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold uppercase">Completed: {Number(selectedUserProfile.completed_orders || 0)}</span>
               <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-bold uppercase">${Number(selectedUserProfile.wallet_balance || 0).toFixed(2)}</span>
+              {selectedUserProfile.role === 'buyer' && (
+                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-bold uppercase">
+                  Loan Credit: ${Number(selectedUserProfile.loan_credit_balance || 0).toFixed(2)}
+                </span>
+              )}
             </div>
+            {selectedUserProfile.role === 'buyer' && (
+              <button
+                type="button"
+                onClick={() => onUpdateLoanCredit?.(selectedUserProfile.id, selectedUserProfile.loan_credit_balance)}
+                className="mt-3 bg-[#0066ff] hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
+              >
+                Update Loan Credit
+              </button>
+            )}
           </div>
 
           {selectedUserProfile.role === 'buyer' && (

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard, TrendingUp, ShieldCheck, Zap, CheckCircle, Wallet, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, Gift } from 'lucide-react';
+import { Search, Briefcase, Star, ChevronDown, ChevronUp, ShieldAlert, LayoutDashboard, TrendingUp, ShieldCheck, Zap, CheckCircle, Wallet, ArrowRight, Calculator, RefreshCw, Info, ShoppingCart, CreditCard } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -53,7 +53,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-5 py-2 rounded-full font-black text-xs md:text-sm tracking-wide mb-6 shadow-lg shadow-yellow-500/30 animate-bounce">
-               <Gift size={18} className="text-yellow-900" /> {t('buyer_badge')}
+               <CreditCard size={18} className="text-yellow-900" /> {t('buyer_badge')}
             </div>
           )}
           
@@ -153,17 +153,17 @@ export default function HomePage() {
 
              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-5 rounded-2xl shadow-xl border border-yellow-200 text-center transform hover:scale-105 transition-transform w-full max-w-sm">
                 <div className="w-12 h-12 bg-yellow-400 text-yellow-900 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
-                   <Gift size={24}/>
+                   <CreditCard size={24}/>
                 </div>
-                <p className="text-yellow-800 font-bold text-xs uppercase mb-1">{t('refer_earn')}</p>
-                <h3 className="text-2xl font-black text-gray-900 mb-2">{t('get_10_bonus')}</h3>
-                <p className="text-xs text-gray-600 font-semibold mb-3 leading-relaxed">{t('signup_bonus_desc')}</p>
+                <p className="text-yellow-800 font-bold text-xs uppercase mb-1">{t('loan_credit_label')}</p>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">{t('loan_credit_title')}</h3>
+                <p className="text-xs text-gray-600 font-semibold mb-3 leading-relaxed">{t('loan_credit_desc')}</p>
                 <div className="bg-white border border-emerald-100 rounded-xl p-3 mb-3">
-                  <p className="text-sm font-black text-emerald-700">{t('seller_referral_bonus_title')}</p>
-                  <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-relaxed">{t('seller_referral_bonus_desc')}</p>
+                  <p className="text-sm font-black text-emerald-700">{t('loan_credit_subtitle')}</p>
+                  <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-relaxed">{t('loan_credit_subdesc')}</p>
                 </div>
-                <Link to="/dashboard?tab=referral" className="inline-block bg-gray-900 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors shadow-sm mt-1">
-                   {t('get_your_link')}
+                <Link to="/profile" className="inline-block bg-gray-900 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors shadow-sm mt-1">
+                   {t('view_account')}
                 </Link>
              </div>
 

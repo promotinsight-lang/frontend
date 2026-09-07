@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FileText, X, RefreshCcw } from 'lucide-react'; 
-
-// 🔥 Firebase Imports (আপনার firebase.js ফাইলের লোকেশন অনুযায়ী পাথ ঠিক আছে)
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider, yahooProvider } from '../firebase'; 
 
@@ -13,7 +11,6 @@ export default function SellerAuth({ onAuthSuccess }) {
   const isLoginForm = location.pathname.includes('/login-form');
   const [isLogin, setIsLogin] = useState(isLoginForm); 
 
-  // URL থেকে role বের করার ফাংশন
   const getRoleFromUrl = () => {
     const params = new URLSearchParams(location.search);
     const urlRole = params.get('role');
@@ -22,7 +19,6 @@ export default function SellerAuth({ onAuthSuccess }) {
 
   const [role, setRole] = useState(getRoleFromUrl());
 
-  // URL পরিবর্তন হলে role স্টেট আপডেট হবে
   useEffect(() => {
     setRole(getRoleFromUrl());
   }, [location.search]);
@@ -38,10 +34,6 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  // 🔥 Referral Code State
-  const [referredByCode, setReferredByCode] = useState('');
-
-  // STATES FOR CAPTCHA AND OTP
   const [captchaData, setCaptchaData] = useState(null);
   const [captchaInput, setCaptchaInput] = useState('');
   
@@ -50,7 +42,6 @@ export default function SellerAuth({ onAuthSuccess }) {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpCountdown, setOtpCountdown] = useState(0);
 
-  // Login/Register মোড পরিবর্তন করার ফাংশন (Role URL-এ ধরে রাখবে)
   const switchAuthMode = (login) => {
     const params = new URLSearchParams(location.search);
     if (!params.get('role')) params.set('role', role);
@@ -58,19 +49,6 @@ export default function SellerAuth({ onAuthSuccess }) {
     navigate(`${path}?${params.toString()}`, { replace: true });
     setIsLogin(login);
   };
-
-  // 🔥 URL থেকে Referral Code ধরা এবং LocalStorage এ সেভ করা
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const ref = params.get('ref');
-    if (ref) {
-      setReferredByCode(ref);
-      localStorage.setItem('referral_code', ref);
-    } else {
-      const storedRef = localStorage.getItem('referral_code');
-      if (storedRef) setReferredByCode(storedRef);
-    }
-  }, [location.search]);
 
   // FETCH CAPTCHA
   const fetchCaptcha = async () => {
@@ -134,7 +112,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     }
   };
 
-  // 🔥 ASOL SOCIAL LOGIN HANDLER (Firebase Integrated with Referral Code)
+  // Social login handler
   const handleSocialLogin = async (providerName) => {
     setSocialLoading(true);
     setError('');
@@ -152,7 +130,6 @@ export default function SellerAuth({ onAuthSuccess }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idToken,
-          referred_by_code: referredByCode,
           role: roleForApi
         })
       });
@@ -161,8 +138,6 @@ export default function SellerAuth({ onAuthSuccess }) {
 
       if (res.ok) {
         localStorage.setItem('user', JSON.stringify(data.user));
-        if (referredByCode) localStorage.removeItem('referral_code'); // Clean up
-        
         onAuthSuccess(data.user);
         navigate('/dashboard'); 
       } else {
@@ -178,7 +153,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     }
   };
 
-  // STANDARD EMAIL SUBMIT (With Referral Code)
+  // Standard email submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -201,7 +176,7 @@ export default function SellerAuth({ onAuthSuccess }) {
     
     const payload = isLogin 
       ? { email, password, captchaId: captchaData?.captchaId, captchaInput } 
-      : { fullName, email, password, role, profileLink, otp: otpCode, referred_by_code: referredByCode };
+      : { fullName, email, password, role, profileLink, otp: otpCode };
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${endpoint}`, {
@@ -214,8 +189,6 @@ export default function SellerAuth({ onAuthSuccess }) {
 
       if (res.ok) {
         localStorage.setItem('user', JSON.stringify(data.user));
-        if (!isLogin && referredByCode) localStorage.removeItem('referral_code'); // Clean up
-        
         onAuthSuccess(data.user);
         navigate('/dashboard'); 
       } else {
@@ -357,19 +330,6 @@ export default function SellerAuth({ onAuthSuccess }) {
             <input required type="password" minLength="8" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
 
-          {!isLogin && (
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Referral Code (Optional)</label>
-              <input 
-                type="text" 
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-[#0066ff] outline-none text-sm uppercase" 
-                value={referredByCode} 
-                onChange={(e) => setReferredByCode(e.target.value)} 
-                placeholder="e.g. JAMXYZ" 
-              />
-            </div>
-          )}
-
           {isLogin && (
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1">Security Code</label>
@@ -460,3 +420,5 @@ export default function SellerAuth({ onAuthSuccess }) {
     </div>
   );
 }
+
+

@@ -41,7 +41,6 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
     // 🔥 UPDATE: localStorage.clear() এর বদলে নির্দিষ্ট ডেটা রিমুভ করা হলো
     // এর ফলে নোটিফিকেশনের রিড (Read) হিস্ট্রি ব্রাউজারে থেকে যাবে
     localStorage.removeItem('user');
-    localStorage.removeItem('referral_code');
     
     window.location.replace('/');
   };
@@ -412,14 +411,6 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   <Wallet size={20} />
                   <span className="font-semibold">My Wallet</span>
-                </div>
-                <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
-              </Link>
-
-              <Link to="/dashboard?tab=referral" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
-                <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
-                  <Users size={20} />
-                  <span className="font-semibold">Refer & Earn</span>
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
