@@ -91,9 +91,6 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                   )}
                   
                   {!isActive && (
-                  )}
-                  
-                  {!isActive && (
                     <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold flex items-center gap-1 tracking-wider shadow-sm">
                       <ShieldAlert size={10}/> Disabled
                     </span>
@@ -454,4 +451,5 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
 };
 
 export default SidebarMenu;
+
 
