@@ -88,6 +88,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
             is_active: profileData.user.is_active, 
             is_frozen: profileData.user.is_frozen,
           }));
+          window.dispatchEvent(new Event('user-profile-updated'));
           
           if (profileData.user.is_active === false) {
             setIsAccountDisabled(true);
@@ -138,8 +139,10 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const walletBalance = Number(storedUser.wallet_balance || 0);
   const loanCreditBalance = Number(storedUser.loan_credit_balance || 0);
+  const orderTotalAmount = Number(orderForm.order_total_amount || 0);
+  const remainingLoanCredit = Math.max(0, loanCreditBalance - orderTotalAmount);
+  const hasInsufficientLoanCredit = orderTotalAmount > loanCreditBalance;
 
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
@@ -390,7 +393,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
       <div className="bg-white px-4 py-6 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
         <h1 className="text-2xl font-black text-gray-800 mb-4">
-          {activeTab === 'wallet' ? 'My Wallet' 
+          {activeTab === 'wallet' ? 'Loan Credit Wallet'
             : activeTab === 'support' ? 'Support Tickets' 
             : activeTab === 'announcements' ? 'Announcements' 
             : 'My Orders'}
@@ -612,7 +615,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <CreditCard size={20} className="text-[#0066ff]"/> Loan Credit
+                  <CreditCard size={20} className="text-[#0066ff]"/> Loan Credit Wallet
                 </h3>
                 <div className="flex flex-col items-start sm:items-end">
                   <span className="bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-blue-200 shadow-sm">
@@ -626,19 +629,12 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                   <p className="text-[10px] font-black uppercase text-blue-700 mb-1">Available Loan Credit</p>
                   <p className="text-2xl font-black text-blue-900">{formatWallet(loanCreditBalance).primary}</p>
                   <p className="text-[11px] text-blue-700 font-semibold mt-2">
-                    This credit is managed by admin and shown directly on your buyer account.
-                  </p>
-                </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                  <p className="text-[10px] font-black uppercase text-gray-500 mb-1">Wallet Balance</p>
-                  <p className="text-2xl font-black text-gray-900">{formatWallet(walletBalance).primary}</p>
-                  <p className="text-[11px] text-gray-500 font-semibold mt-2">
-                    Buyer withdrawal requests are currently disabled.
+                    Order total amounts are deducted from this loan credit after you submit order details.
                   </p>
                 </div>
               </div>
@@ -717,6 +713,15 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount</label>
                 <input required type="number" min="0.01" step="0.01" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_total_amount} onChange={e => setOrderForm({...orderForm, order_total_amount: e.target.value})} placeholder="e.g. 25.99" />
+                <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-semibold text-blue-800">
+                  <p>Available loan credit: <span className="font-black">{formatWallet(loanCreditBalance).primary}</span></p>
+                  {orderTotalAmount > 0 && (
+                    <p>After submit: <span className="font-black">{formatWallet(remainingLoanCredit).primary}</span></p>
+                  )}
+                  {hasInsufficientLoanCredit && (
+                    <p className="mt-1 font-black text-red-600">Insufficient loan credit for this order total.</p>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -748,7 +753,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm">Cancel</button>
-                <button type="submit" disabled={isSubmitting || isUploadingImage} className="flex-1 py-3 bg-[#0066ff] text-white rounded-xl font-bold text-sm disabled:opacity-50 transition-opacity">Submit</button>
+                <button type="submit" disabled={isSubmitting || isUploadingImage || hasInsufficientLoanCredit} className="flex-1 py-3 bg-[#0066ff] text-white rounded-xl font-bold text-sm disabled:opacity-50 transition-opacity">Submit</button>
               </div>
             </form>
           </div>

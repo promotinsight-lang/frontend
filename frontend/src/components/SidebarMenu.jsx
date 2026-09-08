@@ -122,7 +122,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
         {user?.role !== 'admin' && (
           <div className="bg-gray-50/80 p-5 flex flex-col items-center justify-center border-b border-gray-100">
             <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
-              Available Balance
+              {user?.role === 'buyer' ? 'Loan Credit Balance' : 'Available Balance'}
             </div>
             <div className="text-gray-900 font-black text-3xl flex items-center gap-2">
               <span className="bg-white p-1.5 rounded-full text-green-500 shadow-sm border border-gray-100">
@@ -130,14 +130,14 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               </span>
               {(() => {
                 if (user?.role === 'buyer') {
-                  const bal = formatWallet(user?.wallet_balance || 0);
+                  const bal = formatWallet(user?.loan_credit_balance || 0);
                   return bal.primary;
                 }
                 return `$${Number(user?.wallet_balance || 0).toFixed(2)}`;
               })()}
             </div>
             {user?.role === 'buyer' && (() => {
-              const bal = formatWallet(user?.wallet_balance || 0);
+              const bal = formatWallet(user?.loan_credit_balance || 0);
               return bal.secondary ? (
                 <p className="text-[10px] text-gray-400 font-bold mt-1">{bal.secondary}</p>
               ) : null;
@@ -410,7 +410,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               <Link to="/dashboard?tab=wallet" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   <Wallet size={20} />
-                  <span className="font-semibold">My Wallet</span>
+                  <span className="font-semibold">{user?.role === 'buyer' ? 'Loan Credit' : 'My Wallet'}</span>
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>

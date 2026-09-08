@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, ClipboardList, Headset, Wallet, ShoppingBag } from 'lucide-react';
+import { CreditCard, Home, ClipboardList, Headset, ShoppingBag } from 'lucide-react';
 
 const BottomNavbar = () => {
   const location = useLocation();
@@ -41,8 +41,8 @@ const BottomNavbar = () => {
         </Link>
 
         <Link to="/dashboard?tab=wallet" className={linkClass(isWallet)}>
-          <Wallet size={isWallet ? 24 : 22} />
-          <span className="text-[10px] font-bold">Wallet</span>
+          <CreditCard size={isWallet ? 24 : 22} />
+          <span className="text-[10px] font-bold">Credit</span>
         </Link>
 
         <Link to="/dashboard?tab=support" className={linkClass(isSupport)}>
