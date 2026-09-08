@@ -91,6 +91,9 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                   )}
                   
                   {!isActive && (
+                  )}
+                  
+                  {!isActive && (
                     <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded uppercase font-bold flex items-center gap-1 tracking-wider shadow-sm">
                       <ShieldAlert size={10}/> Disabled
                     </span>
@@ -127,21 +130,11 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               {isSeller ? 'Seller Balance' : 'Loan Credit'}
             </div>
             <div className="text-gray-900 font-black text-3xl flex items-center gap-2">
-              <span className={`bg-white p-1.5 rounded-full shadow-sm border border-gray-100 ${isSeller ? 'text-green-500' : 'text-[#0066ff]'}`}>
-                {isSeller ? <Wallet size={20} /> : <CreditCard size={20} />}
+              <span className="bg-white p-1.5 rounded-full shadow-sm border border-gray-100 text-green-500">
+                <Wallet size={20} />
               </span>
-              {(() => {
-                if (isSeller) return `$${Number(user?.wallet_balance || 0).toFixed(2)}`;
-                const bal = formatWallet(user?.loan_credit_balance || 0);
-                return bal.primary;
-              })()}
+              ${Number(user?.wallet_balance || 0).toFixed(2)}
             </div>
-            {!isSeller && (() => {
-              const bal = formatWallet(user?.loan_credit_balance || 0);
-              return bal.secondary ? (
-                <p className="text-[10px] text-gray-400 font-bold mt-1">{bal.secondary}</p>
-              ) : null;
-            })()}
           </div>
         )}
 
@@ -461,3 +454,4 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
 };
 
 export default SidebarMenu;
+

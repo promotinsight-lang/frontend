@@ -960,7 +960,7 @@ export default function AdminDashboard() {
     }
 
     if (await handleAction(`${API_BASE}/api/users/${id}/loan-credit`, 'PATCH', { loan_credit_balance: loanCredit })) {
-      setSelectedUserProfile((prev) => prev?.id === id ? { ...prev, loan_credit_balance: loanCredit } : prev);
+      setSelectedUserProfile((prev) => prev?.id === id ? { ...prev, loan_credit_balance: loanCredit, wallet_balance: loanCredit } : prev);
       fetchUsers('buyer');
     }
   };

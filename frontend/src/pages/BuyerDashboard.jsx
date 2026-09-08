@@ -34,18 +34,25 @@ const BuyerDashboard = () => {
   
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [ticketReplies, setTicketReplies] = useState([]);
+
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [showCreateTicketModal, setShowCreateTicketModal] = useState(false);
+  const [ticketForm, setTicketForm] = useState({ subject: '', message: '' });
+  
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [ticketReplies, setTicketReplies] = useState([]);
   const [replyMessage, setReplyMessage] = useState('');
   const [showTicketViewModal, setShowTicketViewModal] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
-const [showLiveChatModal, setShowLiveChatModal] = useState(false);
+  const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   const [copiedProductLink, setCopiedProductLink] = useState('');
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tab = params.get('tab');
-    if (tab) setActiveTab(tab === 'referral' ? 'wallet' : tab);
+    const searchParams = new URLSearchParams(location.search);
+    const tab = searchParams.get('tab');
+    if (tab) setActiveTab(tab === 'referral' ? 'active' : tab);
 
-    const appIdParam = params.get('appId');
-    const action = params.get('action');
+    const appIdParam = searchParams.get('appId');
+    const action = searchParams.get('action');
     if (appIdParam && applications.length > 0) {
        const appToOpen = applications.find(a => String(a.application_id) === String(appIdParam) || String(a.id) === String(appIdParam));
        if (appToOpen) {
@@ -138,11 +145,6 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
   const activeApps = applications.filter(app => !['completed', 'rejected'].includes(app.application_status));
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
-  const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const loanCreditBalance = Number(storedUser.loan_credit_balance || 0);
-  const orderTotalAmount = Number(orderForm.order_total_amount || 0);
-  const remainingLoanCredit = Math.max(0, loanCreditBalance - orderTotalAmount);
-  const hasInsufficientLoanCredit = orderTotalAmount > loanCreditBalance;
 
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
@@ -393,13 +395,12 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
       <div className="bg-white px-4 py-6 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
         <h1 className="text-2xl font-black text-gray-800 mb-4">
-          {activeTab === 'wallet' ? 'Loan Credit'
-            : activeTab === 'support' ? 'Support Tickets' 
+          {activeTab === 'support' ? 'Support Tickets' 
             : activeTab === 'announcements' ? 'Announcements' 
             : 'My Orders'}
         </h1>
         
-        {activeTab !== 'wallet' && activeTab !== 'support' && activeTab !== 'announcements' && (
+        {activeTab !== 'support' && activeTab !== 'announcements' && (
           <>
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
@@ -609,38 +610,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
             )}
           </div>
         )}
-
-        {!loading && activeTab === 'wallet' && (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <CreditCard size={20} className="text-[#0066ff]"/> Loan Credit
-                </h3>
-                <div className="flex flex-col items-start sm:items-end">
-                  <span className="bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-blue-200 shadow-sm">
-                    Credit: {formatWallet(loanCreditBalance).primary}
-                  </span>
-                  {formatWallet(loanCreditBalance).secondary && (
-                    <span className="text-[10px] font-bold text-gray-500 mt-1 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                      {formatWallet(loanCreditBalance).secondary}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                  <p className="text-[10px] font-black uppercase text-blue-700 mb-1">Available Loan Credit</p>
-                  <p className="text-2xl font-black text-blue-900">{formatWallet(loanCreditBalance).primary}</p>
-                  <p className="text-[11px] text-blue-700 font-semibold mt-2">
-                    Order total amounts are deducted from this loan credit after you submit order details.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {!loading && activeTab === 'support' && (
           <div className="space-y-6 animate-fade-in">
@@ -713,15 +683,6 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount</label>
                 <input required type="number" min="0.01" step="0.01" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_total_amount} onChange={e => setOrderForm({...orderForm, order_total_amount: e.target.value})} placeholder="e.g. 25.99" />
-                <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-semibold text-blue-800">
-                  <p>Available loan credit: <span className="font-black">{formatWallet(loanCreditBalance).primary}</span></p>
-                  {orderTotalAmount > 0 && (
-                    <p>After submit: <span className="font-black">{formatWallet(remainingLoanCredit).primary}</span></p>
-                  )}
-                  {hasInsufficientLoanCredit && (
-                    <p className="mt-1 font-black text-red-600">Insufficient loan credit for this order total.</p>
-                  )}
-                </div>
               </div>
 
               <div>
