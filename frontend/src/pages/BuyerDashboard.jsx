@@ -393,7 +393,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
 
       <div className="bg-white px-4 py-6 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
         <h1 className="text-2xl font-black text-gray-800 mb-4">
-          {activeTab === 'wallet' ? 'Loan Credit Wallet'
+          {activeTab === 'wallet' ? 'Loan Credit'
             : activeTab === 'support' ? 'Support Tickets' 
             : activeTab === 'announcements' ? 'Announcements' 
             : 'My Orders'}
@@ -615,7 +615,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  <CreditCard size={20} className="text-[#0066ff]"/> Loan Credit Wallet
+                  <CreditCard size={20} className="text-[#0066ff]"/> Loan Credit
                 </h3>
                 <div className="flex flex-col items-start sm:items-end">
                   <span className="bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full text-sm flex items-center gap-1 border border-blue-200 shadow-sm">
@@ -1130,7 +1130,7 @@ const [showLiveChatModal, setShowLiveChatModal] = useState(false);
                      </p>
                   ) : selectedItem.data.category === 'Pre-Pay' ? (
                      <p className="text-xs text-green-700 font-medium leading-relaxed mb-3">
-                       Your product amount has been successfully processed by the Admin. <strong className="text-green-800">Note: This amount is NOT added to your system wallet.</strong>
+                       Your product amount has been successfully processed by the Admin. <strong className="text-green-800">Note: This amount is tracked through loan credit only.</strong>
                      </p>
                   ) : (
                      <p className="text-xs text-green-700 font-medium leading-relaxed mb-3">

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   ShoppingBag, User, AlertTriangle, CheckCircle,
   LogOut, ChevronRight, X, Snowflake, ShieldAlert,
-  LayoutDashboard, ShoppingCart, Package, Wallet, Landmark, Settings,
+  LayoutDashboard, ShoppingCart, Package, Wallet, CreditCard, Landmark, Settings,
   List, UserCheck, History, PlusCircle, Users, Scale, Headset, Megaphone, FileText, MessageSquare 
 } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
@@ -124,11 +124,11 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
         {!isAdmin && (
           <div className="bg-gray-50/80 p-5 flex flex-col items-center justify-center border-b border-gray-100">
             <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
-              {isSeller ? 'Seller Balance' : 'Loan Credit Balance'}
+              {isSeller ? 'Seller Balance' : 'Loan Credit'}
             </div>
             <div className="text-gray-900 font-black text-3xl flex items-center gap-2">
-              <span className="bg-white p-1.5 rounded-full text-green-500 shadow-sm border border-gray-100">
-                <Wallet size={20} />
+              <span className={`bg-white p-1.5 rounded-full shadow-sm border border-gray-100 ${isSeller ? 'text-green-500' : 'text-[#0066ff]'}`}>
+                {isSeller ? <Wallet size={20} /> : <CreditCard size={20} />}
               </span>
               {(() => {
                 if (isSeller) return `$${Number(user?.wallet_balance || 0).toFixed(2)}`;
@@ -409,7 +409,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               
               <Link to="/dashboard?tab=wallet" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
-                  <Wallet size={20} />
+                  {isSeller ? <Wallet size={20} /> : <CreditCard size={20} />}
                   <span className="font-semibold">{isSeller ? 'Seller Wallet' : 'Loan Credit'}</span>
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
