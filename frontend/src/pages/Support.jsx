@@ -247,7 +247,7 @@ export default function Support() {
                 <div className="flex-1">
                   <h1 className="text-4xl font-black text-gray-900 mb-4">Contact Support</h1>
                   <p className="text-gray-500 mb-8 leading-relaxed">
-                    Facing issues with an order dispute, loan credit, wallet balance, or account access? Send us a message and our admin team will resolve it manually.
+                    Facing issues with an order dispute, loan credit, or account access? Send us a message and our admin team will resolve it manually.
                   </p>
 
                   <div className="space-y-6">

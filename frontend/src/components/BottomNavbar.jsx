@@ -5,8 +5,9 @@ const BottomNavbar = () => {
   const location = useLocation();
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
+  const role = String(user?.role || '').toLowerCase();
 
-  if (!user || user.role !== 'buyer') return null;
+  if (!user || role !== 'buyer') return null;
 
   const params = new URLSearchParams(location.search);
   const tab = params.get('tab');

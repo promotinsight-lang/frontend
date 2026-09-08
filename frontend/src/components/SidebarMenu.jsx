@@ -47,6 +47,9 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
 
   const isVerified = user?.verification_status === 'approved';
   const isPending = user?.verification_status === 'pending';
+  const role = String(user?.role || '').toLowerCase();
+  const isSeller = role === 'seller';
+  const isAdmin = role === 'admin';
   
   const isActive = user?.is_active !== false;
   const isFrozen = user?.is_frozen === true;
@@ -76,12 +79,12 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               
               <div className="flex flex-col items-start gap-1.5 mt-2">
                 <div className="flex flex-wrap gap-1">
-                  {user?.role === 'admin' && (
+                  {isAdmin && (
                     <span className="bg-white/20 text-white text-[10px] px-2.5 py-0.5 rounded uppercase font-bold tracking-wider border border-white/10">
                       Admin
                     </span>
                   )}
-                  {user?.role === 'seller' && (
+                  {isSeller && (
                     <span className="bg-white/20 text-white text-[10px] px-2.5 py-0.5 rounded uppercase font-bold tracking-wider border border-white/10">
                       Seller
                     </span>
@@ -99,7 +102,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                   )}
                 </div>
 
-                {user?.role !== 'admin' && (
+                {!isAdmin && (
                   <span className={`text-[10px] px-2.5 py-0.5 rounded-full uppercase font-bold flex items-center gap-1 tracking-wider border shadow-sm ${isVerified ? 'bg-green-500/20 border-green-400 text-green-50' : isPending ? 'bg-yellow-500/20 border-yellow-400 text-yellow-50' : 'bg-white/10 border-white/30 text-white'}`}>
                     {isVerified ? <CheckCircle size={10}/> : <AlertTriangle size={10}/>}
                     {isVerified ? 'Verified' : isPending ? 'Pending' : 'Unverified'}
@@ -109,7 +112,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
             </div>
           </div>
 
-          {user?.role !== 'admin' && !isVerified && !isPending && isActive && (
+          {!isAdmin && !isVerified && !isPending && isActive && (
             <div className="mt-5">
               <Link to="/verification" onClick={() => setIsOpen(false)} className="block text-center bg-white text-[#0066ff] hover:bg-gray-50 text-xs px-4 py-2.5 rounded-lg font-bold shadow-lg transition-colors uppercase tracking-wide">
                 Complete Verification
@@ -118,25 +121,22 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
           )}
         </div>
 
-        {/* 🔥 UPDATE: Removed user?.role !== 'seller' restriction so seller also sees balance here */}
-        {user?.role !== 'admin' && (
+        {!isAdmin && (
           <div className="bg-gray-50/80 p-5 flex flex-col items-center justify-center border-b border-gray-100">
             <div className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1.5">
-              {user?.role === 'buyer' ? 'Loan Credit Balance' : 'Available Balance'}
+              {isSeller ? 'Seller Balance' : 'Loan Credit Balance'}
             </div>
             <div className="text-gray-900 font-black text-3xl flex items-center gap-2">
               <span className="bg-white p-1.5 rounded-full text-green-500 shadow-sm border border-gray-100">
                 <Wallet size={20} />
               </span>
               {(() => {
-                if (user?.role === 'buyer') {
-                  const bal = formatWallet(user?.loan_credit_balance || 0);
-                  return bal.primary;
-                }
-                return `$${Number(user?.wallet_balance || 0).toFixed(2)}`;
+                if (isSeller) return `$${Number(user?.wallet_balance || 0).toFixed(2)}`;
+                const bal = formatWallet(user?.loan_credit_balance || 0);
+                return bal.primary;
               })()}
             </div>
-            {user?.role === 'buyer' && (() => {
+            {!isSeller && (() => {
               const bal = formatWallet(user?.loan_credit_balance || 0);
               return bal.secondary ? (
                 <p className="text-[10px] text-gray-400 font-bold mt-1">{bal.secondary}</p>
@@ -147,7 +147,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
 
         <div className="py-3 px-2">
           
-          {user?.role === 'admin' ? (
+          {isAdmin ? (
             <>
               <Link to="/dashboard?tab=overview" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
@@ -276,7 +276,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
             </>
-          ) : user?.role === 'seller' ? (
+          ) : isSeller ? (
              <>
                 <Link to="/dashboard?tab=overview" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                   <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
@@ -410,7 +410,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               <Link to="/dashboard?tab=wallet" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   <Wallet size={20} />
-                  <span className="font-semibold">{user?.role === 'buyer' ? 'Loan Credit' : 'My Wallet'}</span>
+                  <span className="font-semibold">{isSeller ? 'Seller Wallet' : 'Loan Credit'}</span>
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
