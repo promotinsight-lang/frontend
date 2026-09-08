@@ -435,6 +435,7 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
   const priceDisplay = formatProductMoney(product.price, product.country);
   const cardLabel = product.category || 'General';
   const statusLabel = isSoldOut ? 'Closed' : `${availableQty} left`;
+  const isBuyer = user?.role === 'buyer';
 
   return (
     <div className={`group flex h-full flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 ${isSoldOut ? 'border-gray-200 opacity-80' : 'border-gray-200 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md'}`}>
@@ -449,24 +450,28 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
           <div className="flex h-full items-center justify-center text-xs font-bold text-gray-400">No Image</div>
         )}
 
-        <div className="absolute left-3 top-3 z-10">
-          <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm ${isSoldOut ? 'bg-gray-400' : 'bg-emerald-500'}`}>
-            {statusLabel}
-          </span>
-        </div>
+        {!isBuyer && (
+          <>
+            <div className="absolute left-3 top-3 z-10">
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm ${isSoldOut ? 'bg-gray-400' : 'bg-emerald-500'}`}>
+                {statusLabel}
+              </span>
+            </div>
 
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(product.id); }}
-          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50"
-          aria-label="Toggle favorite"
-        >
-          <Heart size={18} className={isFavorite ? 'fill-current text-rose-500' : 'text-gray-700'} />
-        </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(product.id); }}
+              className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200 transition hover:bg-gray-50"
+              aria-label="Toggle favorite"
+            >
+              <Heart size={18} className={isFavorite ? 'fill-current text-rose-500' : 'text-gray-700'} />
+            </button>
 
-        <div className="absolute bottom-3 left-3 inline-flex rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-          {cardLabel}
-        </div>
+            <div className="absolute bottom-3 left-3 inline-flex rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+              {cardLabel}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-3 sm:p-4">
@@ -474,12 +479,14 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
           {product.product_name || 'Premium product'}
         </h3>
 
-        <div className="mb-3 border-t border-gray-100 pt-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Price</p>
-            <p className={`text-lg font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>{priceDisplay.formatted}</p>
+        {!isBuyer && (
+          <div className="mb-3 border-t border-gray-100 pt-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Price</p>
+              <p className={`text-lg font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>{priceDisplay.formatted}</p>
+            </div>
           </div>
-        </div>
+        )}
 
         {user?.role === 'seller' ? (
           <button onClick={() => navigate('/dashboard?tab=overview')} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">

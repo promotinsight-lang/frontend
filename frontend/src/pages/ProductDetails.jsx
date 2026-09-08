@@ -166,6 +166,7 @@ export default function ProductDetails() {
   const priceDisplay = formatProductMoney(product.price, product.country);
   const statusLabel = isSoldOut ? 'Closed' : `${availableQty} left`;
   const isVerified = user && user.verification_status === 'approved';
+  const isBuyer = user?.role === 'buyer';
 
   return (
     <div className="min-h-screen bg-[#f9fafb] font-sans text-gray-900 flex flex-col">
@@ -192,49 +193,59 @@ export default function ProductDetails() {
             ) : (
               <span className="text-gray-400 font-bold">No Image Available</span>
             )}
-            <div className="absolute top-4 left-4 z-10">
-              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md ${isSoldOut ? 'bg-gray-400' : 'bg-[#10b981]'}`}>
-                {statusLabel}
-              </span>
-            </div>
-            <div className="absolute top-4 right-4 z-10">
-              <span className="inline-flex rounded-full bg-black/70 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
-                {product.category || 'General'}
-              </span>
-            </div>
+            {!isBuyer && (
+              <>
+                <div className="absolute top-4 left-4 z-10">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md ${isSoldOut ? 'bg-gray-400' : 'bg-[#10b981]'}`}>
+                    {statusLabel}
+                  </span>
+                </div>
+                <div className="absolute top-4 right-4 z-10">
+                  <span className="inline-flex rounded-full bg-black/70 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-md">
+                    {product.category || 'General'}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Details Section */}
           <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col">
             
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-1 rounded">
-                Platform: {product.platform}
-              </span>
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-1 rounded">
-                Country: {product.country}
-              </span>
-            </div>
+            {!isBuyer && (
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-1 rounded">
+                  Platform: {product.platform}
+                </span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-1 rounded">
+                  Country: {product.country}
+                </span>
+              </div>
+            )}
 
             <h1 className={`text-2xl md:text-3xl font-black leading-tight mb-4 ${isSoldOut ? 'text-gray-500' : 'text-gray-900'}`}>
               {product.product_name}
             </h1>
 
-            <div className="mb-8 pb-6 border-b border-gray-100">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Price</p>
-                <p className={`text-3xl font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>
-                  {priceDisplay.formatted}
+            {!isBuyer && (
+              <div className="mb-8 pb-6 border-b border-gray-100">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Price</p>
+                  <p className={`text-3xl font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>
+                    {priceDisplay.formatted}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {!isBuyer && (
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-gray-800 mb-2">Instructions</h3>
+                <p className="text-gray-600 text-sm leading-relaxed mb-6 whitespace-pre-wrap">
+                  {product.instructions || "No specific instructions provided for this product."}
                 </p>
               </div>
-            </div>
-
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-gray-800 mb-2">Instructions</h3>
-              <p className="text-gray-600 text-sm leading-relaxed mb-6 whitespace-pre-wrap">
-                {product.instructions || "No specific instructions provided for this product."}
-              </p>
-            </div>
+            )}
 
             <div className="mt-auto pt-6">
               {isAccountDisabled ? (
