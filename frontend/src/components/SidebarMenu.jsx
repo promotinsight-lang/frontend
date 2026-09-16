@@ -130,7 +130,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               <span className="bg-white p-1.5 rounded-full shadow-sm border border-gray-100 text-green-500">
                 <Wallet size={20} />
               </span>
-              ${Number(user?.wallet_balance || 0).toFixed(2)}
+              ${Number(isSeller ? (user?.wallet_balance || 0) : (user?.loan_credit_balance || 0)).toFixed(2)}
             </div>
           </div>
         )}
@@ -400,7 +400,7 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
               <Link to="/dashboard?tab=wallet" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   {isSeller ? <Wallet size={20} /> : <CreditCard size={20} />}
-                  <span className="font-semibold">{isSeller ? 'Seller Wallet' : 'Loan Credit'}</span>
+                  <span className="font-semibold">{isSeller ? 'Seller Wallet' : 'Transaction History'}</span>
                 </div>
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>

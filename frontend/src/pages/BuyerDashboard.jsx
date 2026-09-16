@@ -14,6 +14,14 @@ const BuyerDashboard = () => {
   const [activeTab, setActiveTab] = useState('active'); 
   const [applications, setApplications] = useState([]);
   const [announcements, setAnnouncements] = useState([]); 
+  const [transactions, setTransactions] = useState([]);
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [isAccountDisabled, setIsAccountDisabled] = useState(false); 
   
@@ -82,14 +90,16 @@ const BuyerDashboard = () => {
         const profileData = await profileRes.json();
         if (profileData.success) {
           const lsUser = JSON.parse(localStorage.getItem('user') || '{}');
-          localStorage.setItem('user', JSON.stringify({ 
+          const updatedUser = { 
             ...lsUser, 
             wallet_balance: profileData.user.wallet_balance, 
             loan_credit_balance: profileData.user.loan_credit_balance,
             wallet_breakdown: profileData.user.wallet_breakdown,
             is_active: profileData.user.is_active, 
             is_frozen: profileData.user.is_frozen,
-          }));
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setUserProfile(updatedUser);
           window.dispatchEvent(new Event('user-profile-updated'));
           
           if (profileData.user.is_active === false) {
@@ -126,6 +136,15 @@ const BuyerDashboard = () => {
          if (tRes.ok) setSupportTickets(tData.data || []);
       }
 
+      if (activeTab === 'wallet') {
+         const trxRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/transactions/my`, {
+            headers: {},
+            credentials: 'include'
+         });
+         const trxData = await trxRes.json();
+         if (trxRes.ok && trxData.success) setTransactions(trxData.data || []);
+      }
+
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
@@ -140,6 +159,18 @@ const BuyerDashboard = () => {
   const activeApps = applications.filter(app => !['completed', 'rejected'].includes(app.application_status));
   const completedApps = applications.filter(app => app.application_status === 'completed');
   const failedApps = applications.filter(app => app.application_status === 'rejected');
+  const loanTransactions = transactions.filter((transaction) =>
+    ['loan_received', 'loan_deducted', 'loan_credit_order'].includes(transaction.type)
+  );
+  const loanReceivedTotal = loanTransactions
+    .filter((transaction) => transaction.type === 'loan_received')
+    .reduce((total, transaction) => total + (Number(transaction.amount) || 0), 0);
+  const loanSpentTotal = loanTransactions
+    .filter((transaction) => ['loan_credit_order', 'loan_deducted'].includes(transaction.type))
+    .reduce((total, transaction) => total + (Number(transaction.amount) || 0), 0);
+  const currentLoanCredit = Number(userProfile?.loan_credit_balance || 0);
+  const requestedOrderTotal = Number(orderForm.order_total_amount || 0);
+  const hasInsufficientLoanCredit = requestedOrderTotal > 0 && currentLoanCredit < requestedOrderTotal;
 
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
@@ -354,6 +385,33 @@ const BuyerDashboard = () => {
     );
   };
 
+  const getTransactionMeta = (transaction) => {
+    if (transaction.type === 'loan_received') {
+      return {
+        label: 'Credit Added',
+        amountClass: 'text-green-600',
+        badgeClass: 'bg-green-100 text-green-700 border-green-200',
+        sign: '+',
+      };
+    }
+
+    if (transaction.type === 'loan_deducted') {
+      return {
+        label: 'Credit Adjusted',
+        amountClass: 'text-red-600',
+        badgeClass: 'bg-red-100 text-red-700 border-red-200',
+        sign: '-',
+      };
+    }
+
+    return {
+      label: 'Spent',
+      amountClass: 'text-red-600',
+      badgeClass: 'bg-blue-100 text-blue-700 border-blue-200',
+      sign: '-',
+    };
+  };
+
   if (isAccountDisabled) {
     return (
       <div className="min-h-screen bg-gray-50 font-sans pb-10 flex flex-col">
@@ -392,10 +450,11 @@ const BuyerDashboard = () => {
         <h1 className="text-2xl font-black text-gray-800 mb-4">
           {activeTab === 'support' ? 'Support Tickets' 
             : activeTab === 'announcements' ? 'Announcements' 
+            : activeTab === 'wallet' ? 'Transaction History'
             : 'My Orders'}
         </h1>
         
-        {activeTab !== 'support' && activeTab !== 'announcements' && (
+        {activeTab !== 'support' && activeTab !== 'announcements' && activeTab !== 'wallet' && (
           <>
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
@@ -479,6 +538,58 @@ const BuyerDashboard = () => {
           </div>
         )}
 
+        {!loading && activeTab === 'wallet' && (
+          <div className="space-y-4 animate-fade-in-up">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-white border border-blue-100 rounded-xl p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Available Credit</p>
+                <p className="text-2xl font-black text-blue-700 mt-1">${currentLoanCredit.toFixed(2)}</p>
+              </div>
+              <div className="bg-white border border-green-100 rounded-xl p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Added</p>
+                <p className="text-2xl font-black text-green-600 mt-1">${loanReceivedTotal.toFixed(2)}</p>
+              </div>
+              <div className="bg-white border border-red-100 rounded-xl p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Spent</p>
+                <p className="text-2xl font-black text-red-600 mt-1">${loanSpentTotal.toFixed(2)}</p>
+              </div>
+            </div>
+
+            {loanTransactions.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm">
+                <CreditCard size={48} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500 font-medium">No credit transactions yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {loanTransactions.map((transaction) => {
+                  const meta = getTransactionMeta(transaction);
+                  return (
+                    <div key={transaction.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className={`inline-block px-2 py-1 rounded border text-[10px] font-black uppercase tracking-wider ${meta.badgeClass}`}>
+                            {meta.label}
+                          </span>
+                          <p className="text-sm font-bold text-gray-800 mt-2 break-words">
+                            {transaction.description || meta.label}
+                          </p>
+                          <p className="text-[11px] text-gray-500 font-semibold mt-1">
+                            {formatDateTime(transaction.created_at) || 'Date unavailable'}
+                          </p>
+                        </div>
+                        <p className={`text-lg font-black shrink-0 ${meta.amountClass}`}>
+                          {meta.sign}${Number(transaction.amount || 0).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {!loading && activeTab === 'active' && (
           <div className="space-y-4">
             {activeApps.length === 0 ? (
@@ -507,6 +618,14 @@ const BuyerDashboard = () => {
                       <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${app.application_status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
                         {(app.application_status || '').replace('_', ' ')}
                       </span>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Product price: <span className="font-bold text-gray-800">{formatProduct(app.price, app.country).formatted}</span>
+                      </p>
+                      {app.order_total_amount && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Input amount: <span className="font-bold text-green-600">${Number(app.order_total_amount).toFixed(2)}</span>
+                        </p>
+                      )}
                       {app.order_submitted_at && (
                         <p className="text-[10px] text-gray-500 font-semibold mt-2">
                           Order submitted: {new Date(app.order_submitted_at).toLocaleString()}
@@ -569,7 +688,10 @@ const BuyerDashboard = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-bold text-gray-800 line-clamp-1">{app.product_name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">Completed: <span className="font-bold text-green-600">{formatProduct(app.price, app.country).formatted}</span></p>
+                    <p className="text-xs text-gray-500 mt-1">Product price: <span className="font-bold text-gray-800">{formatProduct(app.price, app.country).formatted}</span></p>
+                    {app.order_total_amount && (
+                      <p className="text-xs text-gray-500 mt-0.5">Input amount: <span className="font-bold text-green-600">${Number(app.order_total_amount).toFixed(2)}</span></p>
+                    )}
                   </div>
                   <div className="shrink-0 bg-green-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm shadow-green-500/30">
                     <CheckCircle size={14}/> Success
@@ -595,6 +717,7 @@ const BuyerDashboard = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-sm font-bold text-gray-800 line-clamp-1">{app.product_name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">Product price: <span className="font-bold text-gray-800">{formatProduct(app.price, app.country).formatted}</span></p>
                     <p className="text-[10px] text-gray-500 mt-1">Application was rejected</p>
                   </div>
                   <div className="shrink-0 bg-red-100 text-red-600 px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1">
@@ -678,6 +801,12 @@ const BuyerDashboard = () => {
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount</label>
                 <input required type="number" min="0.01" step="0.01" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_total_amount} onChange={e => setOrderForm({...orderForm, order_total_amount: e.target.value})} placeholder="e.g. 25.99" />
+                <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold">
+                  <span className="text-gray-500">Available credit: ${currentLoanCredit.toFixed(2)}</span>
+                  {hasInsufficientLoanCredit && (
+                    <span className="text-red-600">Insufficient credit</span>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -899,7 +1028,13 @@ const BuyerDashboard = () => {
               <h2 className="text-lg font-bold text-gray-800">{selectedItem.data.product_name}</h2>
               
               <div className="bg-gray-50 p-4 rounded-xl mt-4 border border-gray-100">
-                <div><p className="text-xs text-gray-500">Price</p><p className="text-lg font-bold text-gray-800">{formatProduct(selectedItem.data.price, selectedItem.data.country).formatted}</p></div>
+                <div><p className="text-xs text-gray-500">Product Price</p><p className="text-lg font-bold text-gray-800">{formatProduct(selectedItem.data.price, selectedItem.data.country).formatted}</p></div>
+                {selectedItem.data.order_total_amount && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-500">Input Amount</p>
+                    <p className="text-lg font-bold text-green-700">${Number(selectedItem.data.order_total_amount).toFixed(2)}</p>
+                  </div>
+                )}
               </div>
 
               {['pending', 'approved', 'order_submitted', 'order_approved', 'review_submitted', 'pending_refund', 'completed'].includes(selectedItem.data.application_status) && (

@@ -43,7 +43,7 @@ const BottomNavbar = () => {
 
         <Link to="/dashboard?tab=wallet" className={linkClass(isWallet)}>
           <CreditCard size={isWallet ? 24 : 22} />
-          <span className="text-[10px] font-bold">Credit</span>
+          <span className="text-[10px] font-bold">History</span>
         </Link>
 
         <Link to="/dashboard?tab=support" className={linkClass(isSupport)}>
