@@ -135,13 +135,21 @@ export default function AppDetailsModal({
           </div>
 
           <div className="space-y-4">
-             {(selectedAppDetails.status === 'order_submitted' || selectedAppDetails.status === 'order_approved' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && selectedAppDetails.order_number && (
+             {(selectedAppDetails.status === 'order_submitted' || selectedAppDetails.status === 'order_approved' || selectedAppDetails.status === 'forwarded_to_seller' || selectedAppDetails.status === 'review_submitted' || selectedAppDetails.status === 'pending_refund' || selectedAppDetails.status === 'completed' || selectedAppDetails.status === 'disputed' || selectedAppDetails.status === 'rejected') && (selectedAppDetails.order_number || selectedAppDetails.order_total_amount || selectedAppDetails.order_paypal_address || selectedAppDetails.screenshot_url || selectedAppDetails.screenshot_url_2 || selectedAppDetails.order_comment) && (
                <div className="bg-indigo-50 p-4 sm:p-5 rounded-xl border border-indigo-200 shadow-sm">
-                 <h4 className="font-bold text-indigo-800 mb-3 border-b border-indigo-200 pb-2 flex items-center gap-2"><ImageIcon size={18}/> Order Submission</h4>
-                 <p className="text-sm flex flex-col sm:flex-row sm:items-center"><span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Order No:</span> <span className="font-mono font-bold bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">{selectedAppDetails.order_number || 'N/A'}</span></p>
+                 <h4 className="font-bold text-indigo-800 mb-3 border-b border-indigo-200 pb-2 flex items-center gap-2"><ImageIcon size={18}/> Loan Submission</h4>
+                 {selectedAppDetails.order_number && (
+                   <p className="text-sm flex flex-col sm:flex-row sm:items-center"><span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Order No:</span> <span className="font-mono font-bold bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">{selectedAppDetails.order_number}</span></p>
+                 )}
+                 {selectedAppDetails.order_total_amount && (
+                   <p className="text-sm flex flex-col sm:flex-row sm:items-center mt-2"><span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Total:</span> <span className="font-black text-green-700 bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">${Number(selectedAppDetails.order_total_amount).toFixed(2)}</span></p>
+                 )}
+                 {selectedAppDetails.order_paypal_address && (
+                   <p className="text-sm flex flex-col sm:flex-row sm:items-start mt-2"><span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">PayPal:</span> <span className="font-mono font-bold bg-white px-2 py-0.5 border border-indigo-100 rounded break-all">{selectedAppDetails.order_paypal_address}</span></p>
+                 )}
                  {selectedAppDetails.order_submitted_at && (
                    <p className="text-sm flex flex-col sm:flex-row sm:items-center mt-2">
-                     <span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Submitted:</span>
+                     <span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Applied:</span>
                      <span className="font-bold text-indigo-700 bg-white px-2 py-0.5 border border-indigo-100 rounded w-max">
                        {formatDateTime(selectedAppDetails.order_submitted_at)}
                      </span>
@@ -151,7 +159,7 @@ export default function AppDetailsModal({
                  <div className="mt-3 flex flex-wrap gap-2">
                    {selectedAppDetails.screenshot_url && (
                       <a href={selectedAppDetails.screenshot_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[#0066ff] font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-indigo-100 shadow-sm transition-all hover:shadow-md">
-                        <ImageIcon size={14} /> View Proof 1
+                        <ImageIcon size={14} /> View Order Total Screenshot
                       </a>
                    )}
                    {selectedAppDetails.screenshot_url_2 && (
@@ -223,6 +231,35 @@ export default function AppDetailsModal({
                </div>
              )}
 
+             {(selectedAppDetails.loan_payment_transaction_id || selectedAppDetails.loan_payment_screenshot_url || selectedAppDetails.loan_payment_amount) && (
+               <div className="bg-emerald-50 p-4 sm:p-5 rounded-xl border border-emerald-200 shadow-sm">
+                 <h4 className="font-bold text-emerald-800 mb-3 border-b border-emerald-200 pb-2 flex items-center gap-2"><Receipt size={18}/> Loan Approval Proof</h4>
+                 {selectedAppDetails.loan_payment_amount && (
+                   <p className="text-sm mb-2 flex flex-col sm:flex-row sm:items-center">
+                     <span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Amount:</span>
+                     <span className="font-black text-emerald-700 bg-white px-2 py-0.5 border border-emerald-100 rounded w-max">${Number(selectedAppDetails.loan_payment_amount).toFixed(2)}</span>
+                   </p>
+                 )}
+                 {selectedAppDetails.loan_payment_transaction_id && (
+                   <p className="text-sm mb-2 flex flex-col sm:flex-row sm:items-center">
+                     <span className="font-semibold text-gray-600 sm:w-24 mb-1 sm:mb-0">Trx ID:</span>
+                     <span className="font-mono font-bold bg-white px-2 py-0.5 border border-emerald-100 rounded break-all">{selectedAppDetails.loan_payment_transaction_id}</span>
+                   </p>
+                 )}
+                 {selectedAppDetails.loan_paid_at && (
+                   <p className="text-xs text-emerald-700 font-semibold mb-2">Loan approved: {formatDateTime(selectedAppDetails.loan_paid_at)}</p>
+                 )}
+                 {selectedAppDetails.loan_payment_screenshot_url && (
+                   <a href={selectedAppDetails.loan_payment_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-emerald-700 font-bold hover:underline text-xs bg-white px-3 py-2 rounded-lg border border-emerald-100 shadow-sm">
+                     <ImageIcon size={14} /> View Payment Screenshot
+                   </a>
+                 )}
+                 {selectedAppDetails.loan_payment_note && (
+                   <p className="mt-3 text-sm bg-white p-3 rounded-lg border border-emerald-100 text-gray-700">{selectedAppDetails.loan_payment_note}</p>
+                 )}
+               </div>
+             )}
+
              {(selectedAppDetails.seller_payment_transaction_id || selectedAppDetails.seller_payment_screenshot_url) && (
                <div className="bg-green-50 p-4 sm:p-5 rounded-xl border border-green-200 shadow-sm">
                  <h4 className="font-bold text-green-800 mb-3 border-b border-green-200 pb-2 flex items-center gap-2"><Receipt size={18}/> Seller Payment Proof</h4>
@@ -267,11 +304,11 @@ export default function AppDetailsModal({
           
           {selectedAppDetails.status === 'order_submitted' && (
             <>
-              <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-order')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Order</button>
+              <button onClick={() => actionApplication(selectedAppDetails.id, 'reject-order')} className="w-full sm:w-auto bg-red-500 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-red-600 shadow-md transition-colors">Reject Loan</button>
               {isNoReviewCategory(selectedAppDetails.category) ? (
                 <button onClick={() => actionApplication(selectedAppDetails.id, 'forward')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Forward to Seller</button>
               ) : (
-                <button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Approve Order</button>
+                <button onClick={() => actionApplication(selectedAppDetails.id, 'approve-order')} className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition-colors">Approve Loan</button>
               )}
             </>
           )}

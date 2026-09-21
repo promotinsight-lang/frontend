@@ -10,6 +10,7 @@ import PaymentMethodsManager from '../components/admin/PaymentMethodsManager';
 // --- ৮টি মডাল ইম্পোর্ট (Imports) ---
 import FullImageModal from '../components/admin/FullImageModal';
 import RefundModal from '../components/admin/RefundModal';
+import LoanApprovalModal from '../components/admin/LoanApprovalModal';
 import ApproveWithdrawalModal from '../components/admin/ApproveWithdrawalModal';
 import TrxDetailsModal from '../components/admin/TrxDetailsModal';
 import AppealDetailsModal from '../components/admin/AppealDetailsModal';
@@ -233,6 +234,8 @@ export default function AdminDashboard() {
   // Refund Modal States (ক্লিন করা হয়েছে)
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundAppId, setRefundAppId] = useState(null);
+  const [showLoanApprovalModal, setShowLoanApprovalModal] = useState(false);
+  const [loanAppToApprove, setLoanAppToApprove] = useState(null);
 
   const [showAppDetailsModal, setShowAppDetailsModal] = useState(false);
   const [selectedAppDetails, setSelectedAppDetails] = useState(null);
@@ -314,14 +317,14 @@ export default function AdminDashboard() {
 
   // Prevent background scrolling when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = showProductModal || showRefundModal || showAppDetailsModal || showUserProfileModal || showAppealModal || showApproveWithdrawalModal || showTrxDetailsModal || showTicketViewModal || showFullImageModal;
+    const isAnyModalOpen = showProductModal || showRefundModal || showLoanApprovalModal || showAppDetailsModal || showUserProfileModal || showAppealModal || showApproveWithdrawalModal || showTrxDetailsModal || showTicketViewModal || showFullImageModal;
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [showProductModal, showRefundModal, showAppDetailsModal, showUserProfileModal, showAppealModal, showApproveWithdrawalModal, showTrxDetailsModal, showTicketViewModal, showFullImageModal]);
+  }, [showProductModal, showRefundModal, showLoanApprovalModal, showAppDetailsModal, showUserProfileModal, showAppealModal, showApproveWithdrawalModal, showTrxDetailsModal, showTicketViewModal, showFullImageModal]);
 
   // 🔥 FETCH ALL SAVED CONFIGURATIONS
   const fetchAllFeeConfigs = async () => {
@@ -909,12 +912,36 @@ export default function AdminDashboard() {
   const approveAppeal = async (id) => { if(window.confirm('Approve this appeal and reactivate the account?')) { if(await handleAction(`${API_BASE}/api/admin/appeals/${id}/approve`)) fetchAppeals(); } };
   const rejectAppeal = async (id) => { if(window.confirm('Reject this appeal? The account will remain disabled.')) { if(await handleAction(`${API_BASE}/api/admin/appeals/${id}/reject`)) fetchAppeals(); } };
 
+  const openLoanApproval = (application) => {
+    setLoanAppToApprove(application);
+    setShowLoanApprovalModal(true);
+  };
+
   const actionApplication = async (appId, actionType) => {
+    if (actionType === 'approve-order') {
+      const application = selectedAppDetails?.id === appId
+        ? selectedAppDetails
+        : applications.find((app) => app.id === appId);
+      openLoanApproval(application || { id: appId });
+      setShowAppDetailsModal(false);
+      return;
+    }
+
     const actionLabel = actionType === 'approve-order' ? 'approve loan' : actionType === 'reject-order' ? 'reject loan' : actionType.replace('-', ' ');
     if(window.confirm(`Proceed to ${actionLabel}?`)) {
       if(await handleAction(`${API_BASE}/api/applications/${appId}/${actionType}`)) {
          fetchApplications(); setShowAppDetailsModal(false);
       }
+    }
+  };
+
+  const submitLoanApproval = async (proofData) => {
+    if (!loanAppToApprove?.id) return;
+    if (await handleAction(`${API_BASE}/api/applications/${loanAppToApprove.id}/approve-order`, 'PATCH', proofData)) {
+      setShowLoanApprovalModal(false);
+      setLoanAppToApprove(null);
+      setShowAppDetailsModal(false);
+      fetchApplications();
     }
   };
 
@@ -2305,7 +2332,7 @@ export default function AdminDashboard() {
                   subtitle={app.buyer_name}
                   actions={
                     <>
-                      <button onClick={() => actionApplication(app.id, 'approve-order')} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold">
+                      <button onClick={() => openLoanApproval(app)} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold">
                         <CheckCircle size={14} className="inline mr-1" /> Approve
                       </button>
                       <button onClick={() => actionApplication(app.id, 'reject-order')} className="flex-1 border border-red-200 text-red-500 py-2 rounded-lg text-xs font-bold">
@@ -2369,7 +2396,7 @@ export default function AdminDashboard() {
                       </td>
                       <td className="p-4">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => actionApplication(app.id, 'approve-order')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm flex items-center gap-1">
+                          <button onClick={() => openLoanApproval(app)} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm flex items-center gap-1">
                             <CheckCircle size={14}/> Approve
                           </button>
                           <button onClick={() => actionApplication(app.id, 'reject-order')} className="bg-white border border-red-200 text-red-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 shadow-sm flex items-center gap-1">
@@ -3101,6 +3128,17 @@ export default function AdminDashboard() {
               setRefundAppId(null);
             }}
             onSuccess={submitRefund}
+          />
+        )}
+
+        {showLoanApprovalModal && loanAppToApprove && (
+          <LoanApprovalModal
+            application={loanAppToApprove}
+            onClose={() => {
+              setShowLoanApprovalModal(false);
+              setLoanAppToApprove(null);
+            }}
+            onSuccess={submitLoanApproval}
           />
         )}
 

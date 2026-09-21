@@ -616,6 +616,21 @@ const BuyerDashboard = () => {
                               )}
                             </div>
                           )}
+                          {(transaction.loan_payment_transaction_id || transaction.loan_payment_screenshot_url || transaction.loan_payment_note) && (
+                            <div className="mt-3 bg-green-50 border border-green-100 rounded-lg p-2">
+                              {transaction.loan_payment_transaction_id && (
+                                <p className="text-[11px] text-green-800 font-bold break-all">Trx ID: {transaction.loan_payment_transaction_id}</p>
+                              )}
+                              {transaction.loan_payment_screenshot_url && (
+                                <a href={transaction.loan_payment_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-white px-2 py-1 rounded border border-green-100 mt-2">
+                                  <ImageIcon size={13} /> Payment Screenshot
+                                </a>
+                              )}
+                              {transaction.loan_payment_note && (
+                                <p className="text-[11px] text-gray-700 italic mt-2">"{transaction.loan_payment_note}"</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <p className={`text-lg font-black shrink-0 ${meta.amountClass}`}>
                           {meta.sign}${Number(transaction.amount || 0).toFixed(2)}
@@ -1172,6 +1187,45 @@ const BuyerDashboard = () => {
                         </a>
                       )}
                     </div>
+                  )}
+                </div>
+              )}
+
+              {(selectedItem.data.loan_payment_transaction_id || selectedItem.data.loan_payment_screenshot_url || selectedItem.data.loan_payment_amount) && (
+                <div className="mt-6 border border-green-200 bg-green-50 p-4 rounded-xl shadow-sm">
+                  <h4 className="font-bold text-green-800 text-sm mb-2 flex items-center gap-1">
+                    <CheckCircle size={16} /> Loan Approval Proof
+                  </h4>
+                  {selectedItem.data.loan_payment_amount && (
+                    <div className="mb-2">
+                      <p className="text-[10px] text-green-600 uppercase font-bold">Approved Amount</p>
+                      <p className="text-sm font-black bg-white px-2 py-1 rounded inline-block border border-green-200 text-green-700">
+                        ${Number(selectedItem.data.loan_payment_amount).toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                  {selectedItem.data.loan_payment_transaction_id && (
+                    <div className="mb-2">
+                      <p className="text-[10px] text-green-600 uppercase font-bold">Transaction ID</p>
+                      <p className="text-sm font-mono bg-white px-2 py-1 rounded inline-block border border-green-200 text-gray-800 font-bold break-all">
+                        {selectedItem.data.loan_payment_transaction_id}
+                      </p>
+                    </div>
+                  )}
+                  {selectedItem.data.loan_payment_screenshot_url && (
+                    <a href={selectedItem.data.loan_payment_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-green-700 font-bold hover:underline text-xs bg-white px-2 py-1.5 rounded border border-green-100">
+                      <ImageIcon size={14} /> View Payment Screenshot
+                    </a>
+                  )}
+                  {selectedItem.data.loan_paid_at && (
+                    <p className="text-[10px] text-green-700 font-bold mt-2">
+                      Approved at: {new Date(selectedItem.data.loan_paid_at).toLocaleString()}
+                    </p>
+                  )}
+                  {selectedItem.data.loan_payment_note && (
+                    <p className="text-sm text-gray-700 bg-white p-2 rounded border border-green-200 italic mt-2">
+                      "{selectedItem.data.loan_payment_note}"
+                    </p>
                   )}
                 </div>
               )}
