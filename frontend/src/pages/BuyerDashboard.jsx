@@ -459,8 +459,8 @@ const BuyerDashboard = () => {
     <div className="min-h-screen bg-gray-50 font-sans pb-24 md:pb-10 flex flex-col">
       <Navbar />
 
-      <div className="bg-white px-4 py-6 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
-        <h1 className="text-2xl font-black text-gray-800 mb-4">
+      <div className="bg-white px-4 py-3 sm:py-4 border-b border-gray-200 sticky top-14 z-30 shadow-sm">
+        <h1 className="text-xl sm:text-2xl font-black text-gray-800 mb-2 sm:mb-3">
           {activeTab === 'support' ? 'Support Tickets' 
             : activeTab === 'announcements' ? 'Announcements' 
             : activeTab === 'wallet' ? 'Transaction History'
@@ -469,21 +469,21 @@ const BuyerDashboard = () => {
         
         {activeTab !== 'support' && activeTab !== 'announcements' && activeTab !== 'wallet' && (
           <>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
-                <Clock size={20} className="text-blue-500 mb-1" />
-                <p className="text-2xl font-black text-blue-700 leading-none">{activeApps.length}</p>
-                <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">Pending</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-2 sm:mb-3">
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 sm:p-3 text-center flex flex-col items-center justify-center shadow-sm">
+                <Clock size={16} className="text-blue-500 mb-0.5" />
+                <p className="text-lg sm:text-2xl font-black text-blue-700 leading-none">{activeApps.length}</p>
+                <p className="text-[9px] sm:text-[10px] font-bold text-blue-500 uppercase mt-0.5">Pending</p>
               </div>
-              <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
-                <CheckCircle size={20} className="text-green-500 mb-1" />
-                <p className="text-2xl font-black text-green-700 leading-none">{completedApps.length}</p>
-                <p className="text-[10px] font-bold text-green-500 uppercase mt-1">Success</p>
+              <div className="bg-green-50 border border-green-100 rounded-lg p-2 sm:p-3 text-center flex flex-col items-center justify-center shadow-sm">
+                <CheckCircle size={16} className="text-green-500 mb-0.5" />
+                <p className="text-lg sm:text-2xl font-black text-green-700 leading-none">{completedApps.length}</p>
+                <p className="text-[9px] sm:text-[10px] font-bold text-green-500 uppercase mt-0.5">Success</p>
               </div>
-              <div className="bg-red-50 border border-red-100 rounded-xl p-3 text-center flex flex-col items-center justify-center shadow-sm">
-                <XCircle size={20} className="text-red-500 mb-1" />
-                <p className="text-2xl font-black text-red-700 leading-none">{failedApps.length}</p>
-                <p className="text-[10px] font-bold text-red-500 uppercase mt-1">Failed</p>
+              <div className="bg-red-50 border border-red-100 rounded-lg p-2 sm:p-3 text-center flex flex-col items-center justify-center shadow-sm">
+                <XCircle size={16} className="text-red-500 mb-0.5" />
+                <p className="text-lg sm:text-2xl font-black text-red-700 leading-none">{failedApps.length}</p>
+                <p className="text-[9px] sm:text-[10px] font-bold text-red-500 uppercase mt-0.5">Failed</p>
               </div>
             </div>
 
@@ -507,6 +507,11 @@ const BuyerDashboard = () => {
                 Failed
               </button>
             </div>
+            {activeTab === 'active' && (
+              <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] sm:text-xs font-bold leading-relaxed text-red-700">
+                Before apply loan cradite please calculated your order total amount fast and take a screenshot.
+              </div>
+            )}
           </>
         )}
       </div>
