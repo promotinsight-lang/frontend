@@ -949,8 +949,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateLoanCredit = async (id, oldAmount) => {
-    const amount = prompt("Enter buyer loan credit amount (USD):", Number(oldAmount || 0).toFixed(2));
+  const updateLoanCredit = async (id, currentSettings = {}) => {
+    const amount = prompt("Enter buyer loan credit balance (USD):", Number(currentSettings.loan_credit_balance || 0).toFixed(2));
     if (amount === null) return;
 
     const loanCredit = Number(amount);
@@ -959,8 +959,39 @@ export default function AdminDashboard() {
       return;
     }
 
-    if (await handleAction(`${API_BASE}/api/users/${id}/loan-credit`, 'PATCH', { loan_credit_balance: loanCredit })) {
-      setSelectedUserProfile((prev) => prev?.id === id ? { ...prev, loan_credit_balance: loanCredit, wallet_balance: loanCredit } : prev);
+    const limitInput = prompt("Enter max loan credit limit per order (USD):", Number(currentSettings.loan_credit_limit || loanCredit || 0).toFixed(2));
+    if (limitInput === null) return;
+    const loanLimit = Number(limitInput);
+    if (!Number.isFinite(loanLimit) || loanLimit < 0) {
+      alert("Loan credit limit must be a valid non-negative amount.");
+      return;
+    }
+
+    const purchaseInput = prompt("Enter buyer product purchase/cart limit:", String(Number(currentSettings.product_purchase_limit || 3)));
+    if (purchaseInput === null) return;
+    const purchaseLimit = Number(purchaseInput);
+    if (!Number.isInteger(purchaseLimit) || purchaseLimit < 1 || purchaseLimit > 20) {
+      alert("Product purchase limit must be a whole number between 1 and 20.");
+      return;
+    }
+
+    const priceInput = prompt("Enter maximum product price allowed (USD):", Number(currentSettings.product_price_limit || 50).toFixed(2));
+    if (priceInput === null) return;
+    const priceLimit = Number(priceInput);
+    if (!Number.isFinite(priceLimit) || priceLimit <= 0) {
+      alert("Product price limit must be a valid positive amount.");
+      return;
+    }
+
+    const payload = {
+      loan_credit_balance: loanCredit,
+      loan_credit_limit: loanLimit,
+      product_purchase_limit: purchaseLimit,
+      product_price_limit: priceLimit,
+    };
+
+    if (await handleAction(`${API_BASE}/api/users/${id}/loan-credit`, 'PATCH', payload)) {
+      setSelectedUserProfile((prev) => prev?.id === id ? { ...prev, ...payload, wallet_balance: loanCredit } : prev);
       fetchUsers('buyer');
     }
   };

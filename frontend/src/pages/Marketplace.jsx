@@ -66,7 +66,17 @@ export default function Marketplace() {
             if(data.user.is_active === false || data.user.is_active === "false" || data.user.is_active === 0) setIsAccountDisabled(true);
             if(data.user.is_active === false) setIsAccountDisabled(true);
             const lsUser = JSON.parse(localStorage.getItem('user') || '{}');
-            localStorage.setItem('user', JSON.stringify({ ...lsUser, is_active: data.user.is_active, is_frozen: data.user.is_frozen }));
+            const updatedUser = {
+              ...lsUser,
+              is_active: data.user.is_active,
+              is_frozen: data.user.is_frozen,
+              loan_credit_balance: data.user.loan_credit_balance,
+              loan_credit_limit: data.user.loan_credit_limit,
+              product_purchase_limit: data.user.product_purchase_limit,
+              product_price_limit: data.user.product_price_limit,
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
          }
       } catch(e) {
          console.error("Silent auth check failed", e);
@@ -148,7 +158,7 @@ export default function Marketplace() {
             application_status: result.application?.status || 'approved',
           }
         }));
-        alert("Order request saved. Use the Facebook group button to contact directly.");
+        alert("Product added to cart. Go to your dashboard to submit the platform order total and screenshot.");
       } else {
         alert(result.message || "Failed to apply");
       }
@@ -479,14 +489,12 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
           {product.product_name || 'Premium product'}
         </h3>
 
-        {!isBuyer && (
           <div className="mb-3 border-t border-gray-100 pt-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Price</p>
               <p className={`text-lg font-black ${isSoldOut ? 'text-gray-400' : 'text-gray-900'}`}>{priceDisplay.formatted}</p>
             </div>
           </div>
-        )}
 
         {user?.role === 'seller' ? (
           <button onClick={() => navigate('/dashboard?tab=overview')} className="mt-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
@@ -502,7 +510,7 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
                 <Eye size={14} /> View
               </button>
               <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}&action=order` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-3 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
-                <ShoppingBag size={14} /> Order
+                <ShoppingBag size={14} /> Apply Loan
               </button>
             </div>
           </div>
@@ -512,7 +520,7 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
               <MessageCircle size={14} /> Facebook Group <ExternalLink size={13} />
             </button>
             <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#10b981] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
-              <Eye size={16} /> View Order
+              <Eye size={16} /> View Cart
             </button>
           </div>
         ) : isSoldOut ? (
@@ -525,7 +533,7 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
               <Eye size={14} /> View Details
             </button>
             <button onClick={() => onApply(product.id)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-2 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
-              <Plus size={14} /> Order Now
+              <Plus size={14} /> Add to Cart
             </button>
           </div>
         )}

@@ -75,14 +75,27 @@ export default function UserProfileModal({
                   Loan Credit: ${Number(selectedUserProfile.loan_credit_balance || 0).toFixed(2)}
                 </span>
               )}
+              {selectedUserProfile.role === 'buyer' && (
+                <>
+                  <span className="bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded text-xs font-bold uppercase">
+                    Loan Limit: ${Number(selectedUserProfile.loan_credit_limit || 0).toFixed(2)}
+                  </span>
+                  <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold uppercase">
+                    Product Limit: {Number(selectedUserProfile.product_purchase_limit || 3)}
+                  </span>
+                  <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs font-bold uppercase">
+                    Max Price: ${Number(selectedUserProfile.product_price_limit || 50).toFixed(2)}
+                  </span>
+                </>
+              )}
             </div>
             {selectedUserProfile.role === 'buyer' && (
               <button
                 type="button"
-                onClick={() => onUpdateLoanCredit?.(selectedUserProfile.id, selectedUserProfile.loan_credit_balance)}
+                onClick={() => onUpdateLoanCredit?.(selectedUserProfile.id, selectedUserProfile)}
                 className="mt-3 bg-[#0066ff] hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm"
               >
-                Update Loan Credit
+                Update Credit & Limits
               </button>
             )}
           </div>

@@ -94,6 +94,9 @@ const BuyerDashboard = () => {
             ...lsUser, 
             wallet_balance: profileData.user.wallet_balance, 
             loan_credit_balance: profileData.user.loan_credit_balance,
+            loan_credit_limit: profileData.user.loan_credit_limit,
+            product_purchase_limit: profileData.user.product_purchase_limit,
+            product_price_limit: profileData.user.product_price_limit,
             wallet_breakdown: profileData.user.wallet_breakdown,
             is_active: profileData.user.is_active, 
             is_frozen: profileData.user.is_frozen,
@@ -169,8 +172,10 @@ const BuyerDashboard = () => {
     .filter((transaction) => ['loan_credit_order', 'loan_deducted'].includes(transaction.type))
     .reduce((total, transaction) => total + (Number(transaction.amount) || 0), 0);
   const currentLoanCredit = Number(userProfile?.loan_credit_balance || 0);
+  const currentLoanLimit = Number(userProfile?.loan_credit_limit || 0);
   const requestedOrderTotal = Number(orderForm.order_total_amount || 0);
   const hasInsufficientLoanCredit = requestedOrderTotal > 0 && currentLoanCredit < requestedOrderTotal;
+  const hasExceededLoanLimit = currentLoanLimit > 0 && requestedOrderTotal > currentLoanLimit;
 
   const handleImageUpload = async (e, formType) => {
     const file = e.target.files[0];
@@ -212,6 +217,14 @@ const BuyerDashboard = () => {
 
   const submitOrder = async (e) => {
     e.preventDefault();
+    if (!orderForm.screenshot_url) {
+      alert('Please upload the order total amount screenshot before submitting.');
+      return;
+    }
+    if (hasExceededLoanLimit) {
+      alert(`Order total exceeds your loan credit limit of $${currentLoanLimit.toFixed(2)}.`);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/${actionAppId}/order`, {
@@ -544,6 +557,7 @@ const BuyerDashboard = () => {
               <div className="bg-white border border-blue-100 rounded-xl p-4 shadow-sm">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Available Credit</p>
                 <p className="text-2xl font-black text-blue-700 mt-1">${currentLoanCredit.toFixed(2)}</p>
+                <p className="text-[11px] font-bold text-gray-500 mt-1">Limit: ${currentLoanLimit.toFixed(2)}</p>
               </div>
               <div className="bg-white border border-green-100 rounded-xl p-4 shadow-sm">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Added</p>
@@ -638,7 +652,7 @@ const BuyerDashboard = () => {
                     <button onClick={() => setSelectedItem({ type: 'application', data: app })} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg text-xs transition-colors">Details</button>
                     
                     {['approved', 'pending'].includes(app.application_status) && (
-                      <button onClick={() => { setActionAppId(app.application_id); setShowOrderModal(true); }} className="flex-1 bg-[#0066ff] text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-blue-500/30">Submit Order</button>
+                      <button onClick={() => { setActionAppId(app.application_id); setShowOrderModal(true); }} className="flex-1 bg-[#0066ff] text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-blue-500/30">Apply Loan</button>
                     )}
 
                     {app.application_status === 'order_approved' && isReviewTask(app) && (
@@ -791,7 +805,7 @@ const BuyerDashboard = () => {
       {showOrderModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Submit Order Details</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Apply Loan Credit</h3>
             <form onSubmit={submitOrder} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Amazon Order Number</label>
@@ -799,12 +813,15 @@ const BuyerDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount From Platform</label>
                 <input required type="number" min="0.01" step="0.01" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_total_amount} onChange={e => setOrderForm({...orderForm, order_total_amount: e.target.value})} placeholder="e.g. 25.99" />
                 <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold">
                   <span className="text-gray-500">Available credit: ${currentLoanCredit.toFixed(2)}</span>
                   {hasInsufficientLoanCredit && (
                     <span className="text-red-600">Insufficient credit</span>
+                  )}
+                  {hasExceededLoanLimit && (
+                    <span className="text-red-600">Above loan limit</span>
                   )}
                 </div>
               </div>
@@ -815,17 +832,17 @@ const BuyerDashboard = () => {
               </div>
               
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Screenshot 1 (Optional)</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount Screenshot</label>
                 <input 
                   type="file" 
                   accept="image/*" 
                   onChange={(e) => handleImageUpload(e, 'order')} 
                   className="w-full p-2 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
                 />
-                {orderForm.screenshot_url && <p className="text-xs text-green-600 mt-1 font-bold">✓ Image 1 attached!</p>}
+                {orderForm.screenshot_url ? <p className="text-xs text-green-600 mt-1 font-bold">Order total screenshot attached.</p> : <p className="text-xs text-red-500 mt-1 font-bold">Required before loan apply.</p>}
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Upload Screenshot 2 (Optional)</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Extra Screenshot (Optional)</label>
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -838,7 +855,7 @@ const BuyerDashboard = () => {
 
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setShowOrderModal(false)} className="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm">Cancel</button>
-                <button type="submit" disabled={isSubmitting || isUploadingImage || hasInsufficientLoanCredit} className="flex-1 py-3 bg-[#0066ff] text-white rounded-xl font-bold text-sm disabled:opacity-50 transition-opacity">Submit</button>
+                <button type="submit" disabled={isSubmitting || isUploadingImage || hasInsufficientLoanCredit || hasExceededLoanLimit || !orderForm.screenshot_url} className="flex-1 py-3 bg-[#0066ff] text-white rounded-xl font-bold text-sm disabled:opacity-50 transition-opacity">Submit</button>
               </div>
             </form>
           </div>

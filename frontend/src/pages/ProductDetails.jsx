@@ -62,7 +62,7 @@ export default function ProductDetails() {
           const data = await res.json();
           const existingApp = (data.data || []).find(app => String(app.product_id) === String(id));
           if (existingApp) {
-            setApplicationStatus(existingApp.status);
+            setApplicationStatus(existingApp.application_status || existingApp.status);
             setCurrentApplication(existingApp);
           }
         }
@@ -106,7 +106,7 @@ export default function ProductDetails() {
         const nextApplication = result.application || {};
         setApplicationStatus(nextApplication.status || 'approved');
         setCurrentApplication(nextApplication);
-        alert("Order request saved. Use the Facebook group button to contact directly.");
+        alert("Product added to cart. Go to your dashboard to submit the platform order total and screenshot.");
       } else {
         alert(result.message || "Failed to apply");
       }
@@ -212,7 +212,6 @@ export default function ProductDetails() {
           {/* Details Section */}
           <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col">
             
-            {!isBuyer && (
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-1 rounded">
                   Platform: {product.platform}
@@ -221,13 +220,11 @@ export default function ProductDetails() {
                   Country: {product.country}
                 </span>
               </div>
-            )}
 
             <h1 className={`text-2xl md:text-3xl font-black leading-tight mb-4 ${isSoldOut ? 'text-gray-500' : 'text-gray-900'}`}>
               {product.product_name}
             </h1>
 
-            {!isBuyer && (
               <div className="mb-8 pb-6 border-b border-gray-100">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Price</p>
@@ -236,16 +233,13 @@ export default function ProductDetails() {
                   </p>
                 </div>
               </div>
-            )}
 
-            {!isBuyer && (
               <div className="flex-1">
                 <h3 className="text-sm font-bold text-gray-800 mb-2">Instructions</h3>
                 <p className="text-gray-600 text-sm leading-relaxed mb-6 whitespace-pre-wrap">
                   {product.instructions || "No specific instructions provided for this product."}
                 </p>
               </div>
-            )}
 
             <div className="mt-auto pt-6">
               {isAccountDisabled ? (
@@ -279,7 +273,7 @@ export default function ProductDetails() {
                     <MessageCircle size={20} /> Contact in Facebook Group <ExternalLink size={18} />
                   </button>
                   <button onClick={() => navigate('/dashboard?tab=active')} className="w-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 py-4 rounded-full font-bold text-lg transition-all flex justify-center items-center gap-2">
-                    <Eye size={20} /> View Your Order
+                    <Eye size={20} /> View Cart / Apply Loan
                   </button>
                 </div>
               ) : (
@@ -288,7 +282,7 @@ export default function ProductDetails() {
                   disabled={isApplying}
                   className={`w-full ${isApplying ? 'bg-emerald-400' : 'bg-[#10b981] hover:bg-[#059669]'} text-white py-4 rounded-full font-bold text-lg shadow-md transition-all flex justify-center items-center gap-2`}
                 >
-                  <Plus size={20} /> {isApplying ? 'Applying...' : 'Order Now'}
+                  <Plus size={20} /> {isApplying ? 'Adding...' : 'Add to Cart'}
                 </button>
               )}
             </div>
