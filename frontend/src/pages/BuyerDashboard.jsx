@@ -234,13 +234,13 @@ const BuyerDashboard = () => {
         body: JSON.stringify(orderForm)
       });
       if(res.ok) {
-        alert('Order submitted successfully!');
+        alert('Loan applied successfully!');
         setShowOrderModal(false);
         setOrderForm({ order_number: '', order_total_amount: '', order_paypal_address: '', screenshot_url: '', screenshot_url_2: '', order_comment: '' });
         fetchData();
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data.message || 'Failed to submit order');
+        alert(data.message || 'Failed to apply loan');
       }
     } catch {
       alert('Server error');
@@ -396,6 +396,12 @@ const BuyerDashboard = () => {
       app?.review_screenshot_url_2 ||
       ['review_submitted', 'forwarded_to_seller', 'pending_refund', 'completed'].includes(app?.application_status)
     );
+  };
+
+  const getBuyerStatusLabel = (status) => {
+    if (status === 'order_submitted') return 'loan applied';
+    if (status === 'order_approved') return 'loan approved';
+    return (status || '').replace('_', ' ');
   };
 
   const getTransactionMeta = (transaction) => {
@@ -596,6 +602,20 @@ const BuyerDashboard = () => {
                           <p className="text-[11px] text-gray-500 font-semibold mt-1">
                             {formatDateTime(transaction.created_at) || 'Date unavailable'}
                           </p>
+                          {(transaction.order_screenshot_url || transaction.order_extra_screenshot_url) && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {transaction.order_screenshot_url && (
+                                <a href={transaction.order_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                                  <ImageIcon size={13} /> Order Total Screenshot
+                                </a>
+                              )}
+                              {transaction.order_extra_screenshot_url && (
+                                <a href={transaction.order_extra_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                                  <ImageIcon size={13} /> Extra Screenshot
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <p className={`text-lg font-black shrink-0 ${meta.amountClass}`}>
                           {meta.sign}${Number(transaction.amount || 0).toFixed(2)}
@@ -635,7 +655,7 @@ const BuyerDashboard = () => {
                         <h3 className="text-sm font-bold text-gray-800 line-clamp-2">{app.product_name || `Order #${app.application_id}`}</h3>
                       </div>
                       <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${app.application_status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {(app.application_status || '').replace('_', ' ')}
+                        {getBuyerStatusLabel(app.application_status)}
                       </span>
                       <p className="text-xs text-gray-500 mt-2">
                         Product price: <span className="font-bold text-gray-800">{formatProduct(app.price, app.country).formatted}</span>
@@ -647,7 +667,7 @@ const BuyerDashboard = () => {
                       )}
                       {app.order_submitted_at && (
                         <p className="text-[10px] text-gray-500 font-semibold mt-2">
-                          Order submitted: {new Date(app.order_submitted_at).toLocaleString()}
+                          Loan applied: {new Date(app.order_submitted_at).toLocaleString()}
                         </p>
                       )}
                     </div>
@@ -1109,7 +1129,7 @@ const BuyerDashboard = () => {
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order ID</p><p className="text-sm font-mono bg-gray-100 px-2 py-1 rounded inline-block border border-gray-200">{selectedItem.data.order_number}</p></div>
                   )}
                   {selectedItem.data.order_submitted_at && (
-                    <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Order Submitted Date</p><p className="text-sm font-bold bg-indigo-50 text-indigo-700 px-2 py-1 rounded inline-block border border-indigo-100">{new Date(selectedItem.data.order_submitted_at).toLocaleString()}</p></div>
+                    <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Loan Applied Date</p><p className="text-sm font-bold bg-indigo-50 text-indigo-700 px-2 py-1 rounded inline-block border border-indigo-100">{new Date(selectedItem.data.order_submitted_at).toLocaleString()}</p></div>
                   )}
                   {selectedItem.data.review_submitted_at && (
                     <div className="mb-2"><p className="text-[10px] text-gray-500 uppercase font-bold">Review Submitted Date</p><p className="text-sm font-bold bg-purple-50 text-purple-700 px-2 py-1 rounded inline-block border border-purple-100">{new Date(selectedItem.data.review_submitted_at).toLocaleString()}</p></div>

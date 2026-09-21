@@ -187,6 +187,14 @@ const SidebarMenu = ({ isOpen, setIsOpen }) => {
                 <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
               </Link>
 
+              <Link to="/dashboard?tab=loan-applications" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
+                <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
+                  <Wallet size={20} />
+                  <span className="font-semibold">Buyer Loans</span>
+                </div>
+                <ChevronRight size={18} className="text-gray-300 group-hover:text-[#0066ff]" />
+              </Link>
+
               <Link to="/dashboard?tab=products" onClick={() => setIsOpen(false)} className="flex items-center justify-between px-4 py-3.5 mx-2 my-1 rounded-xl hover:bg-blue-50 transition-colors group">
                 <div className="flex items-center gap-3 text-gray-700 group-hover:text-[#0066ff] transition-colors">
                   <Package size={20} />

@@ -864,7 +864,7 @@ export default function AdminDashboard() {
     if (activeTab === 'products' || activeTab === 'all-products') fetchProducts();
     fetchAllFeeConfigs(); // 🔥 Exchange rates সব ট্যাবের জন্য লোড হবে
     if (activeTab === 'settings') { fetchSettings(); fetchPlatformSettings(); fetchGlobalVerificationFields(); }
-    if (activeTab === 'applications') fetchApplications();
+    if (activeTab === 'applications' || activeTab === 'loan-applications') fetchApplications();
     if (activeTab === 'verify-requests') fetchVerifications(); 
     if (activeTab === 'appeals') fetchAppeals(); 
     if (activeTab === 'all-buyers') fetchUsers('buyer'); 
@@ -910,7 +910,8 @@ export default function AdminDashboard() {
   const rejectAppeal = async (id) => { if(window.confirm('Reject this appeal? The account will remain disabled.')) { if(await handleAction(`${API_BASE}/api/admin/appeals/${id}/reject`)) fetchAppeals(); } };
 
   const actionApplication = async (appId, actionType) => {
-    if(window.confirm(`Proceed to ${actionType.replace('-', ' ')}?`)) {
+    const actionLabel = actionType === 'approve-order' ? 'approve loan' : actionType === 'reject-order' ? 'reject loan' : actionType.replace('-', ' ');
+    if(window.confirm(`Proceed to ${actionLabel}?`)) {
       if(await handleAction(`${API_BASE}/api/applications/${appId}/${actionType}`)) {
          fetchApplications(); setShowAppDetailsModal(false);
       }
@@ -1090,6 +1091,8 @@ export default function AdminDashboard() {
       product.status
     ].some((value) => String(value || '').toLowerCase().includes(term));
   });
+  const loanApplications = applications.filter((app) => app.status === 'order_submitted');
+  const regularApplications = applications.filter((app) => app.status !== 'order_submitted');
 
   const updateBlogField = (field, value) => {
     setNewBlog((prev) => ({ ...prev, [field]: value }));
@@ -1222,7 +1225,8 @@ export default function AdminDashboard() {
   const renderStatusBadge = (status) => {
     switch(status) {
       case 'approved': return <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-[10px] font-bold uppercase border border-green-200">Approved</span>;
-      case 'order_approved': return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] font-bold uppercase border border-blue-200">Order Apprvd</span>;
+      case 'order_submitted': return <span className="bg-cyan-100 text-cyan-800 px-2 py-1 rounded text-[10px] font-bold uppercase border border-cyan-200">Loan Applied</span>;
+      case 'order_approved': return <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-[10px] font-bold uppercase border border-blue-200">Loan Approved</span>;
       case 'rejected': return <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-[10px] font-bold uppercase border border-red-200">Rejected</span>;
       case 'pending': return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-[10px] font-bold uppercase border border-yellow-200">Pending</span>;
       case 'stopped': return <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-[10px] font-bold uppercase border border-orange-200">Stopped</span>;
@@ -1253,7 +1257,7 @@ export default function AdminDashboard() {
           </div>
           <button onClick={() => {
             fetchStats(); fetchMonthlyReport();
-            if(activeTab === 'applications') fetchApplications();
+            if(activeTab === 'applications' || activeTab === 'loan-applications') fetchApplications();
             if(activeTab === 'products' || activeTab === 'all-products') fetchProducts();
             if(activeTab === 'verify-requests') fetchVerifications();
             if(activeTab === 'appeals') fetchAppeals();
@@ -1282,6 +1286,7 @@ export default function AdminDashboard() {
             { id: 'products', icon: <Package size={16} />, label: 'Pending Products' },
             { id: 'all-products', icon: <LayoutDashboard size={16} />, label: 'All Products' },
             { id: 'applications', icon: <FileText size={16} />, label: 'Applications' },
+            { id: 'loan-applications', icon: <Wallet size={16} />, label: 'Loan' },
             { id: 'deposits', icon: <Wallet size={16} />, label: 'Deposits' },
             { id: 'withdrawals', icon: <History size={16} />, label: 'Withdrawals' },
             { id: 'history', icon: <History size={16} />, label: 'Trx History' },
@@ -2283,14 +2288,114 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* LOAN APPLICATIONS TAB */}
+        {activeTab === 'loan-applications' && (
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden animate-fade-in-up mt-6">
+            <div className="p-4 bg-gray-50 border-b">
+              <h3 className="font-bold text-gray-700">Buyer Loan Applications</h3>
+              <p className="text-xs text-gray-500 mt-1">Approve loan requests after checking the submitted order total amount and screenshot.</p>
+            </div>
+            <ResponsiveTableShell
+              empty={loanApplications.length === 0}
+              emptyMessage="No loan applications found."
+              mobile={loanApplications.map((app) => (
+                <AdminMobileCard
+                  key={app.id}
+                  title={app.product_name}
+                  subtitle={app.buyer_name}
+                  actions={
+                    <>
+                      <button onClick={() => actionApplication(app.id, 'approve-order')} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold">
+                        <CheckCircle size={14} className="inline mr-1" /> Approve
+                      </button>
+                      <button onClick={() => actionApplication(app.id, 'reject-order')} className="flex-1 border border-red-200 text-red-500 py-2 rounded-lg text-xs font-bold">
+                        <XCircle size={14} className="inline mr-1" /> Reject
+                      </button>
+                      <button onClick={() => { setSelectedAppDetails(app); setShowAppDetailsModal(true); }} className="flex-1 border border-gray-200 text-[#0066ff] py-2 rounded-lg text-xs font-bold">
+                        <Eye size={14} className="inline mr-1" /> Details
+                      </button>
+                    </>
+                  }
+                >
+                  <AdminField label="Buyer email">{app.buyer_email}</AdminField>
+                  <AdminField label="Order total"><span className="font-black text-green-700">${Number(app.order_total_amount || 0).toFixed(2)}</span></AdminField>
+                  {app.order_submitted_at && (
+                    <AdminField label="Loan applied">{new Date(app.order_submitted_at).toLocaleString()}</AdminField>
+                  )}
+                  {app.screenshot_url && (
+                    <a href={app.screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                      <ImageIcon size={14} /> View Screenshot
+                    </a>
+                  )}
+                </AdminMobileCard>
+              ))}
+            >
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-100 text-gray-600">
+                  <tr>
+                    <th className="p-4">Buyer</th>
+                    <th className="p-4">Product</th>
+                    <th className="p-4">Order Total</th>
+                    <th className="p-4">Screenshot</th>
+                    <th className="p-4">Loan Applied</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loanApplications.map(app => (
+                    <tr key={app.id} className="border-b hover:bg-gray-50">
+                      <td className="p-4">
+                        <p className="font-bold text-gray-800">{app.buyer_name}</p>
+                        <p className="text-xs text-gray-500">{app.buyer_email}</p>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <img src={app.image_url} alt="Product" className="w-10 h-10 rounded object-contain bg-white border shrink-0" />
+                          <p className="font-bold text-gray-800 w-48 truncate">{app.product_name}</p>
+                        </div>
+                      </td>
+                      <td className="p-4 font-black text-green-700">${Number(app.order_total_amount || 0).toFixed(2)}</td>
+                      <td className="p-4">
+                        {app.screenshot_url ? (
+                          <a href={app.screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100">
+                            <ImageIcon size={14} /> View
+                          </a>
+                        ) : (
+                          <span className="text-xs font-bold text-red-500">Missing</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-xs text-gray-600">
+                        {app.order_submitted_at ? new Date(app.order_submitted_at).toLocaleString() : 'N/A'}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => actionApplication(app.id, 'approve-order')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 shadow-sm flex items-center gap-1">
+                            <CheckCircle size={14}/> Approve
+                          </button>
+                          <button onClick={() => actionApplication(app.id, 'reject-order')} className="bg-white border border-red-200 text-red-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 shadow-sm flex items-center gap-1">
+                            <XCircle size={14}/> Reject
+                          </button>
+                          <button onClick={() => { setSelectedAppDetails(app); setShowAppDetailsModal(true); }} className="bg-white border border-gray-300 text-[#0066ff] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-50 shadow-sm flex items-center gap-1">
+                            <Eye size={14}/> Details
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ResponsiveTableShell>
+          </div>
+        )}
+
         {/* APPLICATIONS TAB */}
         {activeTab === 'applications' && (
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden animate-fade-in-up mt-6">
             <div className="p-4 bg-gray-50 border-b"><h3 className="font-bold text-gray-700">Manage Buyer Orders & Applications</h3></div>
             <ResponsiveTableShell
-              empty={applications.length === 0}
+              empty={regularApplications.length === 0}
               emptyMessage="No applications found."
-              mobile={applications.map((app) => (
+              mobile={regularApplications.map((app) => (
                 <AdminMobileCard
                   key={app.id}
                   title={app.product_name}
@@ -2320,7 +2425,7 @@ export default function AdminDashboard() {
                   <AdminField label="Buyer email">{app.buyer_email}</AdminField>
                   <AdminField label="Status">{renderStatusBadge(app.status)}</AdminField>
                   {app.order_submitted_at && (
-                    <AdminField label="Order submitted">{new Date(app.order_submitted_at).toLocaleString()}</AdminField>
+                    <AdminField label="Loan applied">{new Date(app.order_submitted_at).toLocaleString()}</AdminField>
                   )}
                   {app.review_submitted_at && (
                     <AdminField label="Review submitted">{new Date(app.review_submitted_at).toLocaleString()}</AdminField>
@@ -2334,13 +2439,13 @@ export default function AdminDashboard() {
                     <th className="p-4">Buyer Info</th>
                     <th className="p-4">Product</th>
                     <th className="p-4">Status</th>
-                    <th className="p-4">Order Submitted</th>
+                    <th className="p-4">Loan Applied</th>
                     <th className="p-4">Review Submitted</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map(app => (
+                  {regularApplications.map(app => (
                     <tr key={app.id} className="border-b hover:bg-gray-50">
                       <td className="p-4">
                         <p className="font-bold text-gray-800">{app.buyer_name}</p>
