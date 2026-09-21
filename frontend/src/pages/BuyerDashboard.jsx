@@ -813,11 +813,6 @@ const BuyerDashboard = () => {
             <h3 className="text-lg font-bold text-gray-800 mb-4">Apply Loan Credit</h3>
             <form onSubmit={submitOrder} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Amazon Order Number</label>
-                <input required type="text" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_number} onChange={e => setOrderForm({...orderForm, order_number: e.target.value})} placeholder="e.g. 114-1234567-8901234" />
-              </div>
-
-              <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Order Total Amount From Platform</label>
                 <input required type="number" min="0.01" step="0.01" className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:border-[#0066ff] outline-none" value={orderForm.order_total_amount} onChange={e => setOrderForm({...orderForm, order_total_amount: e.target.value})} placeholder="e.g. 25.99" />
                 <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold">
