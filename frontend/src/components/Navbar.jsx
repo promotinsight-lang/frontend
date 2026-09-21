@@ -1,6 +1,6 @@
 import {  useState, useEffect  } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Home, Bell, X, ShoppingBag, FileText } from 'lucide-react'; 
+import { Menu, Home, Bell, X, ShoppingBag, ShoppingCart, FileText } from 'lucide-react'; 
 import SidebarMenu from './SidebarMenu';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -9,6 +9,7 @@ const Navbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showNotif, setShowNotif] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [cartCount, setCartCount] = useState(0);
   
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
@@ -32,6 +33,7 @@ const Navbar = () => {
           let notifs = [];
 
           if (user.role === 'admin') {
+              setCartCount(0);
               const [resAppeals, resVer, resStats, resProd, resApps] = await Promise.all([
                  fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/appeals`, { headers, credentials }),
                  fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/verifications`, { headers, credentials }),
@@ -93,6 +95,9 @@ const Navbar = () => {
               if (appRes.ok) {
                  const appData = await appRes.json();
                  if (appData.success) {
+                     const activeCartItems = (appData.data || []).filter(app => !['completed', 'rejected', 'disputed'].includes(app.application_status || app.status));
+                     setCartCount(activeCartItems.length);
+
                      appData.data.forEach(app => {
                          const status = app.application_status;
                          const pName = app.product_name ? app.product_name.substring(0, 22) + '...' : 'Product';
@@ -115,6 +120,7 @@ const Navbar = () => {
               }
           }
           else if (user.role === 'seller') {
+              setCartCount(0);
               const prodRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/products/my`, { headers, credentials });
 
               if (prodRes.ok) {
@@ -251,6 +257,20 @@ const Navbar = () => {
                      <Link to="/marketplace" className={navLinkClass} title={t('nav_marketplace')} aria-label={t('nav_marketplace')}>
                        <ShoppingBag size={22} />
                        <span className="text-[9px] font-black leading-none sm:text-xs">{t('nav_marketplace')}</span>
+                     </Link>
+                   )}
+
+                   {user.role === 'buyer' && (
+                     <Link to="/dashboard?tab=active" className={navLinkClass} title="Cart" aria-label="Open cart">
+                       <div className="relative">
+                         <ShoppingCart size={22} />
+                         {cartCount > 0 && (
+                           <span className="absolute -top-2 -right-2 bg-[#10b981] text-white text-[10px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center font-bold shadow-sm">
+                             {cartCount > 9 ? '9+' : cartCount}
+                           </span>
+                         )}
+                       </div>
+                       <span className="text-[9px] font-black leading-none sm:text-xs">Cart</span>
                      </Link>
                    )}
 

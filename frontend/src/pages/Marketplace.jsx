@@ -1,7 +1,7 @@
 import {  useState, useEffect  } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, Lock, ShieldAlert, Eye, ShoppingBag, Menu, Globe, Heart, Plus, Filter, Home, MessageCircle, ExternalLink
+  Search, Lock, ShieldAlert, Eye, ShoppingCart, Menu, Globe, Heart, Plus, Filter, Home, MessageCircle, ExternalLink
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import SidebarMenu from '../components/SidebarMenu';
@@ -509,8 +509,8 @@ function ProductCard({ product, user, application, onApply, navigate, isFavorite
               <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-3 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-100">
                 <Eye size={14} /> View
               </button>
-              <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}&action=order` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-3 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
-                <ShoppingBag size={14} /> Apply Loan
+              <button onClick={() => navigate(`/dashboard?tab=active${applicationId ? `&appId=${applicationId}` : ''}`)} className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#10b981] px-3 py-3 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#059669]">
+                <ShoppingCart size={14} /> View Cart
               </button>
             </div>
           </div>
