@@ -226,7 +226,7 @@ export default function AdminDashboard() {
   const [usersList, setUsersList] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [productSearchTerm, setProductSearchTerm] = useState('');
-  const [subTabHistory, setSubTabHistory] = useState('withdrawals');
+  const [subTabHistory, setSubTabHistory] = useState('loans');
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedProductDetails, setSelectedProductDetails] = useState(null);
@@ -863,7 +863,7 @@ export default function AdminDashboard() {
     fetchMonthlyReport();
     if (activeTab === 'deposits' || activeTab === 'history') fetchDeposits();
     if (activeTab === 'withdrawals' || activeTab === 'history') fetchWithdrawals();
-    if (activeTab === 'history') fetchRefunds(); 
+    if (activeTab === 'history') { fetchRefunds(); fetchApplications(); }
     if (activeTab === 'products' || activeTab === 'all-products') fetchProducts();
     fetchAllFeeConfigs(); // 🔥 Exchange rates সব ট্যাবের জন্য লোড হবে
     if (activeTab === 'settings') { fetchSettings(); fetchPlatformSettings(); fetchGlobalVerificationFields(); }
@@ -1119,6 +1119,13 @@ export default function AdminDashboard() {
     ].some((value) => String(value || '').toLowerCase().includes(term));
   });
   const loanApplications = applications.filter((app) => app.status === 'order_submitted');
+  const loanHistory = applications.filter((app) =>
+    app.loan_payment_amount ||
+    app.loan_payment_transaction_id ||
+    app.loan_payment_screenshot_url ||
+    app.loan_paid_at ||
+    app.status === 'order_approved'
+  );
   const regularApplications = applications.filter((app) => app.status !== 'order_submitted');
 
   const updateBlogField = (field, value) => {
@@ -1288,7 +1295,7 @@ export default function AdminDashboard() {
             if(activeTab === 'products' || activeTab === 'all-products') fetchProducts();
             if(activeTab === 'verify-requests') fetchVerifications();
             if(activeTab === 'appeals') fetchAppeals();
-            if(activeTab === 'history') { fetchDeposits(); fetchWithdrawals(); fetchRefunds(); }
+            if(activeTab === 'history') { fetchDeposits(); fetchWithdrawals(); fetchRefunds(); fetchApplications(); }
             if(activeTab === 'all-buyers') fetchUsers('buyer');
             if(activeTab === 'all-sellers') fetchUsers('seller');
             if(activeTab === 'support-tickets') fetchSupportTickets();
@@ -2638,6 +2645,7 @@ export default function AdminDashboard() {
             <div className="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
               <h3 className="font-bold text-gray-700">Transaction History</h3>
               <div className="flex flex-wrap gap-2 bg-gray-200 p-1 rounded-lg w-full md:w-auto">
+                <button onClick={() => setSubTabHistory('loans')} className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'loans' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Loan Credits</button>
                 <button onClick={() => setSubTabHistory('withdrawals')} className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'withdrawals' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Withdrawals</button>
                 <button onClick={() => setSubTabHistory('deposits')} className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'deposits' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Deposits</button>
                 <button onClick={() => setSubTabHistory('refunds')} className={`flex-1 md:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${subTabHistory === 'refunds' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Product Refunds</button>
@@ -2645,6 +2653,7 @@ export default function AdminDashboard() {
             </div>
             <ResponsiveTableShell
               empty={
+                (subTabHistory === 'loans' && loanHistory.length === 0) ||
                 (subTabHistory === 'withdrawals' && historyWithdrawals.length === 0) ||
                 (subTabHistory === 'deposits' && historyDeposits.length === 0) ||
                 (subTabHistory === 'refunds' && historyRefunds.length === 0)
@@ -2652,6 +2661,29 @@ export default function AdminDashboard() {
               emptyMessage="No records in this history tab."
               mobile={
                 <>
+                  {subTabHistory === 'loans' &&
+                    loanHistory.map((loan) => (
+                      <AdminMobileCard
+                        key={loan.id}
+                        title={loan.buyer_name}
+                        subtitle={loan.buyer_email}
+                        className="border-green-100 bg-green-50/20"
+                        actions={
+                          <button
+                            onClick={() => { setSelectedAppDetails(loan); setShowAppDetailsModal(true); }}
+                            className="w-full text-[#0066ff] py-2 text-xs font-bold border border-blue-100 rounded-lg bg-blue-50"
+                          >
+                            <Eye size={12} className="inline mr-1" /> View Details
+                          </button>
+                        }
+                      >
+                        <AdminField label="Amount"><span className="text-green-600 font-bold">+${Number(loan.loan_payment_amount || loan.order_total_amount || 0).toFixed(2)}</span></AdminField>
+                        <AdminField label="Product">{loan.product_name}</AdminField>
+                        <AdminField label="Trx"><span className="break-all text-[10px]">{loan.loan_payment_transaction_id || 'N/A'}</span></AdminField>
+                        <AdminField label="Date">{loan.loan_paid_at ? new Date(loan.loan_paid_at).toLocaleDateString() : 'N/A'}</AdminField>
+                        <AdminField label="Status">{renderStatusBadge(loan.status)}</AdminField>
+                      </AdminMobileCard>
+                    ))}
                   {subTabHistory === 'withdrawals' &&
                     historyWithdrawals.map((w) => (
                       <AdminMobileCard
@@ -2714,7 +2746,9 @@ export default function AdminDashboard() {
             >
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-100 text-gray-600">
-                  {subTabHistory === 'withdrawals' ? (
+                  {subTabHistory === 'loans' ? (
+                    <tr><th>Buyer Info</th><th>Loan Amount</th><th>Product</th><th>Payment Proof</th><th>Date</th><th className="text-right">Status & Details</th></tr>
+                  ) : subTabHistory === 'withdrawals' ? (
                     <tr><th>User Info</th><th>Amount</th><th>Method & Account</th><th>Date</th><th className="text-right">Status & Details</th></tr>
                   ) : subTabHistory === 'deposits' ? (
                     <tr><th>User Info</th><th>Amount</th><th>Method & Trx ID</th><th>Date</th><th className="text-right">Status & Details</th></tr>
@@ -2723,6 +2757,30 @@ export default function AdminDashboard() {
                   )}
                 </thead>
                 <tbody>
+                  {subTabHistory === 'loans' && loanHistory.map(loan => (
+                    <tr key={loan.id} className="border-b hover:bg-gray-50 bg-green-50/20">
+                      <td className="p-4"><p className="font-bold text-gray-700">{loan.buyer_name}</p><p className="text-xs text-gray-500">{loan.buyer_email}</p></td>
+                      <td className="p-4 text-green-600 font-bold">+${Number(loan.loan_payment_amount || loan.order_total_amount || 0).toFixed(2)}</td>
+                      <td className="p-4">
+                        <p className="font-bold text-gray-700 max-w-[220px] truncate">{loan.product_name}</p>
+                        <p className="text-xs text-gray-500">{[loan.platform, loan.country].filter(Boolean).join(' - ') || 'N/A'}</p>
+                      </td>
+                      <td className="p-4">
+                        <p className="text-xs text-gray-500 font-mono break-all">{loan.loan_payment_transaction_id || 'No trx id'}</p>
+                        {loan.loan_payment_screenshot_url && (
+                          <a href={loan.loan_payment_screenshot_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#0066ff] text-[10px] font-bold hover:underline mt-1">
+                            <ImageIcon size={12}/> Screenshot
+                          </a>
+                        )}
+                        {loan.loan_payment_note && <p className="text-[10px] text-gray-500 italic mt-1 max-w-[220px] truncate">{loan.loan_payment_note}</p>}
+                      </td>
+                      <td className="p-4 text-gray-600 text-xs">{loan.loan_paid_at ? new Date(loan.loan_paid_at).toLocaleDateString() : 'N/A'}</td>
+                      <td className="p-4 text-right flex flex-col items-end gap-1">
+                        {renderStatusBadge(loan.status)}
+                        <button onClick={() => { setSelectedAppDetails(loan); setShowAppDetailsModal(true); }} className="text-[#0066ff] text-[10px] font-bold hover:underline flex items-center justify-end gap-1 mt-1"><Eye size={12}/> View Details</button>
+                      </td>
+                    </tr>
+                  ))}
                   {subTabHistory === 'withdrawals' && historyWithdrawals.map(w => (
                     <tr key={w.id} className="border-b hover:bg-gray-50">
                       <td className="p-4"><p className="font-bold text-gray-700">{w.name}</p><p className="text-xs text-gray-500">{w.email}</p></td>
