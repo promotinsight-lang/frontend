@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { ShoppingBag, CheckCircle, Clock, X, ShieldAlert, XCircle, AlertCircle, CreditCard, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Copy } from 'lucide-react';
+import { ShoppingBag, CheckCircle, Clock, X, Trash2, ShieldAlert, XCircle, AlertCircle, CreditCard, Image as ImageIcon, Headset, PlusCircle, MessageCircle, MessageSquare, Send, Megaphone, Copy } from 'lucide-react';
 import { useBuyerCurrency } from '../hooks/useBuyerCurrency';
 import BottomNavbar from '../components/BottomNavbar';
 import LiveChatModal from '../components/LiveChatModal';
@@ -30,6 +30,7 @@ const BuyerDashboard = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [actionAppId, setActionAppId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [removingApplicationId, setRemovingApplicationId] = useState(null);
   
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -246,6 +247,29 @@ const BuyerDashboard = () => {
       alert('Server error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const removeCartItem = async (applicationId) => {
+    if (!window.confirm('Remove this product from your cart?')) return;
+
+    setRemovingApplicationId(applicationId);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/applications/${applicationId}/cart`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(result.message || 'Failed to remove this product from your cart.');
+        return;
+      }
+
+      setApplications((current) => current.filter((app) => String(app.application_id) !== String(applicationId)));
+    } catch {
+      alert('Server error. Please try again.');
+    } finally {
+      setRemovingApplicationId(null);
     }
   };
 
@@ -693,6 +717,17 @@ const BuyerDashboard = () => {
                     
                     {['approved', 'pending'].includes(app.application_status) && (
                       <button onClick={() => { setActionAppId(app.application_id); setShowOrderModal(true); }} className="flex-1 bg-[#0066ff] text-white font-bold py-2 rounded-lg text-xs shadow-md shadow-blue-500/30">Apply Loan</button>
+                    )}
+
+                    {['approved', 'pending'].includes(app.application_status) && (
+                      <button
+                        onClick={() => removeCartItem(app.application_id)}
+                        disabled={removingApplicationId === app.application_id}
+                        className="flex items-center justify-center gap-1 bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-2 rounded-lg text-xs transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                        {removingApplicationId === app.application_id ? 'Removing...' : 'Remove'}
+                      </button>
                     )}
 
                     {app.application_status === 'order_approved' && isReviewTask(app) && (
